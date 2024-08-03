@@ -1,0 +1,18 @@
+---
+source: gedcom/tests/tests.rs
+assertion_line: 101
+expression: "format!(\"{:?}\", err.with_source_code(NamedSource::new(filename, data)))"
+input_file: gedcom/tests/format_inputs/after_trlr.ged
+---
+gedcom::schema_error::records_after_trailer
+
+  × validating after_trlr.ged
+  ├─▶ File structure error
+  ╰─▶ Records after trailer (TRLR) record
+   ╭─[after_trlr.ged:5:1]
+ 4 │ 0 TRLR
+ 5 │ 0 BADBADBAD
+   · ─────┬─────
+   ·      ╰── this record appears after the TRLR record
+   ╰────
+  help: there are additional records after the trailer record which marks the end of the file

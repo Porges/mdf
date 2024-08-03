@@ -1,0 +1,14 @@
+---
+source: gedcom/tests/tests.rs
+expression: "format!(\"{:?}\",\n    miette::Report::new(err).with_source_code(NamedSource::new(path.file_name().unwrap_or_default().to_string_lossy(),\n    data)))"
+input_file: gedcom/tests/test_inputs/xref_no_tag.ged
+---
+gedcom::parse_error::no_tag
+
+  × Line syntax error
+  ╰─▶ No tag found
+   ╭─[xref_no_tag.ged:1:1]
+ 1 │ 0 @x@
+   · ──┬──
+   ·   ╰── no tag in this line
+   ╰────

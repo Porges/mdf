@@ -1,0 +1,17 @@
+---
+source: gedcom/tests/tests.rs
+expression: "format!(\"{:?}\", err.with_source_code(NamedSource::new(filename, data)))"
+input_file: gedcom/tests/format_inputs/no_gedc.ged
+---
+gedcom::file_format_error::missing_gedc_record
+
+  × validating no_gedc.ged
+  ├─▶ File structure error
+  ╰─▶ GEDCOM information is missing: HEAD record is missing `GEDC` entry
+   ╭─[no_gedc.ged:1:1]
+ 1 │ 0 HEAD
+   · ───┬──
+   ·    ╰── this record should contain a GEDC entry
+ 2 │ 0 TRLR
+   ╰────
+  help: this has been required since GEDCOM 5.0 (1991), so this might be an older file

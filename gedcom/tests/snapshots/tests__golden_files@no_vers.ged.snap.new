@@ -1,0 +1,7 @@
+---
+source: gedcom/tests/tests.rs
+assertion_line: 100
+expression: tree
+input_file: gedcom/tests/format_inputs/no_vers.ged
+---
+2

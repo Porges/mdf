@@ -1,0 +1,130 @@
+---
+source: gedcom/tests/tests.rs
+expression: tree
+input_file: gedcom/tests/syntax_inputs/basic_grandparent.ged
+---
+[
+    Sourced {
+        value: RawRecord {
+            tag: Sourced {
+                value: [
+                    95,
+                    82,
+                    79,
+                    79,
+                    84,
+                    49,
+                ],
+                span: SourceSpan {
+                    offset: SourceOffset(
+                        2,
+                    ),
+                    length: 6,
+                },
+            },
+            xref: None,
+            data: None,
+            records: [
+                Sourced {
+                    value: RawRecord {
+                        tag: Sourced {
+                            value: [
+                                95,
+                                67,
+                                72,
+                                73,
+                                76,
+                                68,
+                            ],
+                            span: SourceSpan {
+                                offset: SourceOffset(
+                                    12,
+                                ),
+                                length: 6,
+                            },
+                        },
+                        xref: None,
+                        data: None,
+                        records: [
+                            Sourced {
+                                value: RawRecord {
+                                    tag: Sourced {
+                                        value: [
+                                            95,
+                                            71,
+                                            82,
+                                            65,
+                                            78,
+                                            68,
+                                            67,
+                                            72,
+                                            73,
+                                            76,
+                                            68,
+                                        ],
+                                        span: SourceSpan {
+                                            offset: SourceOffset(
+                                                22,
+                                            ),
+                                            length: 11,
+                                        },
+                                    },
+                                    xref: None,
+                                    data: None,
+                                    records: [],
+                                },
+                                span: SourceSpan {
+                                    offset: SourceOffset(
+                                        20,
+                                    ),
+                                    length: 13,
+                                },
+                            },
+                        ],
+                    },
+                    span: SourceSpan {
+                        offset: SourceOffset(
+                            10,
+                        ),
+                        length: 23,
+                    },
+                },
+            ],
+        },
+        span: SourceSpan {
+            offset: SourceOffset(
+                0,
+            ),
+            length: 33,
+        },
+    },
+    Sourced {
+        value: RawRecord {
+            tag: Sourced {
+                value: [
+                    95,
+                    82,
+                    79,
+                    79,
+                    84,
+                    50,
+                ],
+                span: SourceSpan {
+                    offset: SourceOffset(
+                        37,
+                    ),
+                    length: 6,
+                },
+            },
+            xref: None,
+            data: None,
+            records: [],
+        },
+        span: SourceSpan {
+            offset: SourceOffset(
+                35,
+            ),
+            length: 8,
+        },
+    },
+]

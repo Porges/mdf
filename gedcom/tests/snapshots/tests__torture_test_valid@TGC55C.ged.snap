@@ -1,0 +1,6 @@
+---
+source: gedcom/tests/tests.rs
+expression: tree
+input_file: gedcom/tests/TestGED/TGC55C.ged
+---
+67

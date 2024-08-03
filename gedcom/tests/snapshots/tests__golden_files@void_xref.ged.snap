@@ -1,0 +1,15 @@
+---
+source: gedcom/tests/tests.rs
+expression: "format!(\"{:?}\",\n    miette::Report::new(err).with_source_code(NamedSource::new(path.file_name().unwrap_or_default().to_string_lossy(),\n    data)))"
+input_file: gedcom/tests/test_inputs/void_xref.ged
+---
+gedcom::parse_error::reserved_xref
+
+  × Line syntax error
+  ╰─▶ Reserved value '@VOID@' cannot be used as an XRef
+   ╭─[void_xref.ged:2:3]
+ 1 │ 0 OK
+ 2 │ 1 @VOID@ BAD
+   ·   ───┬──
+   ·      ╰── @VOID@ is a reserved value
+   ╰────

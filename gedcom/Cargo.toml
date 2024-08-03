@@ -1,0 +1,19 @@
+[package]
+name = "gedcom"
+version = "0.1.0"
+edition = "2021"
+authors = ["George Pollard <porges@porg.es>"]
+license = "GPL-3.0"
+
+[dependencies]
+ascii = "1.1.0"
+encoding_rs = "0.8.34"
+miette = "7.2.0"
+owo-colors = "4.0.0"
+thiserror = "1.0.63"
+tracing = { version = "0.1", features = ["attributes"] }
+vec1 = "1.12.1"
+
+[dev-dependencies]
+insta = { version = "1.39.0", features = ["glob"] }
+miette = { version = "7.2.0", features = ["fancy-no-backtrace"] }
