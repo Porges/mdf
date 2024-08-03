@@ -1,12 +1,11 @@
 ---
 source: gedcom/tests/tests.rs
-expression: "format!(\"{:?}\",\n    miette::Report::new(err).with_source_code(NamedSource::new(filename.to_string_lossy(),\n    data)))"
-input_file: gedcom/tests/test_inputs/invalid_level_error.ged
+expression: "format!(\"{:?}\",\n    err.with_source_code(NamedSource::new(filename.to_string_lossy(), data)))"
+input_file: gedcom/tests/syntax_inputs/invalid_level_error.ged
 ---
 gedcom::parse_error::invalid_level
 
-  × Line syntax error
-  ├─▶ Invalid non-numeric level 'x'
+  × Invalid non-numeric level 'x'
   ╰─▶ invalid digit found in string
    ╭─[invalid_level_error.ged:1:1]
  1 │ x y z

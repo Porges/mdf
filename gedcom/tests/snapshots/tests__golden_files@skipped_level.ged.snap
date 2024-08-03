@@ -1,12 +1,11 @@
 ---
 source: gedcom/tests/tests.rs
-expression: "format!(\"{:?}\",\n    miette::Report::new(err).with_source_code(NamedSource::new(filename.to_string_lossy(),\n    data)))"
-input_file: gedcom/tests/test_inputs/skipped_level.ged
+expression: "format!(\"{:?}\",\n    err.with_source_code(NamedSource::new(filename.to_string_lossy(), data)))"
+input_file: gedcom/tests/syntax_inputs/skipped_level.ged
 ---
 gedcom::tree_error::invalid_child_level
 
-  × Line structure error
-  ╰─▶ Invalid child level 2, expected 1 or less
+  × Invalid child level 2, expected 1 or less
    ╭─[skipped_level.ged:2:1]
  1 │ 0 TAG
  2 │ 2 TAG

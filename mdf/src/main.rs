@@ -38,7 +38,7 @@ fn main() -> miette::Result<()> {
                     .into_diagnostic()
                     .with_context(|| format!("Loading file {}", path.display()))?;
 
-                let count = gedcom::validate(&data)
+                let count = gedcom::validate_syntax(&data)
                     .with_context(|| format!("validating {}", path.display()))
                     .map_err(|e| {
                         e.with_source_code(
@@ -49,7 +49,7 @@ fn main() -> miette::Result<()> {
                 tracing::info!(
                     record_count = count,
                     path = %path.display(),
-                    "file is valid",
+                    "file is (syntactically) valid",
                 );
 
                 Ok(())

@@ -1,12 +1,11 @@
 ---
 source: gedcom/tests/tests.rs
-expression: "format!(\"{:?}\",\n    miette::Report::new(err).with_source_code(NamedSource::new(filename.to_string_lossy(),\n    data)))"
+expression: "format!(\"{:?}\",\n    err.with_source_code(NamedSource::new(filename.to_string_lossy(), data)))"
 input_file: gedcom/tests/syntax_inputs/no_tag.ged
 ---
 gedcom::parse_error::no_tag
 
-  × Line syntax error
-  ╰─▶ No tag found
+  × No tag found
    ╭─[no_tag.ged:1:1]
  1 │ 0
    · ┬

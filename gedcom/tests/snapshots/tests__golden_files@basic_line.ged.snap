@@ -1,33 +1,6 @@
 ---
 source: gedcom/tests/tests.rs
-expression: tree
+expression: kdl
 input_file: gedcom/tests/syntax_inputs/basic_line.ged
 ---
-[
-    Sourced {
-        value: RawRecord {
-            tag: Sourced {
-                value: [
-                    84,
-                    65,
-                    71,
-                ],
-                span: SourceSpan {
-                    offset: SourceOffset(
-                        2,
-                    ),
-                    length: 3,
-                },
-            },
-            xref: None,
-            data: None,
-            records: [],
-        },
-        span: SourceSpan {
-            offset: SourceOffset(
-                0,
-            ),
-            length: 5,
-        },
-    },
-]
+TAG

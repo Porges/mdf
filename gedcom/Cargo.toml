@@ -16,4 +16,5 @@ vec1 = "1.12.1"
 
 [dev-dependencies]
 insta = { version = "1.39.0", features = ["glob"] }
+kdl = "4.6.0"
 miette = { version = "7.2.0", features = ["fancy-no-backtrace"] }

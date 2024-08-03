@@ -29,6 +29,7 @@ pub fn parse_gedcom_version_raw(value: &[u8]) -> Result<GEDCOMVersion, InvalidGE
     }
 }
 
+/*
 pub struct VersionErrorAdapter<ETarget, Inner> {
     inner: Inner,
     _phantom: std::marker::PhantomData<ETarget>,
@@ -74,3 +75,4 @@ impl GEDCOMVersion {
         }
     }
 }
+*/

@@ -3,7 +3,8 @@ use std::{
     borrow::{Borrow, Cow},
     convert::Infallible,
     hint::unreachable_unchecked,
-    ops::ControlFlow,
+    ops::{ControlFlow, Range},
+    slice::SplitN,
 };
 
 use ascii::{AsAsciiStr, AsciiChar, AsciiStr};
@@ -37,6 +38,15 @@ pub enum GedcomError {
     #[diagnostic(code(gedcom7::io_error))]
     IOError(#[from] std::io::Error),
     */
+}
+
+#[derive(thiserror::Error, Debug, miette::Diagnostic)]
+pub enum ValidationError {
+    #[error("Syntax errors detected")]
+    SyntaxErrorsDetected {
+        #[related]
+        errors: Vec<LineSyntaxError>,
+    },
 }
 
 impl From<Infallible> for GedcomError {
@@ -238,6 +248,8 @@ trait GEDCOMSource: ascii::AsAsciiStr + PartialEq<AsciiStr> {
     fn span_of(&self, source: &Self) -> SourceSpan;
     fn starts_with(&self, char: AsciiChar) -> bool;
     fn ends_with(&self, char: AsciiChar) -> bool;
+    fn is_empty(&self) -> bool;
+    fn slice_from(&self, offset: usize) -> &Self;
 }
 
 impl GEDCOMSource for str {
@@ -263,6 +275,14 @@ impl GEDCOMSource for str {
     fn ends_with(&self, char: AsciiChar) -> bool {
         (*self).ends_with(char.as_char())
     }
+
+    fn is_empty(&self) -> bool {
+        (*self).is_empty()
+    }
+
+    fn slice_from(&self, offset: usize) -> &Self {
+        &(*self)[offset..]
+    }
 }
 
 impl GEDCOMSource for [u8] {
@@ -279,9 +299,7 @@ impl GEDCOMSource for [u8] {
 
     fn span_of(&self, source: &Self) -> SourceSpan {
         SourceSpan::new(
-            SourceOffset::from(
-                unsafe { source.as_ptr().byte_offset_from(source.as_ptr()) } as usize
-            ),
+            SourceOffset::from(unsafe { source.as_ptr().byte_offset_from(self.as_ptr()) } as usize),
             source.len(),
         )
     }
@@ -292,6 +310,14 @@ impl GEDCOMSource for [u8] {
 
     fn ends_with(&self, char: AsciiChar) -> bool {
         (*self).ends_with(&[char.as_byte()])
+    }
+
+    fn is_empty(&self) -> bool {
+        (*self).is_empty()
+    }
+
+    fn slice_from(&self, offset: usize) -> &Self {
+        &(*self)[offset..]
     }
 }
 
@@ -304,9 +330,118 @@ where
     E: From<LineSyntaxError> + From<C::Err>,
 {
     let source_code: Cow<'a, str> = detect_encoding(input).expect("TODO");
-    let r = parse_lines_general::<E, _, _>(&*source_code, consumer);
-    drop(r);
+    //let r = parse_lines_general::<E, _, _>(source_code.as_ref(), consumer);
     todo!()
+}
+
+pub fn iterate_lines<'a, S: GEDCOMSource + ?Sized>(
+    source_code: &'a S,
+) -> impl Iterator<Item = Result<(Sourced<usize>, Sourced<RawLine<'a, S>>), LineSyntaxError>> {
+    let to_sourced = |s: &'a S| Sourced {
+        value: s,
+        span: source_code.span_of(s),
+    };
+
+    source_code.lines().filter_map(move |line| {
+        let mut parts = line.splitn(3, AsciiChar::Space).peekable();
+        let Some(level_part) = parts.next() else {
+            unreachable!("even an empty line produces one part")
+        };
+
+        if level_part.is_empty() {
+            return None; // skipping empty line
+        }
+
+        let result = || -> Result<_, _> {
+            let level_str = level_part
+                .as_ascii_str()
+                .map_err(|source| LineSyntaxError::InvalidLevel {
+                    source: Box::new(source),
+                    value: "<not ascii>".to_string(),
+                    span: source_code.span_of(level_part),
+                })?
+                .as_str();
+
+            let level =
+                level_str
+                    .parse::<usize>()
+                    .map_err(|source| LineSyntaxError::InvalidLevel {
+                        source: Box::new(source),
+                        value: level_str.to_string(),
+                        span: source_code.span_of(level_part),
+                    })?;
+
+            let level = Sourced {
+                value: level,
+                span: source_code.span_of(level_part),
+            };
+
+            // XRef starts and ends with '@' but interior does not _have_ to be ASCII
+            let xref =
+                parts.next_if(|s| s.starts_with(AsciiChar::At) && s.ends_with(AsciiChar::At));
+
+            if let Some(xref) = xref {
+                let void = unsafe { AsciiStr::from_ascii_unchecked(b"@VOID@") };
+                // tag may not be the reserved 'null' value
+                if xref.eq(void) {
+                    return Err(LineSyntaxError::ReservedXRef {
+                        reserved_value: void.to_string(),
+                        span: source_code.span_of(xref),
+                    });
+                }
+            }
+
+            let xref = xref.map(to_sourced);
+
+            let source_tag = parts.next().ok_or_else(|| LineSyntaxError::NoTag {
+                span: source_code.span_of(line),
+            })?;
+
+            // ensure tag is valid (only ASCII alphanumeric, may have underscore at start)
+            let tag = source_tag.as_ascii_str().map_err(|source| {
+                // produce error pointing to the first non-valid char
+                let full_span = source_code.span_of(source_tag);
+                let span = SourceSpan::from((full_span.offset() + source.valid_up_to(), 1));
+                LineSyntaxError::InvalidTagCharacter { span }
+            })?;
+
+            if let Some((ix, _)) = tag.chars().enumerate().find(|&(ix, char)| {
+                if char == AsciiChar::UnderScore {
+                    ix > 0
+                } else {
+                    !char.is_ascii_alphanumeric()
+                }
+            }) {
+                let full_span = source_code.span_of(source_tag);
+                let span = SourceSpan::from((full_span.offset() + ix, 1));
+                return Err(LineSyntaxError::InvalidTagCharacter { span });
+            }
+
+            let tag = Sourced {
+                value: tag,
+                span: source_code.span_of(source_tag),
+            };
+
+            let data = parts.next().map(|p| {
+                // this is a bit ugly
+                // if xref was not present, there's two more splits...
+                // re-slice the remainder of the string
+                let span = line.span_of(p);
+                let full_data = line.slice_from(span.offset());
+                to_sourced(full_data)
+            });
+
+            Ok((
+                level,
+                Sourced {
+                    span: source_code.span_of(line),
+                    value: RawLine { tag, xref, data },
+                },
+            ))
+        }();
+
+        Some(result)
+    })
 }
 
 fn parse_lines_general<'a, E, S: GEDCOMSource + ?Sized, C>(
@@ -378,11 +513,11 @@ where
                 LineSyntaxError::InvalidTagCharacter { span }
             })?;
 
-            if let Some((ix, invalid_char)) = tag.chars().enumerate().find(|&(ix, c)| {
-                if c == AsciiChar::UnderScore {
+            if let Some((ix, _)) = tag.chars().enumerate().find(|&(ix, char)| {
+                if char == AsciiChar::UnderScore {
                     ix > 0
                 } else {
-                    !c.is_ascii_alphanumeric()
+                    !char.is_ascii_alphanumeric()
                 }
             }) {
                 let full_span = source_code.span_of(&source_tag);
@@ -542,10 +677,25 @@ where
     }
 }
 
-#[derive(Debug)]
+#[derive(Copy, Clone)]
 pub struct Sourced<T> {
     pub value: T,
     pub span: SourceSpan,
+}
+
+impl<T> Sourced<T> {
+    pub fn as_ref(&self) -> Sourced<&T> {
+        Sourced {
+            value: &self.value,
+            span: self.span,
+        }
+    }
+    pub fn map<U>(self, f: impl FnOnce(T) -> U) -> Sourced<U> {
+        Sourced {
+            value: f(self.value),
+            span: self.span,
+        }
+    }
 }
 
 impl<T> std::ops::Deref for Sourced<T> {
@@ -558,7 +708,6 @@ impl<T> std::ops::Deref for Sourced<T> {
 // we take advantage of the encoding requirements here to
 // make tags less generic, since they must only be ASCII
 
-#[derive(Debug)]
 pub struct RawLine<'a, S: GEDCOMSource + ?Sized> {
     pub tag: Sourced<&'a AsciiStr>,
     pub xref: Option<Sourced<&'a S>>,
@@ -696,17 +845,101 @@ impl<'a, S: GEDCOMSource + ?Sized> Sourced<RawRecord<'a, S>> {
     }
 }
 
-#[derive(Default, Debug)]
+pub fn build_tree<'a>(
+    lines: impl Iterator<Item = (Sourced<usize>, Sourced<RawLine<'a, str>>)>,
+) -> impl Iterator<Item = Result<Sourced<RawRecord<'a, str>>, LineStructureError>> {
+    struct I<'i, Inner> {
+        lines: Inner,
+        stack: Vec<RawRecord<'i, str>>,
+    }
+
+    impl<'i, Inner> I<'i, Inner> {
+        fn pop_level(&mut self, level: usize) -> Option<Sourced<RawRecord<'i, str>>> {
+            while self.stack.len() > level {
+                let child = self.stack.pop().unwrap(); // UNWRAP: guaranteed, len > 0
+
+                let span = if let Some(last_child) = child.records.last() {
+                    // if children are present, re-calculate the span of the record,
+                    // so that a parent record has a span that covers all its children
+                    let child_offset = child.line.span.offset();
+                    let len = last_child.span.offset() + last_child.span.len() - child_offset;
+                    SourceSpan::from((child_offset, len))
+                } else {
+                    // otherwise just use the span of the line
+                    child.line.span
+                };
+
+                let sourced = Sourced { value: child, span };
+
+                match self.stack.last_mut() {
+                    None => {
+                        debug_assert_eq!(level, 0); // only happens when popping to top level
+                        return Some(sourced);
+                    }
+                    Some(parent) => {
+                        parent.records.push(sourced);
+                    }
+                }
+            }
+
+            None
+        }
+
+        fn consume(
+            &mut self,
+            (level, line): (Sourced<usize>, Sourced<RawLine<'i, str>>),
+        ) -> Result<Option<Sourced<RawRecord<'i, str>>>, LineStructureError> {
+            let to_emit = self.pop_level(level.value);
+
+            let expected_level = self.stack.len();
+            if level.value != expected_level {
+                return Err(LineStructureError::InvalidChildLevel {
+                    level: level.value,
+                    expected_level,
+                    span: level.span,
+                });
+            }
+
+            self.stack.push(RawRecord::new(line));
+
+            Ok(to_emit)
+        }
+    }
+
+    impl<'i, Inner> Iterator for I<'i, Inner>
+    where
+        Inner: Iterator<Item = (Sourced<usize>, Sourced<RawLine<'i, str>>)>,
+    {
+        type Item = Result<Sourced<RawRecord<'i, str>>, LineStructureError>;
+
+        fn next(&mut self) -> Option<Self::Item> {
+            while let Some(item) = self.lines.next() {
+                if let Some(result) = self.consume(item).transpose() {
+                    return Some(result);
+                }
+            }
+
+            // run out of items - see if we have anything in buffer
+            self.pop_level(0).map(Ok)
+        }
+    }
+
+    I {
+        lines,
+        stack: Vec::new(),
+    }
+}
+
+#[derive(Default)]
 pub struct RecordTreeBuilder<'a, C, E, S: GEDCOMSource + ?Sized = str> {
     sink: C,
     working: Vec<RawRecord<'a, S>>,
     _phantom: std::marker::PhantomData<E>,
 }
 
-#[derive(Debug)]
 pub struct RawRecord<'a, S: GEDCOMSource + ?Sized = str> {
-    line: Sourced<RawLine<'a, S>>,
-    records: Vec<Sourced<RawRecord<'a, S>>>,
+    pub line: Sourced<RawLine<'a, S>>,
+    pub records: Vec<Sourced<RawRecord<'a, S>>>,
 }
 
 impl<'a, S: GEDCOMSource + ?Sized> RawRecord<'a, S> {
@@ -781,13 +1014,13 @@ where
     fn consume(
         &mut self,
         (level, line): (Sourced<usize>, Sourced<RawLine<'a, S>>),
-    ) -> Result<(), E> {
+    ) -> Result<ControlFlow<Self::Break>, E> {
         self.pop_below(level.value)?;
 
         let expected_level = self.working.len();
         if level.value == expected_level {
             self.working.push(RawRecord::new(line));
-            Ok(())
+            Ok(ControlFlow::Continue(()))
         } else {
             Err(LineStructureError::InvalidChildLevel {
                 level: level.value,
@@ -805,16 +1038,23 @@ where
     }
 }
 
-pub fn validate_syntax(source: &[u8]) -> Result<usize, GedcomError> {
-    let consumer = RecordTreeBuilder::<_, GedcomError>::new(Counter::new(NullSink {}));
-    let count = parse_lines::<GedcomError, _, _>(source, consumer)?;
-    Ok(count.only_complete())
-}
+/// Checks that the lines in the file are (minimally) well-formed.
+/// Returns the number of lines in the file if successful.
+pub fn validate_syntax(source: &[u8]) -> Result<usize, ValidationError> {
+    let mut line_count = 0;
+    let errors = Vec::from_iter(iterate_lines(source).filter_map(|r| match r {
+        Ok(_) => {
+            line_count += 1;
+            None
+        }
+        Err(e) => Some(e),
+    }));
 
-pub fn validate(source: &[u8]) -> Result<usize, GedcomError> {
-    let consumer = RecordTreeBuilder::<_, GedcomError>::new(Counter::new(FileFormatParser::new()));
-    let count = parse_lines::<GedcomError, _, _>(source, consumer)?;
-    Ok(count.only_complete())
+    if errors.is_empty() {
+        Ok(line_count)
+    } else {
+        Err(ValidationError::SyntaxErrorsDetected { errors })
+    }
 }
 
 struct FileFormatParser {
@@ -841,6 +1081,7 @@ pub enum OptionSetting<T> {
     ErrorIfMissing, // default – error if value is missing
 }
 
+/*
 impl FileFormatOptions {
     pub fn handle_encoding(
         &self,
@@ -975,6 +1216,7 @@ impl FileFormatOptions {
         Ok(GEDCOMEncoding::ANSEL)
     }
 }
+*/
 
 impl FileFormatParser {
     pub fn new() -> Self {
@@ -1077,6 +1319,7 @@ pub enum SchemaError {
     DataError(#[from] DataError<'static>),
 }
 
+/*
 impl<'a> Sink<Sourced<RawLine<'a>>> for FileFormatParser {
     type Output = ();
 
@@ -1171,3 +1414,4 @@ impl<'a> Sink<Sourced<RawLine<'a>>> for FileFormatParser {
         }
     }
 }
+*/
