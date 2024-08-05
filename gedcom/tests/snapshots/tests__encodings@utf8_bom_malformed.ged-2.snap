@@ -1,0 +1,20 @@
+---
+source: gedcom/tests/tests.rs
+description: "﻿0 HEAD\r\n0 MALFORMED h�x�ré\r\n"
+expression: "format!(\"{:?}\", err.with_source_code(NamedSource::new(filename, data)))"
+input_file: gedcom/tests/encoding_inputs/utf8_bom_malformed.ged
+---
+gedcom::encoding::invalid_data
+
+  × Invalid data in GEDCOM file
+  ╰─▶ invalid utf-8 sequence of 1 bytes from index 21
+   ╭─[utf8_bom_malformed.ged:2:14]
+ 1 │ ﻿0 HEAD
+ 2 │ 0 MALFORMED h�x�ré
+   ·              ┬
+   ·              ╰── this is not valid data for the encoding UTF-8
+   ╰────
+
+Advice: gedcom::encoding_reason::bom
+
+  ☞ encoding was detected from the byte-order mark (BOM)

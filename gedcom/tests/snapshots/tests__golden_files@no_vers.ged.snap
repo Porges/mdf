@@ -1,0 +1,10 @@
+---
+source: gedcom/tests/tests.rs
+description: "0 HEAD\r\n1 GEDC\r\n0 TRLR\r\n"
+expression: kdl
+input_file: gedcom/tests/format_inputs/no_vers.ged
+---
+HEAD {
+    GEDC
+}
+TRLR

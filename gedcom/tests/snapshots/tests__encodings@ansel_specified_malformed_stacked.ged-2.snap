@@ -1,0 +1,27 @@
+---
+source: gedcom/tests/tests.rs
+description: "0 HEAD\r\n1 CHAR ANSEL\r\n0 SOME t��ea\r\n0 TRLR\r\n"
+expression: "format!(\"{:?}\", err.with_source_code(NamedSource::new(filename, data)))"
+input_file: gedcom/tests/encoding_inputs/ansel_specified_malformed_stacked.ged
+---
+gedcom::encoding::invalid_data
+
+  × Invalid data in GEDCOM file
+  ╰─▶ stacked combining characters are not allowed
+   ╭─[ansel_specified_malformed_stacked.ged:1:1]
+ 1 │ 0 HEAD
+   · ┬
+   · ╰── this is not valid data for the encoding ANSEL
+ 2 │ 1 CHAR ANSEL
+   ╰────
+
+Advice: gedcom::encoding_reason::header
+
+  ☞ encoding was specified in GEDCOM header
+   ╭─[ansel_specified_malformed_stacked.ged:2:8]
+ 1 │ 0 HEAD
+ 2 │ 1 CHAR ANSEL
+   ·        ──┬──
+   ·          ╰── encoding was specified here
+ 3 │ 0 SOME t��ea
+   ╰────

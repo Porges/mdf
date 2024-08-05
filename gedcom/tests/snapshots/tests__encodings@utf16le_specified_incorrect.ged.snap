@@ -1,0 +1,7 @@
+---
+source: gedcom/tests/tests.rs
+description: "0 HEAD\r\n1 GEDC\r\n2 CHAR UNICODE\r\n0 TRLR\r\n"
+expression: encoding_report
+input_file: gedcom/tests/encoding_inputs/utf16le_specified_incorrect.ged
+---
+GEDCOM header specifies UNICODE encoding, but file is not encoded in UTF-16

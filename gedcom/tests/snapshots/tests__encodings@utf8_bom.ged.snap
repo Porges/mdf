@@ -1,0 +1,8 @@
+---
+source: gedcom/tests/tests.rs
+description: "﻿0 HEAD\r\n0 TRLR\r\n"
+expression: encoding_report
+input_file: gedcom/tests/encoding_inputs/utf8_bom.ged
+---
+Encoding detected: UTF-8
+Reason: encoding was detected from the byte-order mark (BOM)

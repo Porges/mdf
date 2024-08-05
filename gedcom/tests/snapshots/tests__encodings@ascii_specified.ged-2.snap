@@ -1,0 +1,10 @@
+---
+source: gedcom/tests/tests.rs
+description: "0 HEAD\r\n1 CHAR ASCII\r\n0 TRLR\r\n"
+expression: kdl
+input_file: gedcom/tests/encoding_inputs/ascii_specified.ged
+---
+HEAD {
+    CHAR "ASCII"
+}
+TRLR

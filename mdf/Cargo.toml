@@ -8,6 +8,6 @@ license = "GPL-3.0"
 [dependencies]
 clap = { version = "4.5.13", features = ["derive"] }
 gedcom = { path = "../gedcom" }
-miette = { version = "7.2.0", features = ["fancy-no-backtrace"] }
+miette = { git = "https://github.com/Porges/miette", branch = "invalid_unicode", features = ["fancy-no-backtrace"] }
 tracing-subscriber = "0.3.18"
 tracing = "0.1"

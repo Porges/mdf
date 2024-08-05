@@ -1,0 +1,27 @@
+---
+source: gedcom/tests/tests.rs
+description: "0 HEAD\r\n1 CHAR UTF-8\r\n0 MALFORMED h�3�ré\r\n"
+expression: "format!(\"{:?}\", err.with_source_code(NamedSource::new(filename, data)))"
+input_file: gedcom/tests/encoding_inputs/utf8_specified_malformed.ged
+---
+gedcom::encoding::invalid_data
+
+  × Invalid data in GEDCOM file
+  ╰─▶ invalid utf-8 sequence of 1 bytes from index 35
+   ╭─[utf8_specified_malformed.ged:3:14]
+ 2 │ 1 CHAR UTF-8
+ 3 │ 0 MALFORMED h�3�ré
+   ·              ┬
+   ·              ╰── this is not valid data for the encoding UTF-8
+   ╰────
+
+Advice: gedcom::encoding_reason::header
+
+  ☞ encoding was specified in GEDCOM header
+   ╭─[utf8_specified_malformed.ged:2:8]
+ 1 │ 0 HEAD
+ 2 │ 1 CHAR UTF-8
+   ·        ──┬──
+   ·          ╰── encoding was specified here
+ 3 │ 0 MALFORMED h�3�ré
+   ╰────

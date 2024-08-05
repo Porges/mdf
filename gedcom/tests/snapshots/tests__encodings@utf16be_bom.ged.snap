@@ -1,0 +1,8 @@
+---
+source: gedcom/tests/tests.rs
+description: "��\u00000\u0000 \u0000H\u0000E\u0000A\u0000D\u0000\r\u0000\n\u00000\u0000 \u0000T\u0000R\u0000L\u0000R\u0000\r\u0000\n"
+expression: encoding_report
+input_file: gedcom/tests/encoding_inputs/utf16be_bom.ged
+---
+Encoding detected: UTF-16 (big-endian)
+Reason: encoding was detected from the byte-order mark (BOM)

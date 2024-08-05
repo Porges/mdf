@@ -1,0 +1,8 @@
+---
+source: gedcom/tests/tests.rs
+description: "0 HEAD\r\n1 CHAR ANSEL\r\n0 Hié\r\n0 TRLR\r\n"
+expression: encoding_report
+input_file: gedcom/tests/encoding_inputs/ansel_specified_malformed_badchar.ged
+---
+Encoding detected: ANSEL
+Reason: encoding was specified in GEDCOM header

@@ -8,7 +8,8 @@ license = "GPL-3.0"
 [dependencies]
 ascii = "1.1.0"
 encoding_rs = "0.8.34"
-miette = "7.2.0"
+# TODO: update once this is merged https://github.com/zkat/miette/pull/393
+miette = { git = "https://github.com/Porges/miette", branch = "invalid_unicode"}
 owo-colors = "4.0.0"
 thiserror = "1.0.63"
 tracing = { version = "0.1", features = ["attributes"] }
@@ -17,4 +18,4 @@ vec1 = "1.12.1"
 [dev-dependencies]
 insta = { version = "1.39.0", features = ["glob"] }
 kdl = "4.6.0"
-miette = { version = "7.2.0", features = ["fancy-no-backtrace"] }
+miette = { git = "https://github.com/Porges/miette", branch = "invalid_unicode", features = ["fancy-no-backtrace"] }

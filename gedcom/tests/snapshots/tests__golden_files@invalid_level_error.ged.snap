@@ -1,5 +1,6 @@
 ---
 source: gedcom/tests/tests.rs
+description: "x y z\r\n"
 expression: "format!(\"{:?}\",\n    err.with_source_code(NamedSource::new(filename.to_string_lossy(), data)))"
 input_file: gedcom/tests/syntax_inputs/invalid_level_error.ged
 ---

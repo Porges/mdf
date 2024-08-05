@@ -3,13 +3,12 @@ use std::{borrow::Cow, fmt::Display};
 use miette::{Diagnostic, SourceSpan};
 use thiserror::Error;
 
-use crate::Sourced;
-
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum GEDCOMEncoding {
     ASCII,
     ANSEL,
     UTF8,
+    UNICODE,
 }
 
 impl Display for GEDCOMEncoding {
@@ -18,6 +17,7 @@ impl Display for GEDCOMEncoding {
             GEDCOMEncoding::ASCII => "ASCII",
             GEDCOMEncoding::ANSEL => "ANSEL",
             GEDCOMEncoding::UTF8 => "UTF-8",
+            GEDCOMEncoding::UNICODE => "UNICODE",
         };
 
         write!(f, "{}", s)
@@ -105,46 +105,7 @@ pub fn parse_encoding_raw(value: &[u8]) -> Result<GEDCOMEncoding, InvalidGEDCOME
         b"ANSEL" => Ok(GEDCOMEncoding::ANSEL),
         b"ASCII" => Ok(GEDCOMEncoding::ASCII),
         b"UTF-8" => Ok(GEDCOMEncoding::UTF8),
+        b"UNICODE" => Ok(GEDCOMEncoding::UNICODE),
         _ => Err(InvalidGEDCOMEncoding {}),
-    }
-}
-
-// TODO: pull this out into a seprate function specifically for reading from a tag
-
-pub fn parse_encoding<'a>(
-    tag: &Sourced<&'a [u8]>,
-    value: &Option<Sourced<&'a [u8]>>,
-) -> Result<Sourced<GEDCOMEncoding>, DataError<'a>> {
-    const EXPECTED: &str = "ANSEL, ASCII, or UTF-8";
-    if let Some(value) = value {
-        match value.value {
-            b"ANSEL" => Ok(Sourced {
-                value: GEDCOMEncoding::ANSEL,
-                span: value.span,
-            }),
-            b"ASCII" => Ok(Sourced {
-                value: GEDCOMEncoding::ASCII,
-                span: value.span,
-            }),
-            b"UTF-8" => Ok(Sourced {
-                value: GEDCOMEncoding::UTF8,
-                span: value.span,
-            }),
-            _ => Err(DataError::MalformedData {
-                tag: Cow::Borrowed(std::str::from_utf8(tag.value).unwrap_or("<invalid tag name>")),
-                malformed_value: Cow::Borrowed(
-                    std::str::from_utf8(value.value).unwrap_or("<invalid utf-8>"),
-                ),
-                expected: EXPECTED,
-                data_span: value.span,
-                source: None,
-            }),
-        }
-    } else {
-        Err(DataError::MissingData {
-            expected: EXPECTED,
-            tag: Cow::Borrowed(std::str::from_utf8(tag.value).unwrap_or("<invalid tag name>")),
-            tag_span: tag.span,
-        })
     }
 }

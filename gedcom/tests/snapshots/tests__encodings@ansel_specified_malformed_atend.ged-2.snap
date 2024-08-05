@@ -1,0 +1,27 @@
+---
+source: gedcom/tests/tests.rs
+description: "0 HEAD\r\n1 CHAR ANSEL\r\n0 SOME t�"
+expression: "format!(\"{:?}\", err.with_source_code(NamedSource::new(filename, data)))"
+input_file: gedcom/tests/encoding_inputs/ansel_specified_malformed_atend.ged
+---
+gedcom::encoding::invalid_data
+
+  × Invalid data in GEDCOM file
+  ╰─▶ combining character at end of input
+   ╭─[ansel_specified_malformed_atend.ged:3:9]
+ 2 │ 1 CHAR ANSEL
+ 3 │ 0 SOME t�
+   ·         ┬
+   ·         ╰── this is not valid data for the encoding ANSEL
+   ╰────
+
+Advice: gedcom::encoding_reason::header
+
+  ☞ encoding was specified in GEDCOM header
+   ╭─[ansel_specified_malformed_atend.ged:2:8]
+ 1 │ 0 HEAD
+ 2 │ 1 CHAR ANSEL
+   ·        ──┬──
+   ·          ╰── encoding was specified here
+ 3 │ 0 SOME t�
+   ╰────

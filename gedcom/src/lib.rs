@@ -1,16 +1,9 @@
 use core::str;
-use std::{
-    borrow::{Borrow, Cow},
-    convert::Infallible,
-    hint::unreachable_unchecked,
-    ops::{ControlFlow, Range},
-    slice::SplitN,
-};
+use std::{borrow::Cow, convert::Infallible, hint::unreachable_unchecked, ops::ControlFlow};
 
 use ascii::{AsAsciiStr, AsciiChar, AsciiStr};
-use encoding_rs::Encoding;
 use encodings::{parse_encoding_raw, DataError, GEDCOMEncoding, MissingRequiredSubrecord};
-use miette::{Diagnostic, SourceOffset, SourceSpan};
+use miette::{diagnostic, Diagnostic, SourceOffset, SourceSpan};
 use vec1::Vec1;
 use versions::{parse_gedcom_version_raw, GEDCOMVersion};
 
@@ -33,11 +26,6 @@ pub enum GedcomError {
     #[error("File structure error")]
     #[diagnostic(transparent)]
     FileStructureError(#[from] SchemaError),
-    /*
-    #[error("I/O errror")]
-    #[diagnostic(code(gedcom7::io_error))]
-    IOError(#[from] std::io::Error),
-    */
 }
 
 #[derive(thiserror::Error, Debug, miette::Diagnostic)]
@@ -148,101 +136,493 @@ pub trait LinesConsumer<'a, E> {
     fn complete(self) -> Result<Self::Output, E>;
 }
 
-pub fn detect_encoding<'a>(input: &'a [u8]) -> Result<Cow<'a, str>, ()> {
-    // Note that the v7 spec recommends a UTF-16 BOM U+FEFF
-    // to indicate that the file is encoded in UTF-8! I am assuming that this is wrong.
+/// Represents the encodings supported by this crate.
+/// These are the encodings that are required by the GEDCOM standard.
+///
+/// If you need to use an encoding which is not provided here,
+/// you can pre-decode the file and pass the decoded bytes to the parser.
+#[derive(Copy, Clone, PartialEq, Eq, Debug)]
+pub enum SupportedEncoding {
+    /// The ASCII encoding. This will reject any bytes with highest bit set.
+    ASCII,
+    /// The ANSEl encoding. (Really this is MARC8?)
+    ANSEL,
+    /// The UTF-8 encoding.
+    UTF8,
+    /// The UTF-16 Big Endian encoding.
+    UTF16BE,
+    /// The UTF-16 Little Endian encoding.
+    UTF16LE,
+}
 
-    // First see if the file starts with a BOM:
-    if let Some((encoding, offset)) = Encoding::for_bom(input) {
-        // we have to do decoding manually because we want to see exactly where it fails
-        let input = &input[offset..];
-        if encoding.name() == "UTF8" {
-            let valid_to = Encoding::utf8_valid_up_to(input);
-            if valid_to == input.len() {
-                return Ok(Cow::Borrowed(unsafe {
-                    std::str::from_utf8_unchecked(input)
-                }));
-            } else {
-                return Err(()); // TODO: location
+impl std::fmt::Display for SupportedEncoding {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let str = match self {
+            SupportedEncoding::ASCII => "ASCII",
+            SupportedEncoding::ANSEL => "ANSEL",
+            SupportedEncoding::UTF8 => "UTF-8",
+            SupportedEncoding::UTF16BE => "UTF-16 (big-endian)",
+            SupportedEncoding::UTF16LE => "UTF-16 (little-endian)",
+        };
+
+        write!(f, "{}", str)
+    }
+}
+
+#[derive(Debug)]
+pub struct DetectedEncoding {
+    pub encoding: SupportedEncoding,
+    pub reason: EncodingReason,
+}
+
+impl DetectedEncoding {
+    pub fn decode<'a>(&self, data: &'a [u8]) -> Result<Cow<'a, str>, EncodingError> {
+        // trim off BOM, if any
+        let offset_adjustment = match self.reason {
+            EncodingReason::BOMDetected { bom_length } => bom_length,
+            _ => 0,
+        };
+
+        let data = &data[offset_adjustment..];
+
+        match self.encoding {
+            SupportedEncoding::ASCII => Ok(data
+                .as_ascii_str()
+                .map_err(|source| EncodingError::InvalidData {
+                    encoding: self.encoding,
+                    source: Some(Box::new(source)),
+                    span: Some(SourceSpan::from((
+                        offset_adjustment + source.valid_up_to(),
+                        1,
+                    ))),
+                    reason: vec![self.reason],
+                })?
+                .as_str()
+                .into()),
+            SupportedEncoding::ANSEL => {
+                decode_ansel(data).map_err(|source| EncodingError::InvalidData {
+                    encoding: self.encoding,
+                    source: Some(Box::new(source)),
+                    span: Some(SourceSpan::from((offset_adjustment + source.offset(), 1))),
+                    reason: vec![self.reason],
+                })
             }
-        } else if let Some(result) =
-            encoding.decode_without_bom_handling_and_without_replacement(input)
-        {
-            return Ok(result);
+            SupportedEncoding::UTF8 => Ok(std::str::from_utf8(data)
+                .map_err(|source| EncodingError::InvalidData {
+                    encoding: self.encoding,
+                    source: Some(Box::new(source)),
+                    span: Some(SourceSpan::from((
+                        offset_adjustment + source.valid_up_to(),
+                        source.error_len().unwrap_or(1),
+                    ))),
+                    reason: vec![self.reason],
+                })?
+                .into()),
+            SupportedEncoding::UTF16BE => {
+                let (result, had_errors) = encoding_rs::UTF_16BE.decode_without_bom_handling(data);
+                if had_errors {
+                    Err(EncodingError::InvalidData {
+                        encoding: self.encoding,
+                        source: None,
+                        span: None,
+                        reason: vec![self.reason],
+                    })
+                } else {
+                    Ok(result)
+                }
+            }
+            SupportedEncoding::UTF16LE => {
+                let (result, had_errors) = encoding_rs::UTF_16LE.decode_without_bom_handling(data);
+                if had_errors {
+                    Err(EncodingError::InvalidData {
+                        encoding: self.encoding,
+                        source: None,
+                        span: None,
+                        reason: vec![self.reason],
+                    })
+                } else {
+                    Ok(result)
+                }
+            }
+        }
+    }
+}
+
+#[derive(thiserror::Error, Debug, Clone, Copy)]
+pub enum AnselErr {
+    #[error("the byte at index {offset} (value 0x{value:x}) is not ANSEL")]
+    Invalid { offset: usize, value: u8 },
+
+    #[error("stacked combining characters are not allowed")]
+    StackedCombiningChars { offset: usize },
+
+    #[error("combining character at end of input")]
+    CombiningCharacterAtEnd { offset: usize },
+}
+
+impl AnselErr {
+    pub fn offset(self) -> usize {
+        match self {
+            AnselErr::Invalid { offset, .. } => offset,
+            AnselErr::StackedCombiningChars { offset } => offset,
+            AnselErr::CombiningCharacterAtEnd { offset } => offset,
+        }
+    }
+}
+
+fn decode_ansel(input: &[u8]) -> Result<Cow<str>, AnselErr> {
+    match input.as_ascii_str() {
+        // if it’s pure ASCII we don’t need to do anything
+        Ok(ascii_str) => Ok(Cow::Borrowed(ascii_str.as_str())),
+        Err(ascii_err) => {
+            let mut dest = String::new();
+            let mut after_next = None;
+
+            let mut input = input;
+            let mut ascii_err = ascii_err;
+
+            loop {
+                let mut valid_part =
+                    unsafe { input[0..ascii_err.valid_up_to()].as_ascii_str_unchecked() };
+
+                if !valid_part.is_empty() {
+                    if let Some(after_next) = after_next.take() {
+                        dest.push(valid_part[0].as_char());
+                        dest.push(after_next);
+
+                        valid_part = &valid_part[1..];
+                    }
+                }
+
+                dest.push_str(valid_part.as_str());
+
+                let input_c = input[ascii_err.valid_up_to()];
+                input = &input[ascii_err.valid_up_to() + 1..];
+
+                // combining chars
+                if matches!(input_c, b'\xE0'..=b'\xFB' | b'\xFE') {
+                    let combining = match input_c {
+                        b'\xE0' => '\u{0309}',
+                        b'\xE1' => '\u{0300}',
+                        b'\xE2' => '\u{0301}',
+                        b'\xE3' => '\u{0302}',
+                        b'\xE4' => '\u{0303}',
+                        b'\xE5' => '\u{0304}',
+                        b'\xE6' => '\u{0306}',
+                        b'\xE7' => '\u{0307}',
+                        b'\xE8' => '\u{0308}',
+                        b'\xE9' => '\u{030C}',
+                        b'\xEA' => '\u{030A}',
+                        b'\xEB' => '\u{FE20}',
+                        b'\xEC' => '\u{FE20}',
+                        b'\xED' => '\u{0315}',
+                        b'\xEE' => '\u{030B}',
+                        b'\xEF' => '\u{0310}',
+                        b'\xF0' => '\u{0327}',
+                        b'\xF1' => '\u{0328}',
+                        b'\xF2' => '\u{0323}',
+                        b'\xF3' => '\u{0324}',
+                        b'\xF4' => '\u{0325}',
+                        b'\xF5' => '\u{0333}',
+                        b'\xF6' => '\u{0332}',
+                        b'\xF7' => '\u{0326}',
+                        b'\xF8' => '\u{031C}',
+                        b'\xF9' => '\u{032E}',
+                        b'\xFA' => '\u{FE22}',
+                        b'\xFB' => '\u{FE23}',
+                        b'\xFE' => '\u{0313}',
+                        _ => unreachable!(),
+                    };
+
+                    if let Some(_after_next) = after_next.take() {
+                        return Err(AnselErr::StackedCombiningChars {
+                            offset: ascii_err.valid_up_to(),
+                        });
+                    }
+
+                    after_next = Some(combining);
+                } else {
+                    let output_c = match input_c {
+                        // ANSI/NISO Z39.47-1993 (R2003)
+                        // Ax
+                        b'\xA1' => '\u{0141}',
+                        b'\xA2' => '\u{00D8}',
+                        b'\xA3' => '\u{0110}',
+                        b'\xA4' => '\u{00DE}',
+                        b'\xA5' => '\u{00C6}',
+                        b'\xA6' => '\u{0152}',
+                        b'\xA7' => '\u{02B9}',
+                        b'\xA8' => '\u{00B7}',
+                        b'\xA9' => '\u{266D}',
+                        b'\xAA' => '\u{00AE}',
+                        b'\xAB' => '\u{00B1}',
+                        b'\xAC' => '\u{01A0}',
+                        b'\xAD' => '\u{01AF}',
+                        b'\xAE' => '\u{02BC}',
+                        // Bx
+                        b'\xB0' => '\u{02BB}',
+                        b'\xB1' => '\u{0142}',
+                        b'\xB2' => '\u{00F8}',
+                        b'\xB3' => '\u{0111}',
+                        b'\xB4' => '\u{00FE}',
+                        b'\xB5' => '\u{00E6}',
+                        b'\xB6' => '\u{0153}',
+                        b'\xB7' => '\u{02BA}',
+                        b'\xB8' => '\u{0131}',
+                        b'\xB9' => '\u{00A3}',
+                        b'\xBA' => '\u{00F0}',
+                        b'\xBC' => '\u{01A1}',
+                        b'\xBD' => '\u{01B0}',
+                        // Cx
+                        b'\xC0' => '\u{00B0}',
+                        b'\xC1' => '\u{2113}',
+                        b'\xC2' => '\u{2117}',
+                        b'\xC3' => '\u{00A9}',
+                        b'\xC4' => '\u{266F}',
+                        b'\xC5' => '\u{00BF}',
+                        b'\xC6' => '\u{00A1}',
+                        // GEDCOM
+                        b'\xBE' => '\u{25A1}',
+                        b'\xBF' => '\u{25A0}',
+                        b'\xCD' => '\u{0065}',
+                        b'\xCE' => '\u{006F}',
+                        b'\xCF' => '\u{00DF}',
+                        b'\xFC' => '\u{0338}',
+                        // TODO: MARC21?
+                        c => {
+                            return Err(AnselErr::Invalid {
+                                value: c,
+                                offset: ascii_err.valid_up_to(),
+                            })
+                        }
+                    };
+
+                    dest.push(output_c);
+
+                    if let Some(after_next) = after_next.take() {
+                        dest.push(after_next);
+                    }
+                }
+
+                ascii_err = match input.as_ascii_str() {
+                    Ok(mut ascii_str) => {
+                        // whole remainder (which might be empty) is valid ASCII
+                        // still need to insert any combining characters
+                        if ascii_str.is_empty() {
+                            if after_next.is_some() {
+                                return Err(AnselErr::CombiningCharacterAtEnd {
+                                    offset: ascii_err.valid_up_to(),
+                                });
+                            }
+                        } else {
+                            if let Some(after_next) = after_next.take() {
+                                dest.push(ascii_str[0].as_char());
+                                dest.push(after_next);
+
+                                ascii_str = &ascii_str[1..];
+                            }
+
+                            dest.push_str(ascii_str.as_str());
+                        }
+
+                        return Ok(Cow::Owned(dest));
+                    }
+                    Err(ascii_err) => ascii_err,
+                };
+            }
+        }
+    }
+}
+
+#[derive(thiserror::Error, Debug, miette::Diagnostic, Copy, Clone)]
+pub enum EncodingReason {
+    #[error("encoding was detected from the byte-order mark (BOM)")]
+    #[diagnostic(severity(Advice), code(gedcom::encoding_reason::bom))]
+    BOMDetected { bom_length: usize },
+
+    #[error("encoding was detected from start of file conent")]
+    #[diagnostic(severity(Advice), code(gedcom::encoding_reason::sniffed))]
+    Sniffed {},
+
+    #[error("encoding was specified in GEDCOM header")]
+    #[diagnostic(severity(Advice), code(gedcom::encoding_reason::header))]
+    SpecifiedInHeader {
+        #[label("encoding was specified here")]
+        span: SourceSpan,
+    },
+
+    #[error("encoding was determined by GEDCOM version; v7 must always be UTF-8")]
+    #[diagnostic(severity(Advice), code(gedcom::encoding_reason::version))]
+    DeterminedByVersion {
+        #[label("version was specified here")]
+        span: SourceSpan,
+    },
+
+    #[error(
+        "encoding was not detected in GEDCOM file, so was assumed based upon provided parsing options"
+    )]
+    #[diagnostic(severity(Advice), code(gedcom::encoding_reason::assumed))]
+    Assumed {},
+}
+
+#[derive(thiserror::Error, Debug, miette::Diagnostic)]
+pub enum EncodingError {
+    #[error("Input does not appear to be a GEDCOM file")]
+    #[diagnostic(
+        code(gedcom::encoding::not_gedcom),
+        help("GEDCOM files must start with a '0 HEAD' record, but this was not found")
+    )]
+    NotGedcomFile {},
+
+    #[error("GEDCOM header specifies UNICODE encoding, but file is not encoded in UTF-16")]
+    #[diagnostic(code(gedcom::encoding::utf16_mismatch))]
+    UnicodeMismatch {
+        #[label("encoding was specified here")]
+        span: SourceSpan,
+    },
+
+    #[error("Unable to determine encoding of GEDCOM file")]
+    #[diagnostic(
+        code(gedcom::encoding::no_encoding),
+        help("the GEDCOM file seemed to be valid but did not contain any encoding information")
+    )]
+    UnableToDetermine {},
+
+    #[error("Invalid data in GEDCOM file")]
+    #[diagnostic(code(gedcom::encoding::invalid_data))]
+    InvalidData {
+        encoding: SupportedEncoding,
+
+        #[source]
+        source: Option<Box<dyn std::error::Error + Send + Sync + 'static>>,
+
+        #[label("this is not valid data for the encoding {encoding}")]
+        span: Option<SourceSpan>,
+
+        #[related] // TODO: this should be a single reason but miette only supports iterables
+        reason: Vec<EncodingReason>,
+    },
+}
+
+pub fn detect_file_encoding(input: &[u8]) -> Result<DetectedEncoding, EncodingError> {
+    // first, try BOMs:
+    if input.starts_with(b"\xEF\xBB\xBF") {
+        Ok(DetectedEncoding {
+            encoding: SupportedEncoding::UTF8,
+            reason: EncodingReason::BOMDetected { bom_length: 3 },
+        })
+    } else if input.starts_with(b"\xFF\xFE") {
+        Ok(DetectedEncoding {
+            encoding: SupportedEncoding::UTF16LE,
+            reason: EncodingReason::BOMDetected { bom_length: 2 },
+        })
+    } else if input.starts_with(b"\xFE\xFF") {
+        Ok(DetectedEncoding {
+            encoding: SupportedEncoding::UTF16BE,
+            reason: EncodingReason::BOMDetected { bom_length: 2 },
+        })
+    }
+    // next, try sniffing the content:
+    // UTF16BE must be tested first because it overlaps with ASCII/UTF8/etc
+    else if input.starts_with(b"\x30\x00") {
+        Ok(DetectedEncoding {
+            encoding: SupportedEncoding::UTF16LE,
+            reason: EncodingReason::Sniffed {},
+        })
+    } else if input.starts_with(b"\x00\x30") {
+        Ok(DetectedEncoding {
+            encoding: SupportedEncoding::UTF16BE,
+            reason: EncodingReason::Sniffed {},
+        })
+    } else if input.starts_with(b"0") {
+        // this could be ASCII, ANSEL, or UTF-8
+        // we will need to read the records in order to determine the encoding
+        if let Some((value, reason)) = encoding_from_gedcom(input) {
+            let encoding = match value {
+                GEDCOMEncoding::ASCII => SupportedEncoding::ASCII,
+                GEDCOMEncoding::ANSEL => SupportedEncoding::ANSEL,
+                GEDCOMEncoding::UTF8 => SupportedEncoding::UTF8,
+                // we detected the first byte as an ASCII-compatible encoding,
+                // but the file specifies 'UNICODE'
+                GEDCOMEncoding::UNICODE => {
+                    // TODO: we actually should determine version of the file
+                    // as part of the encoding_from_gedcom process
+                    let span = match reason {
+                        EncodingReason::SpecifiedInHeader { span } => span,
+                        EncodingReason::DeterminedByVersion { span } => span,
+                        EncodingReason::Assumed {} => unreachable!(),
+                        EncodingReason::BOMDetected { .. } => unreachable!(),
+                        EncodingReason::Sniffed {} => unreachable!(),
+                    };
+
+                    return Err(EncodingError::UnicodeMismatch { span });
+                }
+            };
+
+            Ok(DetectedEncoding { encoding, reason })
+        } else if !input.starts_with(b"0 HEAD\n") && !input.starts_with(b"0 HEAD\r\n") {
+            Err(EncodingError::NotGedcomFile {})
         } else {
-            // don’t really care about where this fails
-            return Err(()); // TODO: location
+            Err(EncodingError::UnableToDetermine {})
+        }
+    }
+    // unable to determine:
+    else {
+        Err(EncodingError::NotGedcomFile {})
+    }
+}
+
+fn encoding_from_gedcom(input: &[u8]) -> Option<(GEDCOMEncoding, EncodingReason)> {
+    // TODO: this is minimal and doesn’t report errors well
+
+    enum State {
+        Start,
+        InHEAD,
+        InGEDC,
+    }
+
+    let mut state = State::Start;
+
+    let mut lines = iterate_lines_raw(input);
+    while let Some(Ok((level, line))) = lines.next() {
+        match state {
+            State::Start if level.value == 0 && line.tag.value.eq("HEAD") => {
+                state = State::InHEAD;
+            }
+            State::InHEAD if level.value == 1 && line.tag.value.eq("GEDC") => state = State::InGEDC,
+            State::InHEAD | State::InGEDC if level.value == 1 && line.tag.value.eq("CHAR") => {
+                let line_data = line.data.as_ref()?;
+                let encoding = parse_encoding_raw(line_data).ok()?;
+                return Some((
+                    encoding,
+                    EncodingReason::SpecifiedInHeader {
+                        span: line_data.span,
+                    },
+                ));
+            }
+            State::InGEDC if level.value == 2 && line.tag.value.eq("VERS") => {
+                let line_data = line.data.as_ref()?;
+                let version = parse_gedcom_version_raw(line_data).ok()?;
+                if version == GEDCOMVersion::V7 {
+                    // V7 must always be in UTF-8
+                    return Some((
+                        GEDCOMEncoding::UTF8,
+                        EncodingReason::DeterminedByVersion {
+                            span: line_data.span,
+                        },
+                    ));
+                }
+            }
+            State::InGEDC if level.value == 1 => state = State::InHEAD,
+            _ if level.value == 0 => break, // end of header
+            _ => continue,
         }
     }
 
-    // Otherwise we need to read records to find the encoding:
-    let encoding_detector = RecordTreeBuilder::<_, GedcomError, _>::new(EncodingDetector::new());
-
-    // TODO: more specific error than GEDCOMError
-    let result = parse_lines_general::<GedcomError, _, _>(input, encoding_detector).expect("TODO");
-    match result.only_early() {
-        GEDCOMEncoding::ASCII => Ok(input.as_ascii_str().expect("TODO - error").as_str().into()),
-        GEDCOMEncoding::ANSEL => todo!(),
-        GEDCOMEncoding::UTF8 => Ok(std::str::from_utf8(input).expect("TODO - error").into()),
-    }
+    None
 }
 
-/// `EncodingDetector` operates on raw (undecoded) GEDCOM lines and
-/// tries to figure out what the encoding of the file is.
-struct EncodingDetector {
-    state: EncodingDetectorState,
-}
-
-enum EncodingDetectorState {
-    Start,
-    FoundHEAD,
-    FoundGEDC,
-    Done,
-}
-
-impl EncodingDetector {
-    fn new() -> Self {
-        Self {
-            state: EncodingDetectorState::Start,
-        }
-    }
-}
-
-impl<'a> Sink<Sourced<RawRecord<'a, [u8]>>> for EncodingDetector {
-    type Output = Infallible; // never ‘completes’
-    type Err = SchemaError;
-    type Break = GEDCOMEncoding;
-
-    fn consume(
-        &mut self,
-        record: Sourced<RawRecord<'a, [u8]>>,
-    ) -> Result<ControlFlow<Self::Break>, Self::Err> {
-        if !record.line.tag.eq("HEAD") {
-            return Err(SchemaError::MissingHeadRecord { span: record.span });
-        }
-
-        let gedc = record
-            .get_subrecord("Head", "GEDC", "GEDCOM information")
-            .map_err(|_| SchemaError::HeadRecordMissingGEDC { span: record.span })?;
-
-        let char = gedc
-            .get_subrecord("GEDCOM information", "CHAR", "character encoding")
-            .map_err(|_| SchemaError::GEDCRecordMissingCHAR { span: gedc.span })?;
-
-        let char_data = char.line.data.as_ref().expect("TODO - no data on CHAR");
-
-        Ok(ControlFlow::Break(
-            parse_encoding_raw(&char_data).expect("TODO - unable to parse encoding"),
-        ))
-    }
-
-    fn complete(self) -> Result<Self::Output, Self::Err> {
-        // this should only be called if file is empty
-        todo!("handle empty file")
-    }
-}
-
-trait GEDCOMSource: ascii::AsAsciiStr + PartialEq<AsciiStr> {
+pub trait GEDCOMSource: ascii::AsAsciiStr + PartialEq<AsciiStr> {
     fn lines(&self) -> impl Iterator<Item = &Self>;
     fn splitn(&self, n: usize, char: AsciiChar) -> impl Iterator<Item = &Self>;
     fn span_of(&self, source: &Self) -> SourceSpan;
@@ -258,7 +638,14 @@ impl GEDCOMSource for str {
     }
 
     fn lines(&self) -> impl Iterator<Item = &Self> {
-        (*self).lines()
+        // GEDCOM lines are terminated by "any combination of a carriage return and a line feed"
+        (*self).split(|c| c == '\r' || c == '\n').map(|mut s| {
+            while s.starts_with('\n') || s.starts_with('\r') {
+                s = &s[1..];
+            }
+
+            s
+        })
     }
 
     fn span_of(&self, source: &Self) -> SourceSpan {
@@ -291,9 +678,13 @@ impl GEDCOMSource for [u8] {
     }
 
     fn lines(&self) -> impl Iterator<Item = &Self> {
-        (*self).split(|&x| x == b'\n').map(|s| match s {
-            [.., b'\r'] => &s[..s.len() - 1],
-            _ => s,
+        // GEDCOM lines are terminated by "any combination of a carriage return and a line feed"
+        (*self).split(|&x| x == b'\r' || x == b'\n').map(|mut s| {
+            while s.starts_with(&[b'\n']) || s.starts_with(&[b'\r']) {
+                s = &s[1..];
+            }
+
+            s
         })
     }
 
@@ -321,20 +712,102 @@ impl GEDCOMSource for [u8] {
     }
 }
 
-pub fn parse_lines<'a, C, E>(
-    input: &'a [u8],
-    consumer: C,
-) -> Result<ParseResult<C::Break, C::Output>, E>
-where
-    C: Sink<(Sourced<usize>, Sourced<RawLine<'a, str>>)>,
-    E: From<LineSyntaxError> + From<C::Err>,
-{
-    let source_code: Cow<'a, str> = detect_encoding(input).expect("TODO");
-    //let r = parse_lines_general::<E, _, _>(source_code.as_ref(), consumer);
-    todo!()
+pub struct ParseOptions {
+    pub version: OptionSetting<GEDCOMVersion>,
+    pub encoding: OptionSetting<SupportedEncoding>,
 }
 
-pub fn iterate_lines<'a, S: GEDCOMSource + ?Sized>(
+impl Default for ParseOptions {
+    fn default() -> Self {
+        Self {
+            version: OptionSetting::ErrorIfMissing,
+            encoding: OptionSetting::ErrorIfMissing,
+        }
+    }
+}
+
+/// This is a straightforward parser for GEDCOM lines. It performs
+/// minimal syntax-only validation, and does not attempt to validate
+/// record structure or higher-level GEDCOM semantics.
+///
+/// ## Syntax
+pub fn iterate_lines<'a>(
+    source_code: &'a [u8],
+    source_buffer: &'a mut String,
+    parse_options: &ParseOptions,
+) -> Result<
+    impl Iterator<Item = Result<(Sourced<usize>, Sourced<RawLine<'a, str>>), LineSyntaxError>>,
+    EncodingError,
+> {
+    let encoding = match detect_file_encoding(source_code) {
+        Ok(from_file) => match parse_options.encoding {
+            OptionSetting::Assume(_) | OptionSetting::ErrorIfMissing => Ok(from_file),
+            OptionSetting::Require(required_encoding) => {
+                if required_encoding != from_file.encoding {
+                    todo!()
+                } else {
+                    Ok(from_file)
+                }
+            }
+            OptionSetting::Override(override_encoding) => {
+                if override_encoding != from_file.encoding {
+                    todo!("store override message as info/reason")
+                } else {
+                    Ok(from_file)
+                }
+            }
+        },
+        Err(e @ EncodingError::UnicodeMismatch { .. }) => match parse_options.encoding {
+            OptionSetting::Assume(_)
+            | OptionSetting::Require(_)
+            | OptionSetting::ErrorIfMissing => Err(e),
+            OptionSetting::Override(encoding) => Ok(DetectedEncoding {
+                encoding,
+                reason: EncodingReason::Assumed {},
+            }),
+        },
+        Err(e @ EncodingError::UnableToDetermine {}) => match parse_options.encoding {
+            OptionSetting::Assume(encoding) | OptionSetting::Override(encoding) => {
+                Ok(DetectedEncoding {
+                    encoding,
+                    reason: EncodingReason::Assumed {},
+                })
+            }
+            OptionSetting::Require(_) => todo!(),
+            OptionSetting::ErrorIfMissing => Err(e),
+        },
+        Err(e @ EncodingError::NotGedcomFile {}) => match parse_options.encoding {
+            OptionSetting::Assume(encoding) | OptionSetting::Override(encoding) => {
+                Ok(DetectedEncoding {
+                    encoding,
+                    reason: EncodingReason::Assumed {},
+                })
+            }
+            OptionSetting::Require(_) | OptionSetting::ErrorIfMissing => Err(e),
+        },
+        Err(e @ EncodingError::InvalidData { .. }) => Err(e),
+    }?;
+
+    match encoding.decode(source_code)? {
+        Cow::Borrowed(x) => Ok(iterate_lines_raw(x)),
+        Cow::Owned(s) => {
+            *source_buffer = s;
+            Ok(iterate_lines_raw(source_buffer.as_str()))
+        }
+    }
+}
+
+/// This is a straightforward parser for GEDCOM lines. It performs
+/// minimal validation, and can be used to parse lines from a
+/// ‘decoded’ (`&str`) or ‘raw’ (`&[u8]`) source.
+///
+/// This is not intended to be used directly by other code, but it
+/// may be useful as a basis for other tooling. The `raw` version of
+/// this function exists so that records can be parsed in order to determine
+/// the encoding of the file before decoding the rest of the file.
+///
+/// ## Syntax
+pub fn iterate_lines_raw<'a, S: GEDCOMSource + ?Sized>(
     source_code: &'a S,
 ) -> impl Iterator<Item = Result<(Sourced<usize>, Sourced<RawLine<'a, S>>), LineSyntaxError>> {
     let to_sourced = |s: &'a S| Sourced {
@@ -343,7 +816,10 @@ pub fn iterate_lines<'a, S: GEDCOMSource + ?Sized>(
     };
 
     source_code.lines().filter_map(move |line| {
-        let mut parts = line.splitn(3, AsciiChar::Space).peekable();
+        debug_assert!(!line.ends_with(AsciiChar::LineFeed));
+        debug_assert!(!line.ends_with(AsciiChar::CarriageReturn));
+
+        let mut parts = line.splitn(4, AsciiChar::Space).peekable();
         let Some(level_part) = parts.next() else {
             unreachable!("even an empty line produces one part")
         };
@@ -442,111 +918,6 @@ pub fn iterate_lines<'a, S: GEDCOMSource + ?Sized>(
 
         Some(result)
     })
-}
-
-fn parse_lines_general<'a, E, S: GEDCOMSource + ?Sized, C>(
-    source_code: &'a S,
-    mut consumer: C,
-) -> Result<ParseResult<C::Break, C::Output>, E>
-where
-    C: Sink<(Sourced<usize>, Sourced<RawLine<'a, S>>)>,
-    E: From<LineSyntaxError> + From<C::Err>,
-{
-    for line in source_code.lines() {
-        let to_sourced = |s: &'a S| Sourced {
-            value: s,
-            span: source_code.span_of(&s),
-        };
-
-        let mut parts = line.splitn(4, AsciiChar::Space).peekable();
-        if let Some(level_part) = parts.next() {
-            let level_str = level_part
-                .as_ascii_str()
-                .map_err(|source| LineSyntaxError::InvalidLevel {
-                    source: Box::new(source),
-                    value: "<not ascii>".to_string(),
-                    span: source_code.span_of(&level_part),
-                })?
-                .as_str();
-
-            let level =
-                level_str
-                    .parse::<usize>()
-                    .map_err(|source| LineSyntaxError::InvalidLevel {
-                        source: Box::new(source),
-                        value: level_str.to_string(),
-                        span: source_code.span_of(level_part),
-                    })?;
-
-            let level = Sourced {
-                value: level,
-                span: source_code.span_of(&level_part),
-            };
-
-            // XRef starts and ends with '@' but interior does not _have_ to be ASCII
-            let xref =
-                parts.next_if(|s| s.starts_with(AsciiChar::At) && s.ends_with(AsciiChar::At));
-
-            if let Some(xref) = xref {
-                let void = unsafe { AsciiStr::from_ascii_unchecked(b"@VOID@") };
-                // tag may not be the reserved 'null' value
-                if xref.eq(void) {
-                    return Err(LineSyntaxError::ReservedXRef {
-                        reserved_value: void.to_string(),
-                        span: source_code.span_of(&xref),
-                    }
-                    .into());
-                }
-            }
-
-            let xref = xref.map(to_sourced);
-
-            let source_tag = parts.next().ok_or_else(|| LineSyntaxError::NoTag {
-                span: source_code.span_of(&line),
-            })?;
-
-            // ensure tag is valid (only ASCII alphanumeric, may have underscore at start)
-            let tag = source_tag.as_ascii_str().map_err(|source| {
-                // produce error pointing to the first non-valid char
-                let full_span = source_code.span_of(&source_tag);
-                let span = SourceSpan::from((full_span.offset() + source.valid_up_to(), 1));
-                LineSyntaxError::InvalidTagCharacter { span }
-            })?;
-
-            if let Some((ix, _)) = tag.chars().enumerate().find(|&(ix, char)| {
-                if char == AsciiChar::UnderScore {
-                    ix > 0
-                } else {
-                    !char.is_ascii_alphanumeric()
-                }
-            }) {
-                let full_span = source_code.span_of(&source_tag);
-                let span = SourceSpan::from((full_span.offset() + ix, 1));
-                return Err(LineSyntaxError::InvalidTagCharacter { span }.into());
-            }
-
-            let tag = Sourced {
-                value: tag,
-                span: source_code.span_of(&source_tag),
-            };
-
-            let data = parts.next().map(to_sourced);
-
-            let line = Sourced {
-                span: source_code.span_of(&line),
-                value: RawLine { tag, xref, data },
-            };
-
-            match consumer.consume((level, line))? {
-                ControlFlow::Continue(()) => continue,
-                ControlFlow::Break(b) => return Ok(ParseResult::Early(b)),
-            }
-        } else {
-            // ignoring empty line
-        }
-    }
-
-    Ok(ParseResult::Complete(consumer.complete()?))
 }
 
 // This is essentially std::ops::CouroutineState
@@ -721,7 +1092,7 @@ impl<'a, S: GEDCOMSource + ?Sized> RawRecord<'a, S> {
         parser: impl FnOnce(&S) -> Result<T, E>,
     ) -> Result<Option<Sourced<T>>, DataError> {
         if let Some(data) = &self.line.data {
-            let value = parser(&data.value).map_err(|source| DataError::MalformedData {
+            let value = parser(data.value).map_err(|source| DataError::MalformedData {
                 tag: self.line.tag.value.as_str().into(),
                 malformed_value: Cow::Borrowed("<invalid value>"), // TODO
                 expected,
@@ -767,7 +1138,7 @@ impl<'a, S: GEDCOMSource + ?Sized> RawRecord<'a, S> {
     where
         's: 'a,
     {
-        self.get_subrecord_opt(&subrecord_tag)
+        self.get_subrecord_opt(subrecord_tag)
             .ok_or_else(|| MissingRequiredSubrecord {
                 record_tag: self.line.tag.value.as_str().into(),
                 subrecord_tag: subrecord_tag.to_string(),
@@ -965,7 +1336,7 @@ where
     }
 
     fn pop_child(&mut self) -> Result<ControlFlow<C::Break>, C::Err> {
-        let mut child = self.working.pop().unwrap(); // guaranteed
+        let child = self.working.pop().unwrap(); // guaranteed
 
         let span = if let Some(last_child) = child.records.last() {
             // if children are present, re-calculate the span of the record,
@@ -1042,7 +1413,7 @@ where
 /// Returns the number of lines in the file if successful.
 pub fn validate_syntax(source: &[u8]) -> Result<usize, ValidationError> {
     let mut line_count = 0;
-    let errors = Vec::from_iter(iterate_lines(source).filter_map(|r| match r {
+    let errors = Vec::from_iter(iterate_lines_raw(source).filter_map(|r| match r {
         Ok(_) => {
             line_count += 1;
             None

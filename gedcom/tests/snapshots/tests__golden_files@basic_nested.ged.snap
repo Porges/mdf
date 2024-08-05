@@ -1,5 +1,6 @@
 ---
 source: gedcom/tests/tests.rs
+description: "0 _ROOT\r\n1 _CHILD\r\n"
 expression: kdl
 input_file: gedcom/tests/syntax_inputs/basic_nested.ged
 ---

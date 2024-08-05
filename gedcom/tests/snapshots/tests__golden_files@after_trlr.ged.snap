@@ -1,0 +1,9 @@
+---
+source: gedcom/tests/tests.rs
+description: "0 HEAD\r\n0 TRLR\r\n0 BADBADBAD\r\n"
+expression: kdl
+input_file: gedcom/tests/format_inputs/after_trlr.ged
+---
+HEAD
+TRLR
+BADBADBAD

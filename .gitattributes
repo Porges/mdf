@@ -1,0 +1,2 @@
+# ensure that git does not mess with test files
+*.ged binary

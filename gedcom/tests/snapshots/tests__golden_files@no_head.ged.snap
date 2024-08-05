@@ -1,0 +1,9 @@
+---
+source: gedcom/tests/tests.rs
+description: "0 TRLR\r\n1 THING\r\n"
+expression: kdl
+input_file: gedcom/tests/format_inputs/no_head.ged
+---
+TRLR {
+    THING
+}

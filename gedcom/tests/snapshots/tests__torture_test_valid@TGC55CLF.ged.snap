@@ -1,0 +1,2723 @@
+---
+source: gedcom/tests/tests.rs
+expression: to_kdl(parsed.into_iter().map(|r| r.value))
+input_file: gedcom/tests/external/gedcom-samples/Torture Test/TGC55CLF.ged
+---
+HEAD {
+    SOUR "GEDitCOM" {
+        NAME "GEDitCOM"
+        VERS "2.9.4"
+        CORP "RSAC Software" {
+            ADDR "7108 South Pine Cone Street" {
+                CONT "Salt Lake City, UT 84121"
+                CONT "USA"
+                ADR1 "RSAC Software"
+                ADR2 "7108 South Pine Cone Street"
+                CITY "Salt Lake City"
+                STAE "UT"
+                POST "84121"
+                CTRY "USA"
+            }
+            PHON "+1-801-942-7768"
+            PHON "+1-801-555-1212"
+            PHON "+1-801-942-1148 (FAX) (last one!)"
+        }
+        DATA "Name of source data" {
+            DATE "1 JAN 1998"
+            COPR "Copyright of source data"
+        }
+    }
+    SUBM "@SUBMITTER@"
+    SUBN "@SUBMISSION@"
+    _HME "@PERSON1@"
+    DEST "ANSTFILE"
+    DATE "1 JAN 1998" {
+        TIME "13:57:24.80"
+    }
+    FILE "TGC55C.ged"
+    COPR "© 1997 by H. Eichmann, parts © 1999-2000 by J. A. Nairn."
+    GEDC {
+        VERS "5.5"
+        FORM "LINEAGE-LINKED"
+    }
+    LANG "English"
+    CHAR "ANSEL" {
+        VERS "ANSI Z39.47-1985"
+    }
+    PLAC {
+        FORM "City, County, State, Country"
+    }
+    NOTE "This file demonstrates all tags that are allowed in GEDCOM 5.5. Here are some comments about the HEADER record " {
+        CONC "and comments about where to look for information on the other 9 types of GEDCOM records. Most other records will "
+        CONC "have their own notes that describe what to look for in that record and what to hope the importing software will find."
+        CONT ""
+        CONT "Many applications will fail to import these notes. The notes are therefore also provided with the files as a plain-text "
+        CONC "\"Read-Me\" file."
+        CONT ""
+        CONT "--------------------------"
+        CONT "The HEADER Record:"
+        CONT "     This record has all possible tags for a HEADER record. In uses one custom tag (\"_HME\") to see what the software "
+        CONC "will say about custom tags."
+        CONT ""
+        CONT "--------------------------"
+        CONT "INDIVIDUAL Records:"
+        CONT "     This file has a small number of INDIVIDUAL records. The record named \"Joseph Tag Torture\" has all possible "
+        CONC "tags for an INDIVIDUAL record. All remaining  individuals have less tags. Some test specific features; for example:"
+        CONT ""
+        CONT "     Name: Standard GEDCOM Filelinks"
+        CONT "     Name: Nonstandard Multimedia Filelinks"
+        CONT "     Name: General Custom Filelinks"
+        CONT "     Name: Extra URL Filelinks"
+        CONT "          These records link to multimedia files mentioned by the GEDCOM standard and to a variety of other types of "
+        CONC "multimedia files, general files, or URL names."
+        CONT ""
+        CONT "     Name: Chris Locked Torture"
+        CONT "          Has a \"locked\" restriction (RESN) tag - should not be able to edit this record it. This record has one set of notes "
+        CONC "that is used to test line breaking in notes and a few other text-parsing features of the GEDCOM software. Read those "
+        CONC "notes to see what they are testing."
+        CONT ""
+        CONT "     Name: Sandy Privacy Torture"
+        CONT "          Has a \"privacy\" restriction (RESN) tag. Is the tag recognized and how is the record displayed and/or printed?"
+        CONT ""
+        CONT "     Name: Chris Locked Torture"
+        CONT "     Name: Sandy Privacy Torture"
+        CONT "     Name: Pat Smith Torture"
+        CONT "          The three children in this file have unknown sex (no SEX tag). An ancestor tree from each should give five "
+        CONC "generations of ancestors."
+        CONT ""
+        CONT "     Name: Charlie Accented ANSEL"
+        CONT "     Name: Lucy Special ANSEL"
+        CONT "          The notes in these records use all possible special characters in the ANSEL character set. The header of this file "
+        CONC "denotes this file as using the ANSEL character set. The importing software should handle these special characters in a "
+        CONC "reasonable way."
+        CONT ""
+        CONT "     Name: Torture GEDCOM Matriarch"
+        CONT "           All individuals in this file are related and all are descendants (or spouses of descendants) of Torture GEDCOM "
+        CONC "Matriarch. A descendant tree or report from this individual should show five generations of descendants."
+        CONT ""
+        CONT "--------------------------"
+        CONT "FAMILY Records:"
+        CONT "     The FAMILY record for \"Joseph Tag Torture\" (husband) and \"Mary First Jones\" (wife) has all tags allowed in "
+        CONC "family records. All other family records use only a few tags and are used to provide records for extra family links in "
+        CONC "other records."
+        CONT ""
+        CONT "--------------------------"
+        CONT "SOURCE Records:"
+        CONT "     There are two SOURCE records in this file. The \"Everything You Every Wanted to Know about GEDCOM Tags\" "
+        CONC "source has all possible GEDCOM tags for a SOURCE record. The other source only has only a few tags."
+        CONT ""
+        CONT "--------------------------"
+        CONT "REPOSITORY Record:"
+        CONT "     There is just one REPOSITORY record and it uses all possible tags for such a record."
+        CONT ""
+        CONT "--------------------------"
+        CONT "SUBMITTER Records:"
+        CONT "     This file has three SUBMITTER records. The \"John A. Nairn\" record has all tags allowed in such records. The "
+        CONC "second and third submitter are to test how programs input files with multiple submitters. The GEDCOM standard does "
+        CONC "not allow for notes in SUBMITTER records. Look in the \"Main Submitter\" to verify all address data comes through, "
+        CONC "that all three phone numbers appear, and that the multimedia file link is preserved."
+        CONT ""
+        CONT "--------------------------"
+        CONT "MULTIMEDIA OBJECT Record:"
+        CONT "     The one MULTIMEDIA record has all possible tags and even has encoded data for a small image of a flower. There "
+        CONC "are no known GEDCOM programs that can read or write such records. The record is included here to test how "
+        CONC "programs might respond to finding multimedia records present. There are possible plans to eliminate encoded "
+        CONC "multimedia objects in the next version of GEDCOM. In the future all multimedia will be included by links to other files. "
+        CONC "To test current file links and extended file links, see the \"Filelinks\" family records described above."
+        CONT ""
+        CONT "--------------------------"
+        CONT "SUBMISSION Record:"
+        CONT "     The one (maximum allowed) SUBMISSION record in this file has all possible tags for such a record."
+        CONT ""
+        CONT "--------------------------"
+        CONT "NOTE Records:"
+        CONT "     This file has many NOTE records. These are all linked to other records."
+        CONT ""
+        CONT "--------------------------"
+        CONT "TRLR Records:"
+        CONT "     This file ends in the standard TRLR record."
+        CONT ""
+        CONT "--------------------------"
+        CONT "ADDITIONAL NOTES"
+        CONT "     This file was originally created by H. Eichmann at <h.eichmann@@mbox.iqo.uni-hannover.de> and posted on the "
+        CONC "Internet."
+        CONT ""
+        CONT "(NOTE: email addresses are listed here with double \"at\" signs. A rule of GEDCOM parsing is that these should be "
+        CONC "converted to single \"at\" at signs, but not many programs follow that rule. In addition, that rule is not needed and may be "
+        CONC "abandoned in a future version of GEDCOM)."
+        CONT ""
+        CONT "This original file was extensively modified by J. A. Nairn using GEDitCOM 2.9.4 (1999-2001) at "
+        CONC "<support@@geditcom.com> and posted on the Internet at <http://www.geditcom.com>. Some changes included many "
+        CONC "more notes, the use or more tags, extensive testing of multimedia file links, and some notes to test all special ANSEL "
+        CONC "characters."
+        CONT ""
+        CONT "Feel free to copy and use this GEDCOM file for any  non-commercial purpose."
+        CONT ""
+        CONT "For selecting the allowed tags, the GEDCOM standard Release 5.5 (2 JAN 1996) was used. Copyright: The Church of "
+        CONC "Jesus Christ of Latter-Day Saints, <gedcom@@gedcom.org>."
+        CONT ""
+        CONT "You can download the GEDCOM 5.5 specs from: <ftp.gedcom.com/pub/genealogy/gedcom>. You can read the "
+        CONC "GEDCOM 5.5 specs on the Internet at <http://homepages.rootsweb.com/~pmcbride/gedcom/55gctoc.htm>."
+    }
+}
+SUBN xref="@SUBMISSION@" {
+    SUBM "@SUBMITTER@"
+    FAMF "NameOfFamilyFile"
+    TEMP "Abbreviated Temple Code"
+    ANCE "1"
+    DESC "1"
+    ORDI "yes"
+    RIN "1"
+}
+SUBM xref="@SUBMITTER@" {
+    NAME "John A. Nairn"
+    ADDR "Submitter address line 1" {
+        CONT "Submitter address line 2"
+        CONT "Submitter address line 3"
+        CONT "Submitter address line 4"
+        ADR1 "Submitter address line 1"
+        ADR2 "Submitter address line 2"
+        CITY "Submitter address city"
+        STAE "Submitter address state"
+        POST "Submitter address ZIP code"
+        CTRY "Submitter address country"
+    }
+    PHON "Submitter phone number 1"
+    PHON "Submitter phone number 2"
+    PHON "Submitter phone number 3 (last one!)"
+    LANG "English"
+    OBJE {
+        FORM "jpeg"
+        TITL "Submitter Multimedia File"
+        FILE "ImgFile.JPG"
+        NOTE "@N1@"
+    }
+    RFN "Submitter Registered RFN"
+    RIN "1"
+    CHAN {
+        DATE "7 Sep 2000" {
+            TIME "8:35:36"
+        }
+    }
+}
+SUBM xref="@SM2@" {
+    NAME "Secondary Submitter"
+    ADDR "Secondary Submitter Address 1" {
+        CONT "Secondary Submitter Address 2"
+    }
+    LANG "English"
+    CHAN {
+        DATE "12 Mar 2000" {
+            TIME "10:38:33"
+        }
+    }
+    RIN "2"
+}
+SUBM xref="@SM3@" {
+    NAME "H. Eichmann"
+    ADDR "email: h.eichmann@@mbox.iqo.uni-hannover.de" {
+        CONT "or: heiner_eichmann@@h.maus.de (no more than 16k!!!!)"
+    }
+    CHAN {
+        DATE "13 Jun 2000" {
+            TIME "17:07:32"
+        }
+    }
+    RIN "3"
+}
+INDI xref="@I14@" {
+    NAME "Charlie Accented /ANSEL/"
+    SEX "M"
+    BIRT {
+        DATE "15 JUN 1900"
+    }
+    DEAT {
+        DATE "5 JUL 1974"
+    }
+    FAMS "@F6@"
+    FAMC "@F7@"
+    NOTE "@N24@"
+    CHAN {
+        DATE "11 Jan 2001" {
+            TIME "16:00:06"
+        }
+    }
+    RIN "1"
+}
+INDI xref="@I13@" {
+    NAME "Lucy Special /ANSEL/"
+    SEX "F"
+    BIRT {
+        DATE "12 AUG 1905"
+    }
+    DEAT {
+        DATE "31 DEC 1990"
+    }
+    FAMS "@F6@"
+    NOTE "@N25@"
+    CHAN {
+        DATE "11 Jan 2001" {
+            TIME "16:00:23"
+        }
+    }
+    RIN "2"
+}
+INDI xref="@PERSON6@" {
+    NAME "Teresa Mary /Caregiver/"
+    SEX "F"
+    BIRT {
+        DATE "6 JUN 1944"
+    }
+    FAMS "@ADOPTIVE_PARENTS@"
+    NOTE "@N27@"
+    CHAN {
+        DATE "11 Jan 2001" {
+            TIME "16:03:05"
+        }
+    }
+    RIN "3"
+}
+INDI xref="@I12@" {
+    NAME "Extra URL /Filelinks/"
+    SEX "F"
+    BIRT {
+        DATE "1875"
+    }
+    FAMC "@F5@"
+    NOTE "@N23@"
+    OBJE {
+        FORM "URL"
+        TITL "GEDCOM 5.5 documentation web site"
+        FILE "http://homepages.rootsweb.com/~pmcbride/gedcom/55gctoc.htm"
+    }
+    OBJE {
+        FORM "URL"
+        TITL "FTP site with many GEDCOM files"
+        FILE "ftp://ftp.genealogy.org/genealogy/GEDCOM/"
+    }
+    OBJE {
+        FORM "URL"
+        TITL "GEDitCOM Macintosh genealogy software home page"
+        FILE "http://www.geditcom.com"
+    }
+    OBJE {
+        FORM "URL"
+        TITL "Email comments on this GEDCOM file to here"
+        FILE "mailto:support@geditcom.com"
+    }
+    CHAN {
+        DATE "11 Jan 2001" {
+            TIME "16:01:19"
+        }
+    }
+    RIN "4"
+}
+INDI xref="@I11@" {
+    NAME "General Custom /Filelinks/"
+    SEX "M"
+    BIRT {
+        DATE "1872"
+    }
+    DEAT {
+        DATE "7 DEC 1941"
+    }
+    FAMC "@F5@"
+    NOTE "@N22@"
+    OBJE {
+        FORM "TEXT"
+        TITL "Plain TEXT document"
+        FILE "Document.tex"
+    }
+    OBJE {
+        FORM "W8BN"
+        TITL "Microsoft Word document"
+        FILE "Document.DOC"
+    }
+    OBJE {
+        FORM "RTF"
+        TITL "Rich text format document"
+        FILE "Document.RTF"
+    }
+    OBJE {
+        FORM "PDF"
+        TITL "Portable document format file"
+        FILE "Document.pdf"
+    }
+    CHAN {
+        DATE "11 Jan 2001" {
+            TIME "16:01:03"
+        }
+    }
+    RIN "5"
+}
+INDI xref="@I10@" {
+    NAME "Nonstandard Multimedia /Filelinks/"
+    SEX "F"
+    BIRT {
+        DATE "1870"
+    }
+    DEAT "Y"
+    FAMS "@F7@"
+    FAMC "@F5@"
+    NOTE "@N21@"
+    OBJE {
+        FORM "PICT"
+        TITL "Macintosh PICT file"
+        FILE "ImgFile.PIC"
+    }
+    OBJE {
+        FORM "PNTG"
+        TITL "Macintosh MacPaint file"
+        FILE "ImgFile.MAC"
+    }
+    OBJE {
+        FORM "TPIC"
+        TITL "TGA image file"
+        FILE "ImgFile.TGA"
+    }
+    OBJE {
+        FORM "aiff"
+        TITL "Macintosh sound file"
+        FILE "enthist.aif"
+    }
+    OBJE {
+        FORM "mov"
+        TITL "QuickTime movie file"
+        FILE "suntun.mov"
+    }
+    OBJE {
+        TITL "Adobe Photoshop file"
+        FORM "8BPS"
+        FILE "ImgFile.PSD"
+    }
+    OBJE {
+        FORM "mpeg"
+        TITL "Mpeg Movie File"
+        FILE "top.mpg"
+    }
+    CHAN {
+        DATE "11 Jan 2001" {
+            TIME "16:00:39"
+        }
+    }
+    RIN "6"
+}
+INDI xref="@I9@" {
+    NAME "Standard GEDCOM /Filelinks/"
+    SEX "M"
+    BIRT {
+        DATE "1835"
+    }
+    FAMS "@F5@"
+    NOTE "@N18@"
+    OBJE {
+        TITL "Windows bit mapped image file"
+        FORM "bmp"
+        FILE "ImgFile.BMP"
+    }
+    OBJE {
+        TITL "GIF image file"
+        FORM "gif"
+        FILE "ImgFile.GIF"
+    }
+    OBJE {
+        TITL "JPEG image file"
+        FORM "jpeg"
+        FILE "ImgFile.JPG"
+    }
+    OBJE {
+        TITL "Tagged image format file"
+        FORM "tiff"
+        FILE "ImgFile.TIF"
+    }
+    OBJE {
+        FORM "pcx"
+        TITL "Windows paint brush file"
+        FILE "ImgFile.PCX"
+    }
+    OBJE {
+        TITL "Windows sound File"
+        FORM "wav"
+        FILE "force.wav"
+    }
+    OBJE "@M1@"
+    CHAN {
+        DATE "11 Jan 2001" {
+            TIME "16:02:06"
+        }
+    }
+    RIN "7"
+}
+INDI xref="@PERSON2@" {
+    NAME "Mary First /Jones/"
+    SEX "F"
+    BIRT {
+        DATE "BEF 1970"
+    }
+    DEAT {
+        DATE "AFT 2000"
+    }
+    FAMS "@FAMILY1@"
+    NOTE "@N31@"
+    CHAN {
+        DATE "11 Jan 2001" {
+            TIME "15:58:16"
+        }
+    }
+    RIN "8"
+}
+INDI xref="@I15@" {
+    NAME "Torture GEDCOM /Matriarch/"
+    SEX "F"
+    BIRT {
+        DATE "12 FEB 1840"
+    }
+    DEAT {
+        DATE "15 JUN 1915"
+    }
+    FAMS "@F5@"
+    CHAN {
+        DATE "11 Jan 2001" {
+            TIME "16:01:59"
+        }
+    }
+    RIN "9"
+}
+INDI xref="@PERSON8@" {
+    NAME "Elizabeth Second /Smith/"
+    SEX "F"
+    BIRT {
+        DATE "BET MAY 1979 AND AUG 1979"
+    }
+    DEAT {
+        DATE "FROM APR 2000 TO 5 MAR 2001"
+    }
+    FAMS "@FAMILY2@"
+    NOTE "@N32@"
+    CHAN {
+        DATE "11 Jan 2001" {
+            TIME "15:58:58"
+        }
+    }
+    RIN "10"
+}
+INDI xref="@PERSON3@" {
+    NAME "Chris Locked /Torture/"
+    BIRT {
+        DATE "MAR 1999"
+        PLAC "Las Vegas, Nevada USA"
+    }
+    FAMC "@FAMILY1@"
+    NOTE "@N20@"
+    CHAN {
+        DATE "11 Jan 2001" {
+            TIME "15:55:43"
+        }
+        NOTE "This date is the last time this record was changed"
+    }
+    RESN "locked"
+    RIN "11"
+}
+INDI xref="@PERSON1@" {
+    NAME "Joseph Tag /Torture/" {
+        NPFX "Prof."
+        GIVN "Joseph"
+        NICK "Joe"
+        SPFX "Le"
+        SURN "Torture"
+        NSFX "Jr."
+        SOUR "@SOURCE1@" {
+            PAGE "42"
+        }
+        NOTE "These are notes about the first NAME structure in this record. These notes are " {
+            CONC "embedded in the INDIVIDUAL record itself."
+            CONT ""
+            CONT "The second name structure in this record uses all possible tags for a personal name "
+            CONC "structure."
+            CONT ""
+            CONT "NOTE: many applications are confused by two NAME structures."
+        }
+    }
+    SEX "M"
+    NAME "William John /Smith/" {
+        SOUR "@SOURCE1@" {
+            PAGE "55"
+            EVEN "Event type cited in source" {
+                ROLE "Role in cited event"
+            }
+            DATA {
+                DATE "1 JAN 1900"
+                TEXT "Here is some text from the source specific to this source " {
+                    CONC "citation."
+                    CONT "Here is more text but on a new line."
+                }
+            }
+            QUAY "0"
+            OBJE {
+                TITL "Multimedia link about this source"
+                FORM "jpeg"
+                NOTE "@N26@"
+                FILE "ImgFile.JPG"
+            }
+            NOTE "@N7@"
+        }
+        NOTE "This is a second personal NAME structure in a single INDIVIDUAL record " {
+            CONC "which is allowed in GEDCOM. This second NAME structure has all possible "
+            CONC "fields for a NAME structure."
+            CONT ""
+            CONT "These notes are embedded in the INDIVIDUAL record."
+        }
+    }
+    BIRT {
+        DATE "31 DEC 1965"
+        PLAC "Salt Lake City, UT, USA"
+        TYPE "Normal"
+        ADDR "St. Marks Hospital" {
+            CONT "Salt Lake City, UT"
+            CONT "USA"
+        }
+        AGNC "none"
+        OBJE {
+            TITL "Link to multimedia file"
+            FORM "tiff"
+            FILE "ImgFile.TIF"
+        }
+        SOUR "@SOURCE1@" {
+            PAGE "42"
+            QUAY "2"
+            NOTE "Some notes about this birth source citation which are embedded in the citation " {
+                CONC "structure itself."
+            }
+        }
+        NOTE "@N8@"
+        FAMC "@PARENTS@"
+    }
+    DEAT {
+        DATE "ABT 15 JAN 2001"
+        PLAC "New York, New York, USA" {
+            FORM "city, state, country"
+            NOTE "The place structure has more detail than usually used for places"
+            SOUR "@SOURCE1@"
+        }
+        AGE "76"
+        TYPE "slow"
+        ADDR "at Home"
+        CAUS "Cancer"
+        AGNC "none"
+        OBJE {
+            FORM "jpeg"
+            TITL "Multimedia link about the death event"
+            FILE "ImgFile.JPG"
+        }
+        SOUR "@SOURCE1@" {
+            PAGE "42"
+            DATA {
+                DATE "31 DEC 1900"
+                TEXT "Some death source text."
+            }
+            QUAY "3"
+            NOTE "A death source note."
+        }
+        NOTE "A death event note."
+    }
+    FAMS "@FAMILY1@" {
+        NOTE "Note about the link to the family record with his first spouse."
+        NOTE "Another note about the link to the family record with his first spouse."
+    }
+    FAMS "@FAMILY2@"
+    FAMC "@PARENTS@" {
+        NOTE "Note about this link to his parents family record."
+        NOTE "Another note about this link to his parents family record"
+    }
+    FAMC "@ADOPTIVE_PARENTS@" {
+        PEDI "adopted"
+        NOTE "Note about the link to his adoptive parents family record."
+    }
+    BAPM "Y" {
+        DATE "ABT 31 DEC 1997"
+        PLAC "The place"
+        AGE "3 months"
+        TYPE "BAPM"
+        ADDR "Church Name" {
+            CONT "Street Address"
+            CONT "City Name, zip"
+            CONT "Country"
+        }
+        CAUS "Birth"
+        AGNC "The Church"
+        OBJE {
+            FORM "jpeg"
+            TITL "JPEG File Link"
+            FILE "ImgFile.JPG"
+        }
+        SOUR "@SOURCE1@" {
+            PAGE "42"
+            DATA {
+                DATE "31 DEC 1900"
+                TEXT "Sample baptism Source text."
+            }
+            QUAY "3"
+            NOTE "A baptism source note."
+        }
+        NOTE "A baptism event note (the event of baptism (not LDS), performed in infancy or later. See also BAPL and CHR)."
+    }
+    CHR {
+        DATE "CAL 31 DEC 1997"
+        PLAC "The place"
+        TYPE "CHR"
+        SOUR "@SOURCE1@" {
+            PAGE "42"
+            DATA {
+                DATE "31 DEC 1900"
+                TEXT "Sample CHR Source text."
+            }
+            QUAY "3"
+            NOTE "A christening Source note."
+        }
+        NOTE "Christening event note (the religious event (not LDS) of baptizing and/or naming a " {
+            CONC "child)."
+        }
+        FAMC "@ADOPTIVE_PARENTS@"
+    }
+    CHR {
+        DATE "EST 30 DEC 1997"
+        PLAC "The place"
+        TYPE "CHR"
+        SOUR "@SOURCE1@" {
+            PAGE "42"
+            DATA {
+                DATE "31 DEC 1900"
+                TEXT "Some christening source text." {
+                    CONT "This is the second christening structure."
+                }
+            }
+            QUAY "3"
+            NOTE "A christening Source note."
+        }
+        NOTE "Alternative christening event note. GEDOM allows more than one of the same type " {
+            CONC "of event."
+        }
+    }
+    BLES {
+        DATE "BEF 31 DEC 1997"
+        PLAC "The place"
+        TYPE "BLES"
+        SOUR "@SOURCE1@" {
+            PAGE "42"
+            DATA {
+                DATE "31 DEC 1900"
+                TEXT "Some blessing source text."
+            }
+            QUAY "3"
+            NOTE "A blessing source note."
+        }
+        NOTE "Blessing event note (a religious event of bestowing divine care or intercession. " {
+            CONC "Sometimes given in connection with a naming ceremony)"
+        }
+    }
+    BARM {
+        DATE "AFT 31 DEC 1997"
+        PLAC "The place"
+        TYPE "BARM"
+        SOUR "@SOURCE1@" {
+            PAGE "42"
+            DATA {
+                DATE "31 DEC 1900"
+                TEXT "Some Bar Mitzvah source text."
+            }
+            QUAY "3"
+            NOTE "A Bar Mitzvah source note."
+        }
+        NOTE "Bar Mitzvah event note (the ceremonial event held when a Jewish boy reaches age " {
+            CONC "13)."
+        }
+    }
+    BASM {
+        DATE "FROM 31 DEC 1997"
+        PLAC "The place"
+        TYPE "BASM"
+        SOUR "@SOURCE1@" {
+            PAGE "42"
+            DATA {
+                DATE "31 DEC 1900"
+                TEXT "Some Bas Mitzvah source text."
+            }
+            QUAY "3"
+            NOTE "A Bas Mitzvah source note."
+        }
+        NOTE "Bas Mitzvah event note (the ceremonial event held when a Jewish girl reaches age 13, " {
+            CONC "also known as \"Bat Mitzvah\")."
+        }
+    }
+    ADOP "Y" {
+        DATE "TO 31 DEC 1997"
+        PLAC "The place"
+        TYPE "ADOP"
+        SOUR "@SOURCE1@" {
+            PAGE "42"
+            DATA {
+                DATE "31 DEC 1900"
+                TEXT "Some adoption source text."
+            }
+            QUAY "3"
+            NOTE "An adoption source note."
+        }
+        NOTE "Adoption event note (pertaining to creation of a child-parent relationship that does " {
+            CONC "not exist biologically)."
+        }
+        FAMC "@ADOPTIVE_PARENTS@" {
+            ADOP "BOTH"
+        }
+    }
+    CHRA {
+        DATE "BET 31 DEC 1997 AND 1 FEB 1998"
+        PLAC "The place"
+        TYPE "CHRA"
+        SOUR "@SOURCE1@" {
+            PAGE "42"
+            DATA {
+                DATE "31 DEC 1900"
+                TEXT "Some christening source text."
+            }
+            QUAY "3"
+            NOTE "A christening source note."
+        }
+        NOTE "Adult christening event note (the religious event (not LDS) of baptizing and/or " {
+            CONC "naming an adult person)."
+        }
+    }
+    CONF {
+        DATE "FROM 31 DEC 1997 TO 2 JAN 1998"
+        PLAC "The place"
+        TYPE "CONF"
+        SOUR "@SOURCE1@" {
+            PAGE "42"
+            DATA {
+                DATE "31 DEC 1900"
+                TEXT "Some CONF Source text."
+            }
+            QUAY "3"
+            NOTE "A CONF Source note."
+        }
+        NOTE "CONFIRMATION event note (the religious event (not LDS) of conferring the gift of the Holy Ghost and, among protestants, full church membership)."
+    }
+    FCOM {
+        DATE "INT 31 DEC 1997 (a test)"
+        PLAC "The place"
+        TYPE "FCOM"
+        SOUR "@SOURCE1@" {
+            PAGE "42"
+            DATA {
+                DATE "31 DEC 1900"
+                TEXT "Some first communion source text."
+            }
+            QUAY "3"
+            NOTE "An first communion source note."
+        }
+        NOTE "First communion event note (a religious rite, the first act of sharing in the Lord's " {
+            CONC "supper as part of church worship)."
+        }
+    }
+    ORDN {
+        DATE "(No idea of the date)"
+        PLAC "The place"
+        TYPE "ORDN"
+        SOUR "@SOURCE1@" {
+            PAGE "42"
+            DATA {
+                DATE "31 DEC 1900"
+                TEXT "Some ordination source text."
+            }
+            QUAY "3"
+            NOTE "An ordination source note."
+        }
+        NOTE "Ordination event note (a religious event of receiving authority to act in religious " {
+            CONC "matters)."
+        }
+    }
+    GRAD {
+        DATE "31 DEC 1997"
+        PLAC "The place"
+        TYPE "GRAD"
+        SOUR "@SOURCE1@" {
+            PAGE "42"
+            DATA {
+                DATE "31 DEC 1900"
+                TEXT "Some graduation source text."
+            }
+            QUAY "3"
+            NOTE "A graduation source note."
+        }
+        NOTE "Graduation event note (an event of awarding educational diplomas or degrees to " {
+            CONC "individuals)."
+        }
+    }
+    EMIG {
+        DATE "1997"
+        PLAC "The place"
+        TYPE "EMIG"
+        SOUR "@SOURCE1@" {
+            PAGE "42"
+            DATA {
+                DATE "31 DEC 1900"
+                TEXT "Some emigration source text."
+            }
+            QUAY "3"
+            NOTE "An emigration source note."
+        }
+        NOTE "Emigration event note (an event of leaving one's homeland with the intent of residing " {
+            CONC "elsewhere)."
+        }
+    }
+    IMMI {
+        DATE "DEC 1997"
+        PLAC "The place"
+        TYPE "IMMI"
+        SOUR "@SOURCE1@" {
+            PAGE "42"
+            DATA {
+                DATE "31 DEC 1900"
+                TEXT "Some immigration source text."
+            }
+            QUAY "3"
+            NOTE "An immigration source note."
+        }
+        NOTE "Immigration event note (an event of entering into a new locality with the intent of " {
+            CONC "residing there)."
+        }
+    }
+    NATU {
+        DATE "5 AUG 1100 B.C."
+        PLAC "The place"
+        TYPE "NATU"
+        SOUR "@SOURCE1@" {
+            PAGE "42"
+            DATA {
+                DATE "31 DEC 1900"
+                TEXT "Some naturalization source text."
+            }
+            QUAY "3"
+            NOTE "A naturalization source note."
+        }
+        NOTE "Naturalization event note (the event of obtaining citizenship)."
+    }
+    CENS {
+        DATE "2 TVT 5758"
+        PLAC "The place"
+        TYPE "CENS"
+        SOUR "@SOURCE1@" {
+            PAGE "42"
+            DATA {
+                DATE "31 DEC 1900"
+                TEXT "Some census source text."
+            }
+            QUAY "3"
+            NOTE "A census source note."
+        }
+        NOTE "Census event note (the event of the periodic count of the population for a designated " {
+            CONC "locality, such as a national or state Census)."
+        }
+    }
+    RETI {
+        DATE "11 NIVO 0006"
+        PLAC "The place"
+        TYPE "RETI"
+        SOUR "@SOURCE1@" {
+            PAGE "42"
+            DATA {
+                DATE "31 DEC 1900"
+                TEXT "Some retirement source text."
+            }
+            QUAY "3"
+            NOTE "A retirement source note."
+        }
+        NOTE "Retirement event note (an event of exiting an occupational relationship with an " {
+            CONC "employer after a qualifying time period)."
+        }
+    }
+    PROB {
+        DATE "FROM 25 SVN 5757 TO 26 IYR 5757"
+        PLAC "The place"
+        TYPE "PROB"
+        SOUR "@SOURCE1@" {
+            PAGE "42"
+            DATA {
+                DATE "31 DEC 1900"
+                TEXT "Some probate source text."
+            }
+            QUAY "3"
+            NOTE "A probate source note."
+        }
+        NOTE "Probate event note (an event of judicial determination of the validity of a will. May " {
+            CONC "indicate several related court activities over several dates)."
+        }
+    }
+    BURI {
+        DATE "5 VEND 0010"
+        PLAC "The place"
+        TYPE "BURI"
+        SOUR "@SOURCE1@" {
+            PAGE "42"
+            DATA {
+                DATE "31 DEC 1900"
+                TEXT "Some burial source text."
+            }
+            QUAY "3"
+            NOTE "A burial source note."
+        }
+        NOTE "Burial event note (the event of the proper disposing of the mortal remains of a " {
+            CONC "deceased person)."
+        }
+    }
+    WILL {
+        DATE "INT 2 TVT 5758 (interpreted Hebrew date)"
+        PLAC "The place"
+        TYPE "WILL"
+        SOUR "@SOURCE1@" {
+            PAGE "42"
+            DATA {
+                DATE "31 DEC 1900"
+                TEXT "Some will source text."
+            }
+            QUAY "3"
+            NOTE "A will source note."
+        }
+        NOTE "Will event note (a legal document treated as an event, by which a person disposes of " {
+            CONC "his or her estate, to take effect after death. The event date is the date the will was "
+            CONC "signed while the person was alive. See also Probate)."
+        }
+    }
+    CREM "Y"
+    EVEN {
+        DATE "5 MAY 0005"
+        PLAC "The place"
+        TYPE "EVEN"
+        SOUR "@SOURCE1@" {
+            PAGE "42"
+            DATA {
+                DATE "31 DEC 1900"
+                TEXT "Some generic event source text."
+            }
+            QUAY "3"
+            NOTE "A generic event source note."
+        }
+        NOTE "Generic event note (a noteworthy happening related to an individual, a group, or an " {
+            CONC "organization). The TYPE tag specifies the type of event."
+        }
+    }
+    BAPL {
+        DATE "5 MAY 0005 B.C."
+        PLAC "Salt Lake City"
+        STAT "Cleared"
+        TEMP "Mormon Temple"
+        SOUR "@SOURCE1@"
+        NOTE "@N5@"
+    }
+    CONL "Y"
+    ENDL {
+        DATE "BET 5 APR 1712/13 AND 28 SEP 1714/15"
+    }
+    SLGC {
+        DATE "27 OCT 1699/00"
+        FAMC "@PARENTS@"
+    }
+    RESI {
+        DATE "31 DEC 1997"
+        PLAC "The place"
+        AGE "35"
+        TYPE "RESI"
+        ADDR "Address in Free Form Line 1" {
+            CONT "Address in Free Form Line 2"
+            CONT "Address in Free Form Line 3"
+            ADR1 "Special Address Line 1"
+            ADR2 "Special Address Line 2"
+            CITY "City Name"
+            STAE "State name"
+            POST "Postal Code"
+            CTRY "USA"
+        }
+        PHON "+1-800-555-5555"
+        CAUS "Needed housing"
+        AGNC "None"
+        SOUR "@SOURCE1@" {
+            PAGE "42"
+            DATA {
+                DATE "31 DEC 1900"
+                TEXT "Some residence source text."
+            }
+            QUAY "3"
+            NOTE "A residence source note."
+        }
+        NOTE "Residence attribute note (the act of dwelling at an address for a period of time)."
+    }
+    OCCU "Occupation" {
+        DATE "31 DEC 1997"
+        AGE "40"
+        PLAC "The place"
+        TYPE "OCCU"
+        ADDR "Work address line 1" {
+            CONT "Work address line 2"
+            CONT "Work address line 3"
+        }
+        CAUS "Need for money"
+        AGNC "Employer"
+        OBJE {
+            FORM "gif"
+            TITL "GIF Image File"
+            FILE "ImgFile.GIF"
+        }
+        SOUR "@SOURCE1@" {
+            PAGE "42"
+            DATA {
+                DATE "31 DEC 1900"
+                TEXT "Some occupation source text."
+            }
+            QUAY "3"
+            NOTE "An occupation source note."
+        }
+        NOTE "Occupation attribute note (the type of work or profession of an individual)."
+    }
+    OCCU "Another occupation" {
+        DATE "31 DEC 1998"
+        PLAC "The place"
+        TYPE "OCCU"
+        SOUR "@SOURCE1@" {
+            PAGE "42"
+            DATA {
+                DATE "31 DEC 1900"
+                TEXT "Some occupation source text."
+            }
+            QUAY "3"
+            NOTE "An occupation source note."
+        }
+        NOTE "Occupation attribute note. This is the second occupation attribute in the record."
+    }
+    EDUC "Education" {
+        DATE "31 DEC 1997"
+        PLAC "The place"
+        TYPE "EDUC"
+        SOUR "@SOURCE1@" {
+            PAGE "42"
+            DATA {
+                DATE "31 DEC 1900"
+                TEXT "Some education source text."
+            }
+            QUAY "3"
+            NOTE "An education source note."
+        }
+        NOTE "Education attribute note (indicator of a level of education attained)."
+    }
+    DSCR "Physical description" {
+        DATE "31 DEC 1997"
+        PLAC "The place"
+        TYPE "PHYS"
+        SOUR "@SOURCE1@" {
+            PAGE "42"
+            DATA {
+                DATE "31 DEC 1900"
+                TEXT "Some physical description source text."
+            }
+            QUAY "3"
+            NOTE "A physical description source note."
+        }
+        NOTE "Physical description attribute note (the physical characteristics of a person, place, or " {
+            CONC "thing)."
+        }
+    }
+    RELI "Religion" {
+        DATE "31 DEC 1997"
+        PLAC "The place"
+        TYPE "RELI"
+        SOUR "@SOURCE1@" {
+            PAGE "42"
+            DATA {
+                DATE "31 DEC 1900"
+                TEXT "Some religion source text."
+            }
+            QUAY "3"
+            NOTE "A religion source note."
+        }
+        NOTE "Religion attribute note (a religious denomination to which a person is affiliated or for " {
+            CONC "which a record applies)."
+        }
+    }
+    SSN "6942" {
+        DATE "31 DEC 1997"
+        PLAC "The place"
+        TYPE "SSN"
+        SOUR "@SOURCE1@" {
+            PAGE "42"
+            DATA {
+                DATE "31 DEC 1900"
+                TEXT "Some Social security number source text."
+            }
+            QUAY "3"
+            NOTE "An Social security number source note."
+        }
+        NOTE "Social security number attribute note (a number assigned by the United States Social " {
+            CONC "Security Administration. Used for tax identification purposes)."
+        }
+    }
+    IDNO "6942" {
+        DATE "31 DEC 1997"
+        PLAC "The place"
+        TYPE "IDNO"
+        SOUR "@SOURCE1@" {
+            PAGE "42"
+            DATA {
+                DATE "31 DEC 1900"
+                TEXT "Some national identification number source text."
+            }
+            QUAY "3"
+            NOTE "An national identification number source note."
+        }
+        NOTE "National identification number attribute note (a number assigned to identify a person " {
+            CONC "within some significant external system)."
+        }
+    }
+    PROP "Possessions" {
+        DATE "31 DEC 1997"
+        PLAC "The place"
+        TYPE "PROP"
+        SOUR "@SOURCE1@" {
+            PAGE "42"
+            DATA {
+                DATE "31 DEC 1900"
+                TEXT "Some possessions source text."
+            }
+            QUAY "3"
+            NOTE "@N11@"
+        }
+        NOTE "Possessions or property attribute note (pertaining to possessions such as real estate " {
+            CONC "or other property of interest)."
+        }
+    }
+    CAST "Cast name" {
+        DATE "31 DEC 1997"
+        PLAC "The place"
+        TYPE "CAST"
+        SOUR "@SOURCE1@" {
+            PAGE "42"
+            DATA {
+                DATE "31 DEC 1900"
+                TEXT "Some caste name source text."
+            }
+            QUAY "3"
+            NOTE "A caste name source note."
+        }
+        NOTE "Caste name attribute note (the name of an individual's rank or status in society, based " {
+            CONC "on racial or religious differences, or differences in wealth, inherited rank, profession, "
+            CONC "occupation, etc)."
+        }
+    }
+    NCHI "42" {
+        DATE "31 DEC 1997"
+        PLAC "The place"
+        TYPE "NCHI"
+        SOUR "@SOURCE1@" {
+            PAGE "42"
+            DATA {
+                DATE "31 DEC 1900"
+                TEXT "Some number of children source text."
+            }
+            QUAY "3"
+            NOTE "Am number of children source note."
+        }
+        NOTE "Number of children attribute note."
+    }
+    NMR "42" {
+        DATE "31 DEC 1997"
+        PLAC "The place"
+        TYPE "NMR"
+        SOUR "@SOURCE1@" {
+            PAGE "42"
+            DATA {
+                DATE "31 DEC 1900"
+                TEXT "Some number of marriages source text."
+            }
+            QUAY "3"
+            NOTE "An number of marriages source note."
+        }
+        NOTE "Number of marriages attribute note."
+    }
+    TITL "Nobility title" {
+        DATE "31 DEC 1997"
+        PLAC "The place"
+        TYPE "TITL"
+        SOUR "@SOURCE1@" {
+            PAGE "42"
+            DATA {
+                DATE "31 DEC 1900"
+                TEXT "Some title source text."
+            }
+            QUAY "3"
+            NOTE "A title source note."
+        }
+        NOTE "Title attribute note (a description of a specific writing or other work, such as the title " {
+            CONC "of a book when used in a source context, or a formal designation used by an "
+            CONC "individual in connection with positions of royalty or other social status, "
+            CONT "such as Grand Duke)."
+        }
+    }
+    NATI "National or tribe origin" {
+        DATE "31 DEC 1997"
+        PLAC "The place"
+        TYPE "NATI"
+        SOUR "@SOURCE1@" {
+            PAGE "42"
+            DATA {
+                DATE "31 DEC 1900"
+                TEXT "Some nationality source text."
+            }
+            QUAY "3"
+            NOTE "An nationality source note."
+        }
+        NOTE "Nationality attribute note (the national heritage of an individual)."
+    }
+    NOTE "@N4@" {
+        SOUR "@SOURCE1@"
+    }
+    NOTE "This is a second set of notes for this single individual record. It is embedded in the " {
+        CONC "INDIVIDUAL record instead of being in a separate NOTE record."
+        CONT ""
+        CONT "These notes also have a source citation to a SOURCE record. In GEDCOM "
+        CONC "this source can only be a single line and links to a SOURCE record."
+        SOUR "@SOURCE1@"
+    }
+    SOUR "@SOURCE1@" {
+        PAGE "42"
+        DATA {
+            DATE "31 DEC 1900"
+            TEXT "Some sample text from the first source on this record."
+        }
+        QUAY "0"
+        NOTE "A source note."
+    }
+    SOUR "@SR2@" {
+        NOTE "@N12@"
+    }
+    SOUR "This source is embedded in the record instead of being a link to a " {
+        CONC "separate SOURCE record."
+        CONT "The source description can use any number of lines"
+        TEXT "Text from a source. The preferred approach is to cite sources by " {
+            CONC "links to SOURCE records."
+            CONT "Here is a new line of text from the source."
+        }
+        NOTE "@N17@"
+    }
+    OBJE {
+        FORM "gif"
+        TITL "GIF Image File"
+        FILE "ImgFile.GIF"
+    }
+    ALIA "@I9@"
+    ASSO "@I9@" {
+        RELA "Has multimedia links"
+        SOUR "@SOURCE1@" {
+            PAGE "42"
+            DATA {
+                DATE "31 DEC 1900"
+                TEXT "Sample text about this source on an association."
+            }
+        }
+        NOTE "Note on association link."
+    }
+    ASSO "@PERSON5@" {
+        RELA "Father"
+    }
+    SUBM "@SUBMITTER@"
+    ANCI "@SUBMITTER@"
+    DESI "@SUBMITTER@"
+    REFN "User reference number" {
+        TYPE "Type of user number"
+    }
+    RIN "12"
+    RFN "Record File Number"
+    AFN "Ancestral File Number"
+    CHAN {
+        DATE "12 Feb 2001" {
+            TIME "19:16:42"
+        }
+    }
+}
+INDI xref="@PERSON7@" {
+    NAME "Pat Smith /Torture/"
+    BIRT {
+        DATE "1 JAN 2001"
+        PLAC "London, UK"
+    }
+    FAMC "@FAMILY2@"
+    NOTE "@N30@"
+    CHAN {
+        DATE "11 Jan 2001" {
+            TIME "15:56:49"
+        }
+    }
+    RIN "13"
+}
+INDI xref="@PERSON4@" {
+    NAME "Sandy Privacy /Torture/"
+    RESN "privacy"
+    BIRT {
+        DATE "15 FEB 2000"
+        PLAC "Chicago, IL, USA"
+    }
+    FAMC "@FAMILY1@"
+    NOTE "@N29@"
+    CHAN {
+        DATE "11 Jan 2001" {
+            TIME "15:56:15"
+        }
+    }
+    RIN "14"
+}
+INDI xref="@PERSON5@" {
+    NAME "William Joseph /Torture/"
+    SEX "M"
+    BIRT {
+        DATE "ABT 1930"
+    }
+    DEAT "Y" {
+        DATE "INT 1995 (from estimated age)"
+        AGE "65"
+        CAUS "Old age"
+    }
+    FAMS "@PARENTS@"
+    FAMC "@F6@"
+    NOTE "@N28@"
+    CHAN {
+        DATE "11 Jan 2001" {
+            TIME "15:59:40"
+        }
+    }
+    RIN "15"
+}
+FAM xref="@FAMILY1@" {
+    HUSB "@PERSON1@"
+    WIFE "@PERSON2@"
+    MARR {
+        DATE "31 DEC 1997"
+        PLAC "The place"
+        TYPE "Man and Wife"
+        ADDR "A Church" {
+            CONT "Main Street, USA"
+        }
+        CAUS "Love"
+        AGNC "Catholic Church"
+        HUSB {
+            AGE "42y"
+        }
+        WIFE {
+            AGE "42y 6m"
+        }
+        OBJE {
+            FORM "jpeg"
+            TITL "Multimedia link about the marriage event"
+            FILE "ImgFile.JPG"
+        }
+        SOUR "@SOURCE1@" {
+            PAGE "42"
+            DATA {
+                DATE "31 DEC 1900"
+                TEXT "Text from marriage source."
+            }
+            QUAY "3"
+            NOTE "A note about the marriage source."
+        }
+        NOTE "Marriage event note (a legal, common-law, or customary event of creating a family " {
+            CONC "unit of a man and a woman as husband and wife)."
+        }
+    }
+    CHIL "@PERSON3@"
+    CHIL "@PERSON4@"
+    NCHI "42"
+    ENGA "Y" {
+        DATE "31 DEC 1997"
+        PLAC "The place"
+        AGE "42"
+        TYPE "ENGA"
+        ADDR "The house" {
+            CONT "Anytown, USA"
+        }
+        CAUS "Desire"
+        AGNC "None"
+        HUSB {
+            AGE "42y"
+        }
+        WIFE {
+            AGE "STILLBORN"
+        }
+        OBJE {
+            FORM "bmp"
+            TITL "BMP Image File"
+            FILE "ImgFile.BMP"
+        }
+        SOUR "@SOURCE1@" {
+            PAGE "42"
+            DATA {
+                DATE "31 DEC 1900"
+                TEXT "Sample text from engagement source."
+            }
+            QUAY "3"
+            NOTE "A note about this engagement source."
+        }
+        NOTE "Engagement event note (an event of recording or announcing an agreement between " {
+            CONC "two people to become married)."
+        }
+    }
+    MARB {
+        DATE "31 DEC 1997"
+        PLAC "The place"
+        TYPE "MARB"
+        HUSB {
+            AGE "42y"
+        }
+        WIFE {
+            AGE "42y 6m"
+        }
+        SOUR "@SOURCE1@" {
+            PAGE "42"
+            DATA {
+                DATE "31 DEC 1900"
+                TEXT "Sample text from marriage banns source."
+            }
+            QUAY "3"
+            NOTE "A note about this marriage banns source."
+        }
+        NOTE "Marriage banns event note (an event of an official public notice given that two people " {
+            CONC "intend to marry)."
+        }
+    }
+    MARC {
+        DATE "31 DEC 1997"
+        PLAC "The place"
+        TYPE "MARC"
+        HUSB {
+            AGE "42y"
+        }
+        WIFE {
+            AGE ">42y 6m"
+        }
+        SOUR "@SOURCE1@" {
+            PAGE "42"
+            DATA {
+                DATE "31 DEC 1900"
+                TEXT "Sample text from marriage contract source."
+            }
+            QUAY "3"
+            NOTE "A note about this marriage contract source."
+        }
+        NOTE "Marriage contract event note (an event of recording a formal agreement of marriage, " {
+            CONC "including the prenuptial agreement in which marriage partners reach agreement about "
+            CONC "the property rights of one or both, securing property to their children)."
+        }
+    }
+    MARL {
+        DATE "31 DEC 1997"
+        PLAC "The place"
+        TYPE "MARL"
+        HUSB {
+            AGE "42y"
+        }
+        WIFE {
+            AGE "<42y 6m"
+        }
+        SOUR "@SOURCE1@" {
+            PAGE "42"
+            DATA {
+                DATE "31 DEC 1900"
+                TEXT "Sample text from marriage license source."
+            }
+            QUAY "3"
+            NOTE "A note about this marriage license source."
+        }
+        NOTE "Marriage license event note (an event of obtaining a legal license to marry)."
+    }
+    MARS {
+        DATE "31 DEC 1997"
+        PLAC "The place"
+        TYPE "MARS"
+        HUSB {
+            AGE "42y"
+        }
+        WIFE {
+            AGE "INFANT"
+        }
+        SOUR "@SOURCE1@" {
+            PAGE "42"
+            DATA {
+                DATE "31 DEC 1900"
+                TEXT "Sample text from marriage settlement source."
+            }
+            QUAY "3"
+            NOTE "A note about this marriage settlement source."
+        }
+        NOTE "Marriage settlement event note (an event of creating an agreement between two " {
+            CONC "people contemplating marriage, at which time they agree to release or modify "
+            CONC "property rights that would otherwise arise from the marriage)."
+        }
+    }
+    DIV {
+        DATE "31 DEC 1997"
+        PLAC "The place"
+        TYPE "DIV"
+        HUSB {
+            AGE "42y 3d"
+        }
+        WIFE {
+            AGE "42m"
+        }
+        SOUR "@SOURCE1@" {
+            PAGE "42"
+            DATA {
+                DATE "31 DEC 1900"
+                TEXT "Sample text from divorce source."
+            }
+            QUAY "3"
+            NOTE "A note about this divorce source."
+        }
+        NOTE "Divorce event note (an event of dissolving a marriage through civil action)."
+    }
+    DIVF {
+        DATE "31 DEC 1997"
+        PLAC "The place"
+        HUSB {
+            AGE "42d"
+        }
+        WIFE {
+            AGE "CHILD"
+        }
+        SOUR "@SOURCE1@" {
+            PAGE "42"
+            DATA {
+                DATE "31 DEC 1900"
+                TEXT "Sample text from divorce filing source."
+            }
+            QUAY "3"
+            NOTE "A note about this divorce filing source."
+        }
+        NOTE "DIVORCE_FILED event note (an event of filing for a divorce by a spouse)."
+    }
+    ANUL "Y" {
+        DATE "31 DEC 1997"
+    }
+    CENS {
+        DATE "31 DEC 1997"
+        PLAC "The place"
+        TYPE "CENS"
+        HUSB {
+            AGE "42y 6m 9d"
+        }
+        WIFE {
+            AGE "6m 9d"
+        }
+        SOUR "@SOURCE1@" {
+            PAGE "42"
+            DATA {
+                DATE "31 DEC 1900"
+                TEXT "Sample text from census source."
+            }
+            QUAY "3"
+            NOTE "A note about this census source."
+        }
+        NOTE "Census event note (the event of the periodic count of the population for a designated " {
+            CONC "locality, such as a national or state Census)."
+        }
+    }
+    EVEN {
+        DATE "31 DEC 1997"
+        PLAC "The place"
+        TYPE "EVEN"
+        HUSB {
+            AGE "42y"
+        }
+        WIFE {
+            AGE "42y 6m"
+        }
+        SOUR "@SOURCE1@" {
+            PAGE "42"
+            DATA {
+                DATE "31 DEC 1900"
+                TEXT "Sample text from generic family event source."
+            }
+            QUAY "3"
+            NOTE "A note about this generic family event source."
+        }
+        NOTE "Generic family vent note (a noteworthy happening related to an individual, a group, or " {
+            CONC "an organization)."
+        }
+    }
+    SLGS {
+        DATE "12 DEC 1976"
+        PLAC "Temple"
+        STAT "Child"
+        TEMP "Temple Code"
+        SOUR "@SOURCE1@" {
+            DATA {
+                TEXT "Sample text from LDS spouse sealing source."
+            }
+            NOTE "@N19@"
+        }
+        NOTE "@N6@"
+    }
+    NOTE "Comments on \"Joseph Tag Torture-Mary First Jones\" FAMILY Record." {
+        CONT ""
+        CONT "This record contains all possible types of data that can be stored in a FAMILY "
+        CONC "(FAM) GEDCOM record. Here are some comments on the data tested here and "
+        CONC "things to look for when this file is imported into any GEDCOM application:"
+        CONT ""
+        CONT "1. The marriage event (MARR) uses all possible tags for such a structure including "
+        CONC "notes, sources, and a link to a multimedia file."
+        CONT ""
+        CONT "2. This family has two children."
+        CONT ""
+        CONT "3. This family has all possible family events (including a generic event or EVEN "
+        CONC "structure). Some notes are:"
+        CONT "     a. The engaged structure has all possible tags for event detail."
+        CONT "     b. The annulment event (ANUL) has no data except a \"Y\" in the first line to "
+        CONC "indicate that the event has occurred. The importing software should keep this event in "
+        CONC "this record even though it contains no data."
+        CONT "     c. The LDS Spouse Sealing event tests all possible detail tags for an LDS."
+        CONT "     d. The TYPE tag of each event has the name of the GEDCOM tag for that event. "
+        CONC "There is no TYPE tag in the annulment event because that structure is empty."
+        CONT ""
+        CONT "4. This record has this one note structure which is to a set of embedded notes (and "
+        CONC "which you are reading now)."
+        CONT ""
+        CONT "5. This record has one source citation."
+        CONT ""
+        CONT "6. This record is linked a submitter."
+        CONT ""
+        CONT "7. This record has all remaining tags allowed in FAMILY records for user reference "
+        CONC "number, record ID, and the changed date."
+    }
+    SOUR "@SOURCE1@" {
+        PAGE "42"
+        DATA {
+            DATE "31 DEC 1900"
+            TEXT "A sample text from a source of this family"
+        }
+        QUAY "0"
+        NOTE "A note this source on the FAMILY record."
+    }
+    OBJE {
+        FORM "bmp"
+        TITL "BMP Image File"
+        FILE "ImgFile.BMP"
+    }
+    SUBM "@SUBMITTER@"
+    REFN "User Reference Number" {
+        TYPE "Type of user number"
+    }
+    RIN "1"
+    CHAN {
+        DATE "11 Jan 2001" {
+            TIME "16:18:40"
+        }
+    }
+}
+FAM xref="@PARENTS@" {
+    HUSB "@PERSON5@"
+    CHIL "@PERSON1@"
+    NOTE "@N33@"
+    CHAN {
+        DATE "13 Jun 2000" {
+            TIME "17:00:35"
+        }
+    }
+    RIN "2"
+}
+FAM xref="@ADOPTIVE_PARENTS@" {
+    WIFE "@PERSON6@"
+    CHIL "@PERSON1@"
+    NOTE "@N34@"
+    CHAN {
+        DATE "13 Jun 2000" {
+            TIME "17:01:18"
+        }
+    }
+    RIN "3"
+}
+FAM xref="@FAMILY2@" {
+    HUSB "@PERSON1@"
+    WIFE "@PERSON8@"
+    CHIL "@PERSON7@"
+    NOTE "@N35@"
+    CHAN {
+        DATE "13 Jun 2000" {
+            TIME "17:01:46"
+        }
+    }
+    RIN "4"
+}
+FAM xref="@F5@" {
+    HUSB "@I9@"
+    WIFE "@I15@"
+    CHIL "@I10@"
+    CHIL "@I11@"
+    CHIL "@I12@"
+    NOTE "@N36@"
+    RIN "5"
+    CHAN {
+        DATE "11 Jan 2001" {
+            TIME "16:50:37"
+        }
+    }
+}
+FAM xref="@F6@" {
+    HUSB "@I14@"
+    WIFE "@I13@"
+    CHIL "@PERSON5@"
+    NOTE "@N37@"
+    RIN "6"
+    CHAN {
+        DATE "11 Jan 2001" {
+            TIME "16:51:48"
+        }
+    }
+}
+FAM xref="@F7@" {
+    WIFE "@I10@"
+    CHIL "@I14@"
+    NOTE "@N38@"
+    RIN "7"
+    CHAN {
+        DATE "11 Jan 2001" {
+            TIME "16:52:53"
+        }
+    }
+}
+SOUR xref="@SOURCE1@" {
+    TITL "Everything You Every Wanted to Know about GEDCOM Tags, But " {
+        CONC "Were Afraid to Ask!"
+        CONT "You can start new lines in this field too."
+    }
+    ABBR "All About GEDCOM Tags"
+    AUTH "Author or Authorss of this Source using multiple lines if " {
+        CONC "necessary."
+        CONT "Here is a new line in this field"
+    }
+    PUBL "Details of the publisher of this source using multiple lines " {
+        CONC "if necessary."
+        CONT "Here is a new line in this field"
+    }
+    REPO "@R1@" {
+        CALN "920.23" {
+            MEDI "Book (or other description of this source)"
+        }
+        NOTE "A short note about the repository link. This note is about the repository (if more " {
+            CONC "information is needed other than call number and simple description). Notes about "
+            CONC "the Source itself are usually entered elsewhere."
+        }
+    }
+    TEXT "This section is used to generic text from the course. It will usually be a " {
+        CONC "quote from the text that is relevant to the use of this source in the current "
+        CONC "GEDCOM file."
+        CONT ""
+        CONT "It may use as many lines as needed."
+    }
+    DATA {
+        EVEN "BIRT, CHR" {
+            DATE "FROM 1 JAN 1980 TO 1 FEB 1982"
+            PLAC "Anytown, Anycounty, USA"
+        }
+        EVEN "DEAT" {
+            DATE "FROM 1 JAN 1980 TO 1 FEB 1982"
+            PLAC "County Some, Ireland"
+        }
+        AGNC "Responsible agency for data in this source"
+        NOTE "A note about data in source." {
+            CONT ""
+            CONT "This note includes a blank line before this text. These notes are used to describe the "
+            CONC "data in this source. Notes about the source itself are usually entered in a different set "
+            CONC "of notes."
+        }
+    }
+    NOTE "@N15@"
+    NOTE "These are notes embedded in the SOURCE Record instead of in a separate NOTE " {
+        CONC "RECORD."
+    }
+    OBJE {
+        TITL "JPEG image file link"
+        FORM "jpeg"
+        NOTE "@N14@"
+        FILE "ImgFile.JPG"
+    }
+    REFN "User Reference Number" {
+        TYPE "User Reference Type"
+    }
+    RIN "1"
+    CHAN {
+        DATE "14 Jan 2001" {
+            TIME "14:29:25"
+        }
+    }
+}
+SOUR xref="@SR2@" {
+    TITL "All I Know About GEDCOM, I Learned on the Internet"
+    ABBR "What I Know About GEDCOM"
+    AUTH "Second Source Author"
+    NOTE "@N16@"
+    CHAN {
+        DATE "11 Jan 2001" {
+            TIME "16:21:39"
+        }
+    }
+    RIN "2"
+}
+REPO xref="@R1@" {
+    NAME "Family History Library"
+    ADDR "35 North West Temple" {
+        CONT "Salt Lake City, UT 84111"
+        CONT "USA"
+        ADR1 "35 North West Temple"
+        ADR2 "Across the street from Temple Square"
+        CITY "Salt Lake City"
+        STAE "Utah"
+        POST "84111"
+        CTRY "USA"
+    }
+    PHON "+1-801-240-2331 (information)"
+    PHON "+1-801-240-1278 (gifts & donations)"
+    PHON "+1-801-240-2584 (support)"
+    NOTE "@N2@"
+    REFN "User Ref Number" {
+        TYPE "Sample"
+    }
+    RIN "1"
+    CHAN {
+        DATE "12 Mar 2000" {
+            TIME "10:36:02"
+        }
+    }
+}
+NOTE xref="@N1@" {
+    CONC "Test link to a graphics file about the main Submitter of this file."
+    CHAN {
+        DATE "24 May 1999" {
+            TIME "16:39:55"
+        }
+    }
+}
+NOTE xref="@N2@" {
+    CONC "Comments on \"Family History Library\" REPOSITORY Record."
+    CONT ""
+    CONT "This record uses all possible GEDCOM tags for a REPOSITORY record. Some "
+    CONC "things to look for are:"
+    CONT ""
+    CONT "1. The address is specified twice. Once in a multi-line address record and once in "
+    CONC "separate lines. The first method is usually enough. The second method is to be more "
+    CONC "specific about parts of the address. Is everything imported?"
+    CONT ""
+    CONT "2. There are multiple phone numbers. Are they all imported?"
+    SOUR "@SOURCE1@" {
+        PAGE "1"
+        DATA {
+            DATE "1 MAY 1999"
+            TEXT "Text from the source about this repository."
+        }
+        QUAY "3"
+    }
+    CHAN {
+        DATE "12 Mar 2000" {
+            TIME "11:44:05"
+        }
+    }
+}
+NOTE xref="@N4@" {
+    CONC "Comments on \"Joseph Tag Torture\" INDIVIDUAL Record."
+    CONT ""
+    CONT "This record contains all possible types of data that can be stored in an INDIVIDUAL (INDI) "
+    CONC "GEDCOM record. Here are some comments on the data tested here and things to look for "
+    CONC "when this file is imported into any GEDCOM application:"
+    CONT ""
+    CONT "1. This record has two NAME structures. How will a program handle this type of data which "
+    CONC "is allowed in GEDCOM? (Because some GEDCOM files get very bothered by a second "
+    CONC "name, the files TGC551.ged and TGC551LF files are identical to the TGC55.ged and "
+    CONC "TGC55LF.ged files except only one name structure is used for this individual - hence the \"1\" "
+    CONC "in their names)."
+    CONT ""
+    CONT "2. The first NAME structure has all possible subordinate tags for a NAME structure "
+    CONC "including source and notes a source citation and some notes. The second NAME structure "
+    CONC "(when used) has a source citation and some notes. Are these all imported?"
+    CONT ""
+    CONT "3. The Birth and Death events use all possible fields including subordinate tags, sources, "
+    CONC "multimedia links (in Birth), and notes. The birth data has an attached family link which is "
+    CONC "sometimes needed in case of ambiguous parentage."
+    CONT ""
+    CONT "4. This individual has two spouses. The links to the spouses have attached notes."
+    CONT ""
+    CONT "5. This individual has two sets of parents - natural parents and adoptive parents. Each parent "
+    CONC "link has attached notes. The adoptive parents has a subordinate pedigree (PEDI) tag."
+    CONT ""
+    CONT "6. This individual has all possible events (including a generic event or EVEN structure). The "
+    CONC "GEDCOM tags for the events are given in the TYPE tag of each event. Some comments are:"
+    CONT "     a. The baptism record has all possible tags for event detail."
+    CONT "     b. There are 2 christening records to see how programs react to duplicate events (which "
+    CONC "are allowed)."
+    CONT "     c. The adoption event has a family link to give more information about adoptive parentage."
+    CONT "     d. The cremation event (CREM) has no data except a \"Y\" in the first line to indicate that "
+    CONC "the event has occurred. The importing software should keep this event in this record even "
+    CONC "though it contains no data (The GEDCOM tag is not in this TYPE tag)."
+    CONT "     e. The LDS Baptism event tests all possible detail tags for an LDS ordinance."
+    CONT "     f. The LDS confirmation has no data except a \"Y\" in the first line to indicate that the event "
+    CONC "has occurred. The importing software should keep this event in this record even though it "
+    CONC "contains no data."
+    CONT "     g. The date fields in the various events test the possible GEDCOM methods for "
+    CONC "expressing dates, approximate dates, date ranges, and interpreted dates. There are also a few "
+    CONC "Hebrew dates, French Republic dates. and \"B.C\" dates."
+    CONT ""
+    CONT "7. The residence structure use all possible subordinate tags in the address part of the "
+    CONC "residence."
+    CONT ""
+    CONT "8. This individual has all possible attributes. The GEDCOM tags for the attributes are given "
+    CONC "in the TYPE tag of each attribute. Some notes are:"
+    CONT "     a. There are 2 occupation attributes to test how programs handle multiple tags of the same "
+    CONC "type (which is allowed)."
+    CONT "     b. The first OCCU attribute uses all possible subordinate tags for an attribute."
+    CONT ""
+    CONT "9. This record has three note structures. The first is this set of notes which is in a separate "
+    CONC "NOTE record. The other two are NOTE structures embedded in the record. Are all imported "
+    CONC "and kept separate? Furthermore, the two embedded note structures have subordinate source "
+    CONC "citations. The second set of notes has a source citation to a SOURCE record and the third set "
+    CONC "of notes has an embedded source citation."
+    CONT ""
+    CONT "10. This record has three source citations. Two are citations to a SOURCE record; one is an "
+    CONC "embedded source citation (used in older GEDCOM files)."
+    CONT ""
+    CONT "11. This record has one link to a multimedia file. For more testing of multimedia links, see "
+    CONC "the \"Standard GEDCOM Filelinks,\" \"Nonstandard Multimedia Filelinks,\" \"General Custom "
+    CONC "Filelinks,\" and \"Extra URL Filelinks\" INDIVIDUAL records."
+    CONT ""
+    CONT "12. This individual has one alias and two associations. All possible tags in the first "
+    CONC "association link are used."
+    CONT ""
+    CONT "13. This record is linked to a submitter and to two submitters with interest in the ancestors "
+    CONC "and descendants of this individual."
+    CONT ""
+    CONT "14. This record has all remaining tags allowed in individual records for user reference "
+    CONC "number, record ID, record file number, ancestral file number, and the changed date."
+    CHAN {
+        DATE "12 Jan 2001" {
+            TIME "0:36:39"
+        }
+    }
+}
+NOTE xref="@N5@" {
+    CONC "Notes on this LDS event. All possible LDS ordinance detail tags are used in "
+    CONC "this event."
+    CHAN {
+        DATE "6 Mar 2000" {
+            TIME "22:05:42"
+        }
+    }
+}
+NOTE xref="@N6@" {
+    CONC "Notes on this LDS Spouse Sealing Event."
+    SOUR "@SOURCE1@"
+    CHAN {
+        DATE "26 May 1999" {
+            TIME "22:38:25"
+        }
+    }
+}
+NOTE xref="@N7@" {
+    CONC "This source citation has all fields possible in a source citation to a separate SOURCE "
+    CONC "record. Besides the link to the SOURCE record there are possible fields about this "
+    CONC "citation (e.g., PAGE, TEXT, etc.)"
+    CONT ""
+    CONT "These notes on the source citation are in a separate NOTE record."
+    CHAN {
+        DATE "13 Jun 2000" {
+            TIME "16:02:33"
+        }
+    }
+}
+NOTE xref="@N8@" {
+    CONC "Some specific note about the birth event."
+    CONT ""
+    CONT "These notes are in a separate NOTE record. These notes also have their own source "
+    CONC "citation structure."
+    SOUR "@SR2@" {
+        DATA {
+            DATE "1 JUN 1945"
+            TEXT "Here is some text from the source. The source is about the notes " {
+                CONC "for the birth event."
+            }
+        }
+        QUAY "3"
+        NOTE "@N9@"
+        PAGE "102"
+        EVEN "Event type cited in source" {
+            ROLE "Role in cited event"
+        }
+    }
+    CHAN {
+        DATE "18 Jun 2000" {
+            TIME "1:09:46"
+        }
+    }
+}
+NOTE xref="@N9@" {
+    CONC "These are notes in a NOTE record. It is a bit redundant, but you can add source "
+    CONC "citations directly to NOTE records in addition to adding source citations to the "
+    CONC "initial GEDCOM structure that the notes are about."
+    CONT ""
+    CONT "This example source citation in a NOTE record has all possible source citation "
+    CONC "fields filled in."
+    CHAN {
+        DATE "9 Jun 1999" {
+            TIME "13:16:57"
+        }
+    }
+}
+NOTE xref="@N11@" {
+    CONC "A possessions source note."
+    CHAN {
+        DATE "18 Jun 2000" {
+            TIME "1:37:42"
+        }
+    }
+}
+NOTE xref="@N12@" {
+    CONC "This is a second source citation in this record."
+    CHAN {
+        DATE "6 Mar 2000" {
+            TIME "22:18:51"
+        }
+    }
+}
+NOTE xref="@N14@" {
+    CONC "These notes can be used to add more information about the multimedia file linked to "
+    CONC "this SOURCE record."
+    CHAN {
+        DATE "12 Mar 2000" {
+            TIME "9:49:23"
+        }
+    }
+}
+NOTE xref="@N15@" {
+    CONC "Comments on \"Everything You Every Wanted to Know about GEDCOM Tags\" SOURCE Record."
+    CONT ""
+    CONT "This is a set of notes about this SOURCE record. These notes are for anything else "
+    CONC "needed. There are other places to enter notes about the storage of the source (in the "
+    CONC "Repository link) and about the data in the source (in the DATA structure)."
+    CONT ""
+    CONT "This particular SOURCE record uses all possible GEDCOM tags for a SOURCE "
+    CONC "record. Some things to check are:"
+    CONT ""
+    CONT "1. Are the separate notes structures in the Repository link and the DATA structure "
+    CONC "preserved on importing?"
+    CONT ""
+    CONT "2. Does the software recognize two sets of event types in the DATA structure?"
+    CONT ""
+    CONT "3. Are the multimedia links preserved?"
+    CONT ""
+    CONT "4. This record as two sets of notes - this one in a separate record and a second one "
+    CONC "embedded in the SOURCE record. Are they both imported and kept separate?"
+    CHAN {
+        DATE "13 Jun 2000" {
+            TIME "17:04:24"
+        }
+    }
+}
+NOTE xref="@N16@" {
+    CONC "Comments on \"All I Know About GEDCOM, I Learned on the Internet\" SOURCE record."
+    CONT ""
+    CONT "This is another SOURCE record. How does the importing software handle multiple "
+    CONC "sources in the GEDCOM file? This source only fills a few GEDCOM structures."
+    CHAN {
+        DATE "12 Mar 2000" {
+            TIME "12:46:21"
+        }
+    }
+}
+NOTE xref="@N17@" {
+    CONC "How does software handle embedded SOURCE records on import? Such source "
+    CONC "citations are common in old GEDCOM files. More modern GEDCOM files should "
+    CONC "use source citations to SOURCE records."
+    CHAN {
+        DATE "12 Mar 2000" {
+            TIME "10:56:56"
+        }
+    }
+}
+NOTE xref="@N18@" {
+    CONC "Comments on \"Standard GEDCOM Filelinks\" INDIVIDUAL Record."
+    CONT ""
+    CONT "The GEDCOM standard lets you link records to multimedia objects kept in separate "
+    CONC "files. When GEDCOM 5.5 was released, it only mentioned allowing links to a small "
+    CONC "number of multimedia files types and some of them are Windows-only file types. "
+    CONC "The recommended list is"
+    CONT ""
+    CONT "     bmp - Windows but map file"
+    CONT "     gif - Bit map, 256 color GIF files (common on the Internet)"
+    CONT "     jpeg - Bit-mapped files developed for photographs (also common on the Internet)"
+    CONT "     ole - Linked object"
+    CONT "     pcx - Windows paintbrush file"
+    CONT "     tiff - Tagged image format file"
+    CONT "     wav - Windows sound file"
+    CONT ""
+    CONT "This INDIVIDUAL record has links to this limited set of multimedia files (except "
+    CONC "for ole). These links are created by having an OBJE structure with the path name to "
+    CONC "the file in a subordinate FILE tag and the format of the file in a subordinate FORM "
+    CONC "tag."
+    CONT ""
+    CONT "It does not make sense to limit files links to this small set of file types. It does not "
+    CONC "allow for future file types and, for example, it ignores movie files types. You can visit "
+    CONC "the \"Nonstandard Multimedia Filelinks\" record to see links to other types of multimedia files. "
+    CONC "You can visit the \"General Custom Filelinks\" and the \"Extra URL Filelinks\" records to see links to "
+    CONC "any file type and to universal resource locators."
+    CONT ""
+    CONT "NOTE: The path names for the linked files here are just the file names. A good "
+    CONC "GEDCOM program should search for the files and might look first in the same "
+    CONC "folder as this test GEDCOM file. A weaker program might be unable to locate these "
+    CONC "files and you will have to enter the full path names."
+    CONT ""
+    CONT "EMBEDDED Multimedia Object:"
+    CONT "     GEDCOM 5.5 has a method for encoding multimedia objects and storing them in "
+    CONC "MULTIMEDIA Records. This INDIVIDUAL has a link to such an embedded "
+    CONC "object. The object has encoded data, written using the GEDCOM 5.5 encoding "
+    CONC "algorithm, for the image of a small flower. To my knowledge, there are no genealogy "
+    CONC "programs that can actually read and decode such objects. The main reason for "
+    CONC "inclusion of the object here is to see how programs will treat this record. Good "
+    CONC "programs will leave them in the file (it is bad manners to delete someone's data). Bad "
+    CONC "programs will simple delete the object from the file."
+    REFN "User Reference Number" {
+        TYPE "User Reference Type"
+    }
+    RIN "1"
+    CHAN {
+        DATE "11 Jan 2001" {
+            TIME "15:41:51"
+        }
+    }
+}
+NOTE xref="@N19@" {
+    CONC "A note about this LDS spouse sealing source."
+    CHAN {
+        DATE "12 Mar 2000" {
+            TIME "12:32:13"
+        }
+    }
+}
+NOTE xref="@N20@" {
+    CONC "Comments on \"Chris Locked Torture\" record."
+    CONT ""
+    CONT "These notes test line breaking in note records with multiple lines. These notes are for "
+    CONC "a locked individual and thus you should not be able to edit them."
+    CONT ""
+    CONT "TEST #1: Line breaks in the middle of a word"
+    CONT "     These lines appear together. The word TE"
+    CONC "ST should appear as a single word and "
+    CONC "not be broken onto two lines."
+    CONT ""
+    CONT "TEST #2: Translation of \"at\" signs"
+    CONT "     The GEDCOM standard says the \"@@\" sign should appear in any text in the file "
+    CONC "as double \"@@@@\" signs. This recommendation is superfluous, because there is "
+    CONC "never a case when an \"@@\" sign in data can be confused with other GEDCOM uses "
+    CONC "of the \"@@\" sign. The question here is how does the software import:"
+    CONT ""
+    CONT "     A single @@ sign in some notes entered by using two characters."
+    CONT ""
+    CONT "If all \"at\" signs above appear above as 2 or 4 at signs, that GEDCOM software is not "
+    CONC "converting double at signs to single at signs."
+    CONT ""
+    CONT "TEST #3: Bad line breaks between word but a forgotten space"
+    CONT "     A little below, the words \"End\" and \"Start\" are on two lines in the note record. "
+    CONC "The line with \"End,\" however, forgot the required trailing blank. Thus, a proper "
+    CONC "importing of these bad notes should combine the two words with no space between "
+    CONC "\"End\" and \"Start\". Here is End"
+    CONC "Start as described above. They should appear as one "
+    CONC "word."
+    CONT ""
+    CONT "TEST #4: Blank lines"
+    CONT "     The above paragraphs should have blank lines between them."
+    CHAN {
+        DATE "11 Jan 2001" {
+            TIME "15:35:25"
+        }
+    }
+}
+NOTE xref="@N21@" {
+    CONC "Comments on \"Nonstandard Multimedia Filelinks\" INDIVIDUAL Record."
+    CONT ""
+    CONT "File links in GEDCOM are created by having an OBJE structure with the path name "
+    CONC "to the file in a subordinate FILE tag and the format of the file in a subordinate "
+    CONC "FORM tag. It does not make sense to limit file links to the small set of file types "
+    CONC "mentioned in the GEDCOM standard (see INDIVIDUAL record \"Standard GEDCOM Filelinks\"  "
+    CONC "for those file types). This INDIVIDUAL record has links to "
+    CONC "other types of multimedia files including movie files, other image file types, and some "
+    CONC "Macintosh file types."
+    CONT ""
+    CONT "What will a genealogy program do when in encounters to logical extensions to "
+    CONC "GEDCOM file links? Good programs will follow the links. Weaker programs will "
+    CONC "simply delete them from your file (it is bad manners to delete someone's data)."
+    CONT ""
+    CONT "Some other possible multimedia file type not yet linked to this record are:"
+    CONT "   avi - Microsoft movie file"
+    CONT "   midi - sound file"
+    CONT "   mp3 - music file"
+    CHAN {
+        DATE "11 Jan 2001" {
+            TIME "15:43:04"
+        }
+    }
+}
+NOTE xref="@N22@" {
+    CONC "Comments on \"General Custom Filelinks\" INDIVIDUAL Record."
+    CONT ""
+    CONT "File links in GEDCOM are created by having an OBJE structure with the path name "
+    CONC "to the file in a subordinate FILE tag and the format of the file in a subordinate "
+    CONC "FORM tag. It does not make sense to limit file links to the small set of multimedia "
+    CONC "file types mentioned in the GEDCOM standard (see INDIVIDUAL record "
+    CONC "\"Standard GEDCOM Filelinks\" for those file types). The INDIVIDUAL record "
+    CONC "\"Nonstandard Multimedia Filelinks\" has sample links to other types of multimedia files not "
+    CONC "included in the standard GEDCOM list. This INDIVIDUAL record has links to "
+    CONC "some non-multimedia files types."
+    CONT ""
+    CONT "What will a genealogy program do when it encounters such logical extensions to "
+    CONC "GEDCOM file links? Good programs will follow the links. Weaker programs will "
+    CONC "simply delete them from your file (it is bad manners to delete someone's data)."
+    CHAN {
+        DATE "20 Jun 2000" {
+            TIME "1:06:34"
+        }
+    }
+}
+NOTE xref="@N23@" {
+    CONC "Comments on \"Extra URL Filelinks\" INDIVIDUAL Record."
+    CONT ""
+    CONT "File links in GEDCOM are created by having an OBJE structure with the path name "
+    CONC "to the file in a subordinate FILE tag and the format of the file in a subordinate "
+    CONC "FORM tag. It does not make sense to limit file links to the small set of multimedia "
+    CONC "file types mentioned in the GEDCOM standard (see INDIVIDUAL record "
+    CONC "\"Standard GEDCOM Filelinks\" for those file types) or even to limit them to local "
+    CONC "files. This INDIVIDUAL record has a series of links with universal resource "
+    CONC "locators (URL) in the FILE tag and the file \"URL\" in the FORM tag."
+    CONT ""
+    CONT "The sample URL links include links to a web sites, a link to an FTP site, and a link to "
+    CONC "send email."
+    CONT ""
+    CONT "This extension of file links to URL links is non-standard GEDCOM. What will a "
+    CONC "genealogy program do when in encounters URL file links? Cleaver programs will "
+    CONC "find the file on the Internet using your default browser, FTP program, or email "
+    CONC "program. Weaker programs will simply delete them from your file (it is bad manners "
+    CONC "to delete someone's data)."
+    CHAN {
+        DATE "20 Jun 2000" {
+            TIME "1:09:48"
+        }
+    }
+}
+NOTE xref="@N24@" {
+    CONC "Comments on \"Charlie Accented ANSEL\" INDIVIDUAL Record."
+    CONT ""
+    CONT "To represent accented characters, the ANSEL character set uses two-byte codes. The "
+    CONC "first byte is E0 to FB or FE (hexadecimal); the second byte is the letter to be "
+    CONC "accented."
+    CONT ""
+    CONT "These notes have all possible accented characters. How many of the characters are "
+    CONC "represented correctly? Even programs that fully support ANSEL will not draw all "
+    CONC "these accented characters correctly. Many of them correspond to accents that can not "
+    CONC "be found in any langauge and therefore do not correspond to any computer fonts."
+    CONT ""
+    CONT "code: E0 (Unicode: hook above, 0309) low rising tone mark"
+    CONT "     ẢB̉C̉D̉ẺF̉G̉H̉ỈJ̉K̉L̉M̉"
+    CONT "     N̉ỎP̉Q̉R̉S̉T̉ỦV̉W̉X̉ỶZ̉"
+    CONT "     ảb̉c̉d̉ẻf̉g̉h̉ỉj̉k̉l̉m̉"
+    CONT "     n̉ỏp̉q̉r̉s̉t̉ủv̉w̉x̉ỷz̉"
+    CONT ""
+    CONT "code: E1 (Unicode: grave, 0300) grave accent"
+    CONT "     ÀB̀C̀D̀ÈF̀G̀H̀ÌJ̀K̀L̀M̀"
+    CONT "     ǸÒP̀Q̀R̀S̀T̀ÙV̀ẀX̀ỲZ̀"
+    CONT "     àb̀c̀d̀èf̀g̀h̀ìj̀k̀l̀m̀"
+    CONT "     ǹòp̀q̀r̀s̀t̀ùv̀ẁx̀ỳz̀"
+    CONT ""
+    CONT "code: E2 (Unicode: acute, 0301) acute accent:"
+    CONT "     ÁB́ĆD́ÉF́ǴH́ÍJ́ḰĹḾ"
+    CONT "     ŃÓṔQ́ŔŚT́ÚV́ẂX́ÝŹ"
+    CONT "     áb́ćd́éf́ǵh́íj́ḱĺḿ"
+    CONT "     ńíṕq́ŕśt́úv́ẃx́ýź"
+    CONT ""
+    CONT "code: E3 (Unicode: circumflex, 0302) circumflex accent"
+    CONT "     ÂB̂ĈD̂ÊF̂ĜĤÎĴK̂L̂M̂"
+    CONT "     N̂ÔP̂Q̂R̂ŜT̂ÛV̂ŴX̂ŶẐ"
+    CONT "     âb̂ĉd̂êf̂ĝĥîĵk̂l̂m̂"
+    CONT "     n̂ôp̂q̂r̂ŝt̂ûv̂ŵx̂ŷẑ"
+    CONT ""
+    CONT "code: E4 (Unicode: tilde, 0303) tilde"
+    CONT "     ÃB̃C̃D̃ẼF̃G̃H̃ĨJ̃K̃L̃M̃"
+    CONT "     ÑÕP̃Q̃R̃S̃T̃ŨṼW̃X̃ỸZ̃"
+    CONT "     Ñb̃c̃d̃ẽf̃g̃h̃ĩj̃k̃l̃m̃"
+    CONT "     ñõp̃q̃r̃s̃t̃ũṽw̃x̃ỹz̃"
+    CONT ""
+    CONT "code: E5 (Unicode: macron, 0304) macron"
+    CONT "     ĀB̄C̄D̄ĒF̄ḠH̄ĪJ̄K̄L̄M̄"
+    CONT "     N̄ŌP̄Q̄R̄S̄T̄ŪV̄W̄X̄ȲZ̄"
+    CONT "     āb̄c̄d̄ēf̄ḡh̄īj̄k̄l̄m̄"
+    CONT "     n̄ōp̄q̄r̄s̄t̄ūv̄w̄x̄ȳz̄"
+    CONT ""
+    CONT "code: E6 (Unicode: breve, 0306) breve"
+    CONT "     ĂB̆C̆D̆ĔF̆ĞH̆ĬJ̆K̆L̆M̆"
+    CONT "     N̆ŎP̆Q̆R̆S̆T̆ŬV̆W̆X̆Y̆Z̆"
+    CONT "     ăb̆c̆d̆ĕf̆ğh̆ĭj̆k̆l̆m̆"
+    CONT "     n̆ŏp̆q̆r̆s̆t̆ŭv̆w̆x̆y̆z̆"
+    CONT ""
+    CONT "code: E7 (Unicode: dot above, 0307) dot above"
+    CONT "     ȦḂĊḊĖḞĠḢİJ̇K̇L̇Ṁ"
+    CONT "     ṄȮṖQ̇ṘṠṪU̇V̇ẆẊẎŻ"
+    CONT "     ȧḃċḋėḟġḣi̇j̇k̇l̇ṁ"
+    CONT "     ṅȯṗq̇ṙṡṫu̇v̇ẇẋẏż"
+    CONT ""
+    CONT "code: E8 (Unicode: diaeresis, 0308) umlaut (dieresis)"
+    CONT "     ÄB̈C̈D̈ËF̈G̈ḦÏJ̈K̈L̈M̈"
+    CONT "     N̈ÖP̈Q̈R̈S̈T̈ÜV̈ẄẌŸZ̈"
+    CONT "     äb̈c̈d̈ëf̈g̈ḧïj̈k̈l̈m̈"
+    CONT "     n̈öp̈q̈r̈s̈ẗüv̈ẅẍÿz̈"
+    CONT ""
+    CONT "code: E9 (Unicode: caron, 030C) hacek"
+    CONT "     ǍB̌ČĎĚF̌ǦȞǏJ̌ǨĽM̌"
+    CONT "     ŇǑP̌Q̌ŘŠŤǓV̌W̌X̌Y̌Ž"
+    CONT "     ǎb̌čďěf̌ǧȟǐǰǩľm̌"
+    CONT "     ňǒp̌q̌řšťǔv̌w̌x̌y̌ž"
+    CONT ""
+    CONT "code: EA (Unicode: ring above, 030A) circle above (angstrom)"
+    CONT "     ÅB̊C̊D̊E̊F̊G̊H̊I̊J̊K̊L̊M̊"
+    CONT "     N̊O̊P̊Q̊R̊S̊T̊ŮV̊W̊X̊Y̊Z̊"
+    CONT "     åb̊c̊d̊e̊f̊g̊h̊i̊j̊k̊l̊m̊"
+    CONT "     n̊o̊p̊q̊r̊s̊t̊ův̊ẘx̊ẙz̊"
+    CONT ""
+    CONT "code: EB (Unicode: ligature left half, FE20) ligature, left half"
+    CONT "     A︠B︠C︠D︠E︠F︠G︠H︠I︠J︠K︠L︠M︠"
+    CONT "     N︠O︠P︠Q︠R︠S︠T︠U︠V︠W︠X︠Y︠Z︠"
+    CONT "     a︠b︠c︠d︠e︠f︠g︠h︠i︠j︠k︠l︠m︠"
+    CONT "     n︠o︠p︠q︠r︠s︠t︠u︠v︠w︠x︠y︠z︠"
+    CONT ""
+    CONT "code: EC (Unicode: ligature right half, FE21) ligature, right half"
+    CONT "     A︠B︠C︠D︠E︠F︠G︠H︠I︠J︠K︠L︠M︠"
+    CONT "     N︠O︠P︠Q︠R︠S︠T︠U︠V︠W︠X︠Y︠Z︠"
+    CONT "     a︠b︠c︠d︠e︠f︠g︠h︠i︠j︠k︠l︠m︠"
+    CONT "     n︠o︠p︠q︠r︠s︠t︠u︠v︠w︠x︠y︠z︠"
+    CONT ""
+    CONT "code: ED (Unicode: comma above right, 0315) high comma, off center"
+    CONT "     A̕B̕C̕D̕E̕F̕G̕H̕I̕J̕K̕L̕M̕"
+    CONT "     N̕O̕P̕Q̕R̕S̕T̕U̕V̕W̕X̕Y̕Z̕"
+    CONT "     a̕b̕c̕d̕e̕f̕g̕h̕i̕j̕k̕l̕m̕"
+    CONT "     n̕o̕p̕q̕r̕s̕t̕u̕v̕w̕x̕y̕z̕"
+    CONT ""
+    CONT "code: EE (Unicode: double acute, 030B) double acute accent"
+    CONT "     A̋B̋C̋D̋E̋F̋G̋H̋I̋J̋K̋L̋M̋"
+    CONT "     N̋ŐP̋Q̋R̋S̋T̋ŰV̋W̋X̋Y̋Z̋"
+    CONT "     a̋b̋c̋d̋e̋f̋g̋h̋i̋j̋k̋l̋m̋"
+    CONT "     n̋őp̋q̋r̋s̋t̋űv̋w̋x̋y̋z̋"
+    CONT ""
+    CONT "code: EF (Unicode: candrabindu, 0310) candrabindu"
+    CONT "     A̐B̐C̐D̐E̐F̐G̐H̐I̐J̐K̐L̐M̐"
+    CONT "     N̐O̐P̐Q̐R̐S̐T̐U̐V̐W̐X̐Y̐Z̐"
+    CONT "     a̐b̐c̐d̐e̐f̐g̐h̐i̐j̐k̐l̐m̐"
+    CONT "     n̐o̐p̐q̐r̐s̐t̐u̐v̐w̐x̐y̐z̐"
+    CONT ""
+    CONT "code: F0 (Unicode: cedilla, 0327) cedilla"
+    CONT "     A̧B̧ÇḐȨF̧ĢḨI̧J̧ĶĻM̧"
+    CONT "     ŅO̧P̧Q̧ŖŞŢU̧V̧W̧X̧Y̧Z̧"
+    CONT "     a̧b̧çḑȩf̧ģḩi̧j̧ķļm̧"
+    CONT "     ņo̧p̧q̧ŗşţu̧v̧w̧x̧y̧z̧"
+    CONT ""
+    CONT "code: F1 (Unicode: ogonek, 0328) right hook"
+    CONT "     ĄB̨C̨D̨ĘF̨G̨H̨ĮJ̨K̨L̨M̨"
+    CONT "     N̨ǪP̨Q̨R̨S̨T̨ŲV̨W̨X̨Y̨Z̨"
+    CONT "     ąb̨c̨d̨ęf̨g̨h̨įj̨k̨l̨m̨"
+    CONT "     n̨ǫp̨q̨r̨s̨t̨ųv̨w̨x̨y̨z̨"
+    CONT ""
+    CONT "code: F2 (Unicode: dot below, 0323) dot below"
+    CONT "     ẠḄC̣ḌẸF̣G̣ḤỊJ̣ḲḶṂ"
+    CONT "     ṆỌP̣Q̣ṚṢṬỤṾẈX̣ỴẒ"
+    CONT "     ạḅc̣ḍẹf̣g̣ḥịj̣ḳḷṃ"
+    CONT "     ṇọp̣q̣ṛṣṭụṿẉx̣ỵẓ"
+    CONT ""
+    CONT "code: F3 (Unicode: diaeresis below, 0324) double dot below"
+    CONT "     A̤B̤C̤D̤E̤F̤G̤H̤I̤J̤K̤L̤M̤"
+    CONT "     N̤O̤P̤Q̤R̤S̤T̤ṲV̤W̤X̤Y̤Z̤"
+    CONT "     a̤b̤c̤d̤e̤f̤g̤h̤i̤j̤k̤l̤m̤"
+    CONT "     n̤o̤p̤q̤r̤s̤t̤ṳv̤w̤x̤y̤z̤"
+    CONT ""
+    CONT "code: F4 (Unicode: ring below, 0325) circle below"
+    CONT "     ḀB̥C̥D̥E̥F̥G̥H̥I̥J̥K̥L̥M̥"
+    CONT "     N̥O̥P̥Q̥R̥S̥T̥U̥V̥W̥X̥Y̥Z̥"
+    CONT "     ḁb̥c̥d̥e̥f̥g̥h̥i̥j̥k̥l̥m̥"
+    CONT "     n̥o̥p̥q̥r̥s̥t̥u̥v̥w̥x̥y̥z̥"
+    CONT ""
+    CONT "code: F5 (Unicode: double low line, 0333) double underscore"
+    CONT "     A̳B̳C̳D̳E̳F̳G̳H̳I̳J̳K̳L̳M̳"
+    CONT "     N̳O̳P̳Q̳R̳S̳T̳U̳V̳W̳X̳Y̳Z̳"
+    CONT "     a̳b̳c̳d̳e̳f̳g̳h̳i̳j̳k̳l̳m̳"
+    CONT "     n̳o̳p̳q̳r̳s̳t̳u̳v̳w̳x̳y̳z̳"
+    CONT ""
+    CONT "code: F6 (Unicode: line below, 0332) underscore"
+    CONT "     A̲B̲C̲D̲E̲F̲G̲H̲I̲J̲K̲L̲M̲"
+    CONT "     N̲O̲P̲Q̲R̲S̲T̲U̲V̲W̲X̲Y̲Z̲"
+    CONT "     a̲b̲c̲d̲e̲f̲g̲h̲i̲j̲k̲l̲m̲"
+    CONT "     n̲o̲p̲q̲r̲s̲t̲u̲v̲w̲x̲y̲z̲"
+    CONT ""
+    CONT "code: F7 (Unicode: comma below, 0326) left hook"
+    CONT "     A̦B̦C̦D̦E̦F̦G̦H̦I̦J̦K̦L̦M̦"
+    CONT "     N̦O̦P̦Q̦R̦ȘȚU̦V̦W̦X̦Y̦Z̦"
+    CONT "     a̦b̦c̦d̦e̦f̦g̦h̦i̦j̦k̦l̦m̦"
+    CONT "     n̦o̦p̦q̦r̦șțu̦v̦w̦x̦y̦z̦"
+    CONT ""
+    CONT "code: F8 (Unicode: left half ring below, 031C) right cedilla"
+    CONT "     A̜B̜C̜D̜E̜F̜G̜H̜I̜J̜K̜L̜M̜"
+    CONT "     N̜O̜P̜Q̜R̜S̜T̜U̜V̜W̜X̜Y̜Z̜"
+    CONT "     a̜b̜c̜d̜e̜f̜g̜h̜i̜j̜k̜l̜m̜"
+    CONT "     n̜o̜p̜q̜r̜s̜t̜u̜v̜w̜x̜y̜z̜"
+    CONT ""
+    CONT "code: F9 (Unicode: breve below, 032E) half circle below"
+    CONT "     A̮B̮C̮D̮E̮F̮G̮ḪI̮J̮K̮L̮M̮"
+    CONT "     N̮O̮P̮Q̮R̮S̮T̮U̮V̮W̮X̮Y̮Z̮"
+    CONT "     a̮b̮c̮d̮e̮f̮g̮ḫi̮j̮k̮l̮m̮"
+    CONT "     n̮o̮p̮q̮r̮s̮t̮u̮v̮w̮x̮y̮z̮"
+    CONT ""
+    CONT "code: FA (Unicode: double tilde left half, FE22) double tilde, left half"
+    CONT "     A︢B︢C︢D︢E︢F︢G︢H︢I︢J︢K︢L︢M︢"
+    CONT "     N︢O︢P︢Q︢R︢S︢T︢U︢V︢W︢X︢Y︢Z︢"
+    CONT "     a︢b︢c︢d︢e︢f︢g︢h︢i︢j︢k︢l︢m︢"
+    CONT "     n︢o︢p︢q︢r︢s︢t︢u︢v︢w︢x︢y︢z︢"
+    CONT ""
+    CONT "code: FB (Unicode: double tilde right half, FE23) double tilde, right half"
+    CONT "     A︣B︣C︣D︣E︣F︣G︣H︣I︣J︣K︣L︣M︣"
+    CONT "     N︣O︣P︣Q︣R︣S︣T︣U︣V︣W︣X︣Y︣Z︣"
+    CONT "     a︣b︣c︣d︣e︣f︣g︣h︣i︣j︣k︣l︣m︣"
+    CONT "     n︣o︣p︣q︣r︣s︣t︣u︣v︣w︣x︣y︣z︣"
+    CONT ""
+    CONT "code: FE (Unicode: comma above, 0313) high comma, centered"
+    CONT "     A̓B̓C̓D̓E̓F̓G̓H̓I̓J̓K̓L̓M̓"
+    CONT "     N̓O̓P̓Q̓R̓S̓T̓U̓V̓W̓X̓Y̓Z̓"
+    CONT "     a̓b̓c̓d̓e̓f̓g̓h̓i̓j̓k̓l̓m̓"
+    CONT "     n̓o̓p̓q̓r̓s̓t̓u̓v̓w̓x̓y̓z̓"
+    CHAN {
+        DATE "12 Jan 2001" {
+            TIME "0:32:24"
+        }
+    }
+}
+NOTE xref="@N25@" {
+    CONC "Comments on \"Lucy Special ANSEL\" INDIVIDUAL Record."
+    CONT ""
+    CONT "The following are the special characters supported by the ANSEL character set. The first two letters "
+    CONC "are the Hex code. The following text describes the character. "
+    CONC "Finally, that character, or a character as close as possible to that "
+    CONC "character, should appear in the parentheses."
+    CONT ""
+    CONT "A1 slash l - uppercase (Ł)"
+    CONT "A2 slash o - uppercase (Ø)"
+    CONT "A3 slash d - uppercase (Đ)"
+    CONT "A4 thorn - uppercase (Þ)"
+    CONT "A5 ligature ae - uppercase (Æ)"
+    CONT "A6 ligature oe - uppercase (Œ)"
+    CONT "A7 single prime (ʹ)"
+    CONT "A8 middle dot (·)"
+    CONT "A9 musical flat (♭)"
+    CONT "AA registered sign (®)"
+    CONT "AB plus-or-minus (±)"
+    CONT "AC hook o - uppercase (Ơ)"
+    CONT "AD hook u - uppercase (Ư)"
+    CONT "AE left half ring (ʼ)"
+    CONT "BO right half ring (ʻ)"
+    CONT "B1 slash l - lowercase (ł)"
+    CONT "B2 slash o - lowercase (ø)"
+    CONT "B3 slash d - lowercase (đ)"
+    CONT "B4 thorn - lowercase (þ)"
+    CONT "B5 ligature ae - lowercase (æ)"
+    CONT "B6 ligature oe - lowercase (œ)"
+    CONT "B7 double prime (ʺ)"
+    CONT "B8 dotless i - lowercase (ı)"
+    CONT "B9 british pound (£)"
+    CONT "BA eth (ð)"
+    CONT "BC hook o - lowercase (ơ)"
+    CONT "BD hook u - lowercase (ư)"
+    CONT "BE empty box - LDS extension (□)"
+    CONT "BF black box - LDS extensions (■)"
+    CONT "CO degree sign (°)"
+    CONT "C1 script l (ℓ)"
+    CONT "C2 phonograph copyright mark (℗)"
+    CONT "C3 copyright symbol (©)"
+    CONT "C4 musical sharp (♯)"
+    CONT "C5 inverted question mark (¿)"
+    CONT "C6 inverted exclamation mark (¡)"
+    CONT "CD midline e - LDS extension (e)"
+    CONT "CE midline o - LDS extension (o)"
+    CONT "CF es zet (ß)"
+    CHAN {
+        DATE "13 Jun 2000" {
+            TIME "16:28:45"
+        }
+    }
+}
+NOTE xref="@N26@" {
+    CONC "These are some notes of this multimedia link in the NAME structure."
+    CHAN {
+        DATE "16 Jun 2000" {
+            TIME "1:20:11"
+        }
+    }
+}
+NOTE xref="@N27@" {
+    CONC "Comments on \"Teresa Mary Caregiver\" INDIVIDUAL Record."
+    CONT ""
+    CONT "This record is the adoptive mother of \"Joseph Tag Torture\". She is linked to a family "
+    CONC "record, but there is no husband in that record."
+    CHAN {
+        DATE "13 Jun 2000" {
+            TIME "17:14:28"
+        }
+    }
+}
+NOTE xref="@N28@" {
+    CONC "Comments on \"William Joseph Torture\" INDIVIDUAL Record."
+    CONT ""
+    CONT "This record is the natural father of \"Joseph Tag Torture\". He is linked to a family "
+    CONC "record, but there is no wife in that record."
+    CHAN {
+        DATE "11 Jan 2001" {
+            TIME "15:31:12"
+        }
+    }
+}
+NOTE xref="@N29@" {
+    CONC "Comments on \"Sandy Privacy Torture\" INDIVIDUAL Record."
+    CONT ""
+    CONT "This record has a restriction setting of \"privacy.\" In public applications of "
+    CONC "GEDCOM files, \"privacy\" records should be hidden from all viewing and printing. It "
+    CONC "is less clear how GEDCOM software on your own PC reading your own copies of "
+    CONC "GEDCOM files should treat \"privacy\" records. At a minimum, it should import and "
+    CONC "preserve the \"privacy\" setting."
+    CHAN {
+        DATE "11 Jan 2001" {
+            TIME "15:36:50"
+        }
+    }
+}
+NOTE xref="@N30@" {
+    CONC "Comments on \"Pat Smith Torture\" INDIVIDUAL Record."
+    CONT ""
+    CONT "The record simply provides a child to \"Joseph Tag Torture\" in his family with \"Mary First "
+    CONC "Jones\" as his spouse."
+    CHAN {
+        DATE "11 Jan 2001" {
+            TIME "15:40:04"
+        }
+    }
+}
+NOTE xref="@N31@" {
+    CONC "Comments on \"Mary First Jones\" INDIVIDUAL Record."
+    CONT ""
+    CONT "This record is used to provide the first wife to \"Joseph Tag Torture.\" Not many other "
+    CONC "tags are used."
+    CHAN {
+        DATE "11 Jan 2001" {
+            TIME "15:38:17"
+        }
+    }
+}
+NOTE xref="@N32@" {
+    CONC "Comments on \"Elizabeth Second Smith\" INDIVIDUAL Record."
+    CONT ""
+    CONT "This record is used to provide a second wife to \"Joseph Tag Torture.\" Not many "
+    CONC "other tags are used."
+    CHAN {
+        DATE "11 Jan 2001" {
+            TIME "15:38:55"
+        }
+    }
+}
+NOTE xref="@N33@" {
+    CONC "Comments on \"William Joseph Torture-<unknown>\" FAMILY Record."
+    CONT ""
+    CONT "This record has the natural father of \"Joseph Tag Torture.\" The wife is not known."
+    CHAN {
+        DATE "11 Jan 2001" {
+            TIME "16:49:33"
+        }
+    }
+}
+NOTE xref="@N34@" {
+    CONC "Comments on \"<unknown>-Teresa Mary Caregiver\" FAMILY Record."
+    CONT ""
+    CONT "This record has the adoptive mother of \"Joseph Tag Torture.\" The husband is not "
+    CONC "known."
+    CHAN {
+        DATE "11 Jan 2001" {
+            TIME "16:50:06"
+        }
+    }
+}
+NOTE xref="@N35@" {
+    CONC "Comments on \"Joseph Tag Torture-Elizabeth Second Smith\" FAMILY Record."
+    CONT ""
+    CONT "This record has a second marriage for \"Joseph Tag Torture\" and the family has one "
+    CONC "child."
+    CHAN {
+        DATE "11 Jan 2001" {
+            TIME "16:50:21"
+        }
+    }
+}
+NOTE xref="@N36@" {
+    CONC "Comments on \"Standard GEDCOM Filelinks-Torture GEDCOM Matriarch\" "
+    CONC "FAMILY record."
+    CONT ""
+    CONT "The children in this family test logical extensions to the GEDCOM method for "
+    CONC "linking to a multimedia file."
+    CHAN {
+        DATE "11 Jan 2001" {
+            TIME "16:51:33"
+        }
+    }
+}
+NOTE xref="@N37@" {
+    CONC "Comments on \"Charlie Accented ANSEL-Lucy Special ANSEL\" FAMILY Record."
+    CONT ""
+    CONT "The two spouses in this family test reading of the ANSEL character set."
+    CHAN {
+        DATE "11 Jan 2001" {
+            TIME "16:52:38"
+        }
+    }
+}
+NOTE xref="@N38@" {
+    CONC "Comments on \"<unknown>-Nonstandard Multimedia Filelinks\" FAMILY Record."
+    CONT ""
+    CONT "The record is simply used to make family connections between records in this file."
+    CHAN {
+        DATE "11 Jan 2001" {
+            TIME "16:53:38"
+        }
+    }
+}
+OBJE xref="@M1@" {
+    TITL "Dummy Multimedia Object"
+    FORM "PICT"
+    BLOB {
+        CONT ".HM.......k.1..F.jwA.Dzzzzw............A....1.........0U.66..E.8"
+        CONT ".......A..k.a6.A.......A..k.........../6....G.......0../..U....."
+        CONT ".w1/m........HC0..../...zzzzzzzz..5zzk..AnA..U..W6U....2rRrRrRrR"
+        CONT ".Dw...............k.1.......1..A...5ykE/zzzx/.g//.Hxzk6/.Tzy/.k1"
+        CONT "/Dw/.Tvz.E5zzUE9/kHz.Tw2/DzzzEEA.kE2zk5yzk2/zzs21.U2/Dw/.Tw/.Tzy"
+        CONT "/.fy/.HzzkHzzzo21Ds00.E2.UE2.U62/.k./Ds0.UE0/Do0..E8/UE2.U62.U9w"
+        CONT "/.Tx/.20.jg2/jo2..9u/.0U.6A.zk"
+    }
+    NOTE "Here are some notes on this multimedia object." {
+        CONT "If decoded it should be an image of a flower."
+    }
+    REFN "User Reference Number" {
+        TYPE "User Reference Type"
+    }
+    RIN "1"
+    CHAN {
+        DATE "14 Jan 2001" {
+            TIME "14:10:31"
+        }
+    }
+}
+TRLR

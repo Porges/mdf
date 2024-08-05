@@ -1,0 +1,22 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "cargo",
+			"command": "llvm-cov",
+			"args": [
+				"--lcov",
+				"--output-path",
+				"${workspaceFolder}\\lcov.info"
+			],
+			"problemMatcher": [
+				"$rustc"
+			],
+			"group": {
+				"kind": "test",
+				"isDefault": true
+			},
+			"label": "rust: cargo test with coverage"
+		}
+	]
+}

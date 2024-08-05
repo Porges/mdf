@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::{path::PathBuf, time::Instant};
 
 use clap::{Parser, Subcommand};
 use miette::{Context, IntoDiagnostic, NamedSource};
@@ -34,6 +34,8 @@ fn main() -> miette::Result<()> {
     match args {
         MdfArgs::Gedcom(args) => match args.command {
             GedcomCommands::Validate { path } => {
+                let start_time = Instant::now();
+
                 let data = std::fs::read(&path)
                     .into_diagnostic()
                     .with_context(|| format!("Loading file {}", path.display()))?;
@@ -46,9 +48,12 @@ fn main() -> miette::Result<()> {
                         )
                     })?;
 
+                let elapsed = start_time.elapsed();
+
                 tracing::info!(
                     record_count = count,
                     path = %path.display(),
+                    elapse = ?elapsed,
                     "file is (syntactically) valid",
                 );
 

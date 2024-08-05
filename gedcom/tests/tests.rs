@@ -1,11 +1,25 @@
-use std::{convert::Infallible, path::PathBuf};
+use std::{path::PathBuf, sync::Once};
 
-use ascii::AsAsciiStr;
-use gedcom::{
-    Collector, GedcomError, LineStructureError, LineSyntaxError, RawLine, RawRecord, Sink, Sourced,
-};
-use kdl::{KdlDocument, KdlEntry, KdlNode, KdlValue};
-use miette::{Context, NamedSource};
+use gedcom::{ParseOptions, RawRecord, Sourced};
+use kdl::{KdlDocument, KdlEntry, KdlNode};
+use miette::{NamedSource, Report};
+
+static INIT: Once = Once::new();
+fn ensure_hook() {
+    INIT.call_once(|| {
+        miette::set_hook(Box::new(|_diag| {
+            Box::new(
+                miette::MietteHandlerOpts::new()
+                    .terminal_links(false)
+                    .unicode(true)
+                    .color(false)
+                    .width(132)
+                    .build(),
+            )
+        }))
+        .unwrap();
+    });
+}
 
 #[test]
 fn can_parse_allged_lines() {
@@ -24,38 +38,22 @@ fn produces_expected_allged_tree() {
     path.push("tests/external/gpdf/allged.ged");
 
     let data = std::fs::read(path).unwrap();
-    let parsed = parse(&data).unwrap();
+    let buffer = &mut String::new();
+    let parsed = parse(&data, buffer).unwrap();
 
     insta::assert_snapshot!(to_kdl(parsed.into_iter().map(|r| r.value)));
 }
 
-fn parse(data: &[u8]) -> Result<Vec<Sourced<RawRecord<str>>>, miette::Report> {
-    let lines = gedcom::iterate_lines(data).map(
-        |item| -> Result<(Sourced<usize>, Sourced<RawLine<str>>), LineSyntaxError> {
-            // TODO: horrible hack until encoding implemented
-            let (l, r) = item?;
-            let data = r
-                .data
-                .as_ref()
-                .map(|d| d.map(|s| s.as_ascii_str().unwrap().as_str()));
-            let xref = r
-                .xref
-                .as_ref()
-                .map(|d| d.map(|s| s.as_ascii_str().unwrap().as_str()));
-            Ok((
-                l,
-                Sourced {
-                    span: r.span,
-                    value: RawLine {
-                        tag: r.tag,
-                        data,
-                        xref,
-                    },
-                },
-            ))
-        },
-    );
+fn parse<'a>(
+    data: &'a [u8],
+    buffer: &'a mut String,
+) -> Result<Vec<Sourced<RawRecord<'a, str>>>, miette::Report> {
+    let lenient_options = ParseOptions {
+        version: gedcom::OptionSetting::Assume(gedcom::versions::GEDCOMVersion::V5),
+        encoding: gedcom::OptionSetting::Assume(gedcom::SupportedEncoding::ASCII),
+    };
 
+    let lines = gedcom::iterate_lines(data, buffer, &lenient_options)?;
     let validated_lines = lines.collect::<Result<Vec<_>, _>>()?;
     let records = gedcom::build_tree(validated_lines.into_iter());
     let validated_records = records.collect::<Result<Vec<_>, _>>()?;
@@ -63,68 +61,63 @@ fn parse(data: &[u8]) -> Result<Vec<Sourced<RawRecord<str>>>, miette::Report> {
     Ok(validated_records)
 }
 
-/*
-
 #[test]
 fn torture_test_valid() {
-    insta::glob!("tests/external/TestGED/*.ged", |path| {
+    ensure_hook();
+
+    insta::glob!("external/gedcom-samples/Torture Test/*.ged", |path| {
         let data = std::fs::read(path).unwrap();
         let filename = path.file_name().unwrap().to_string_lossy();
-        let result = gedcom::validate(&data).with_context(|| format!("validating {}", filename));
-        match result {
-            Ok(tree) => insta::assert_debug_snapshot!(tree),
-            Err(err) => insta::assert_snapshot!(format!(
-                "{:?}",
-                err.with_source_code(NamedSource::new(filename, data))
-            )),
-        };
+        let buffer = &mut String::new();
+        let parsed = parse(&data, buffer)
+            .map_err(|e| e.with_source_code(NamedSource::new(filename, data.clone())))
+            .unwrap();
+        insta::assert_snapshot!(to_kdl(parsed.into_iter().map(|r| r.value)));
     });
 }
 
-*/
- */
-
 #[test]
 fn golden_files() -> miette::Result<()> {
-    miette::set_hook(Box::new(|_diag| {
-        Box::new(
-            miette::MietteHandlerOpts::new()
-                .terminal_links(false)
-                .unicode(true)
-                .color(false)
-                .width(132)
-                .build(),
-        )
-    }))?;
+    ensure_hook();
 
     insta::glob!("syntax_inputs/*.ged", |path| {
         let data = std::fs::read(path).unwrap();
         let filename = path.file_name().unwrap();
-        match parse(&data) {
-            Ok(records) => {
-                let kdl = to_kdl(records.into_iter().map(|r| r.value));
-                insta::assert_snapshot!(kdl);
-            }
-            Err(err) => insta::assert_snapshot!(format!(
-                "{:?}",
-                err.with_source_code(NamedSource::new(filename.to_string_lossy(), data))
-            )),
-        };
+        insta::with_settings!({
+            // provide GEDCOM source alongside output
+            description => String::from_utf8_lossy(&data),
+        }, {
+            match parse(&data, &mut String::new()) {
+                Ok(records) => {
+                    let kdl = to_kdl(records.into_iter().map(|r| r.value));
+                    insta::assert_snapshot!(kdl);
+                }
+                Err(err) => insta::assert_snapshot!(format!(
+                    "{:?}",
+                    err.with_source_code(NamedSource::new(filename.to_string_lossy(), data))
+                )),
+            };
+        });
     });
 
     insta::glob!("format_inputs/*.ged", |path| {
         let data = std::fs::read(path).unwrap();
         let filename = path.file_name().unwrap().to_string_lossy();
-        match parse(&data) {
-            Ok(records) => {
-                let kdl = to_kdl(records.into_iter().map(|r| r.value));
-                insta::assert_snapshot!(kdl);
-            }
-            Err(err) => insta::assert_snapshot!(format!(
-                "{:?}",
-                err.with_source_code(NamedSource::new(filename, data))
-            )),
-        };
+        insta::with_settings!({
+            // provide GEDCOM source alongside output
+            description => String::from_utf8_lossy(&data),
+        }, {
+            match parse(&data, &mut String::new()) {
+                Ok(records) => {
+                    let kdl = to_kdl(records.into_iter().map(|r| r.value));
+                    insta::assert_snapshot!(kdl);
+                }
+                Err(err) => insta::assert_snapshot!(format!(
+                    "{:?}",
+                    err.with_source_code(NamedSource::new(filename, data))
+                )),
+            };
+        });
     });
 
     Ok(())
@@ -163,4 +156,41 @@ fn record_to_kdl(record: RawRecord) -> KdlNode {
 
     node.set_children(children);
     node
+}
+
+#[test]
+fn test_encodings() {
+    ensure_hook();
+
+    insta::glob!("encoding_inputs/*.ged", |path| {
+        let data = std::fs::read(path).unwrap();
+        let filename = path.file_name().unwrap().to_string_lossy();
+        let detected_encoding = gedcom::detect_file_encoding(&data);
+        let encoding_report = match detected_encoding {
+            Ok(detected) => format!(
+                "Encoding detected: {}\nReason: {}",
+                detected.encoding,
+                Report::new(detected.reason)
+                    .with_source_code(NamedSource::new(filename.clone(), data.clone()))
+            ),
+            Err(err) => format!("{}", Report::new(err)),
+        };
+
+        insta::with_settings!({
+            // provide GEDCOM source alongside output
+            description => String::from_utf8_lossy(&data),
+        }, {
+            insta::assert_snapshot!(encoding_report);
+            match parse(&data, &mut String::new()) {
+                Ok(records) => {
+                    let kdl = to_kdl(records.into_iter().map(|r| r.value));
+                    insta::assert_snapshot!(kdl);
+                }
+                Err(err) => insta::assert_snapshot!(format!(
+                    "{:?}",
+                    err.with_source_code(NamedSource::new(filename, data))
+                )),
+            };
+        });
+    });
 }
