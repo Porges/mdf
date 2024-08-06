@@ -289,7 +289,7 @@ pub fn external_file_encoding(input: &[u8]) -> Result<Option<DetectedEncoding>, 
         [b'0', b' ', b'H', b'E', b'A', b'D', b'\r' | b'\n', ..] => return Ok(None),
         // otherwise it’s probably not a GEDCOM file (at least in supported versions)
         // TODO: it could be the non-first GEDCOM file in a volume?
-        //       - check '0' and then produce an error about that?
+        //       - check for '0 ' and then produce an error about that?
         _ => return Err(EncodingError::NotGedcomFile {}),
     };
 

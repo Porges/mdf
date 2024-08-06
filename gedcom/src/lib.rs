@@ -1,5 +1,4 @@
 use core::str;
-use std::borrow::Cow;
 
 use encodings::{DataError, GEDCOMEncoding, MissingRequiredSubrecord};
 use miette::SourceSpan;
@@ -29,42 +28,6 @@ pub enum ValidationError {
 }
 
 impl<'a, S: GEDCOMSource + ?Sized> RawRecord<'a, S> {
-    pub fn get_data_opt<T, E: std::error::Error + Send + Sync + 'static>(
-        &self,
-        expected: &'static str,
-        parser: impl FnOnce(&S) -> Result<T, E>,
-    ) -> Result<Option<Sourced<T>>, DataError> {
-        if let Some(data) = &self.line.data {
-            let value = parser(data.value).map_err(|source| DataError::MalformedData {
-                tag: self.line.tag.value.as_str().into(),
-                malformed_value: Cow::Borrowed("<invalid value>"), // TODO
-                expected,
-                data_span: data.span,
-                source: Some(Box::new(source)),
-            })?;
-
-            Ok(Some(Sourced {
-                value,
-                span: data.span,
-            }))
-        } else {
-            Ok(None)
-        }
-    }
-
-    pub fn get_data<T, E: std::error::Error + Send + Sync + 'static>(
-        &self,
-        expected: &'static str,
-        parser: impl FnOnce(&S) -> Result<T, E>,
-    ) -> Result<Sourced<T>, DataError> {
-        self.get_data_opt(expected, parser)?
-            .ok_or_else(|| DataError::MissingData {
-                tag: self.line.tag.value.as_str().into(),
-                expected,
-                tag_span: self.line.tag.span,
-            })
-    }
-
     pub fn subrecord_optional(&self, subrecord_tag: &str) -> Option<&Sourced<RawRecord<S>>> {
         self.records
             .iter()

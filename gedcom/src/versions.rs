@@ -51,8 +51,8 @@ impl Sourced<GEDCOMVersion> {
         debug_assert!(head.line.tag.eq("HEAD"));
 
         match self.value {
-            GEDCOMVersion::V3 => todo!(),
-            GEDCOMVersion::V4 => todo!(),
+            GEDCOMVersion::V3 => todo!("V3 not yet supported"),
+            GEDCOMVersion::V4 => todo!("V4 not yet supported"),
             GEDCOMVersion::V5 => {
                 let encoding = head.subrecord_optional("CHAR").expect("TODO better error");
                 let line_data = encoding.line.data.expect("TODO better error");
