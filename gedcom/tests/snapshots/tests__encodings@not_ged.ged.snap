@@ -1,0 +1,7 @@
+---
+source: gedcom/tests/tests.rs
+description: "Hello, world!\r\n"
+expression: encoding_report
+input_file: gedcom/tests/encoding_inputs/not_ged.ged
+---
+Input does not appear to be a GEDCOM file

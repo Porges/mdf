@@ -1,27 +1,18 @@
 ---
 source: gedcom/tests/tests.rs
-description: "0 HEAD\r\n1 CHAR ANSEL\r\n0 MACRON¯\r\n0 TRLR\r\n"
-expression: "format!(\"{:?}\", err.with_source_code(NamedSource::new(filename, data)))"
+description: "0 HEAD\r\n1 GEDC\r\n2 VERS 5.5.1\r\n1 CHAR ANSEL\r\n0 MACRON¯\r\n0 TRLR\r\n"
+expression: "format!(\"{:?}\",\n    Report::new(err).with_source_code(NamedSource::new(filename, data)))"
 input_file: gedcom/tests/encoding_inputs/ansel_specified_malformed_badchar.ged
 ---
-gedcom::encoding::invalid_data
+gedcom::parse_error::invalid_tag
 
-  × Invalid data in GEDCOM file
-  ╰─▶ the byte at index 0 (value 0xaf) is not ANSEL
-   ╭─[ansel_specified_malformed_badchar.ged:1:1]
- 1 │ 0 HEAD
-   · ┬
-   · ╰── this is not valid data for the encoding ANSEL
- 2 │ 1 CHAR ANSEL
+  × GEDCOM file contains a syntax error
+  ╰─▶ Invalid character in tag
+   ╭─[ansel_specified_malformed_badchar.ged:5:9]
+ 4 │ 1 CHAR ANSEL
+ 5 │ 0 MACRON¯
+   ·         ┬
+   ·         ╰── this character is not permitted in a tag
+ 6 │ 0 TRLR
    ╰────
-
-Advice: gedcom::encoding_reason::header
-
-  ☞ encoding was specified in GEDCOM header
-   ╭─[ansel_specified_malformed_badchar.ged:2:8]
- 1 │ 0 HEAD
- 2 │ 1 CHAR ANSEL
-   ·        ──┬──
-   ·          ╰── encoding was specified here
- 3 │ 0 MACRON¯
-   ╰────
+  help: tag names may only contain the characters a-z, A-Z, and 0-9, or a leading underscore

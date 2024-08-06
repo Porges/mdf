@@ -1,28 +1,29 @@
 ---
 source: gedcom/tests/tests.rs
-description: "0 HEAD\r\n1 CHAR ASCII\r\n0 HÖÖT\r\n0 TRLR\r\n"
-expression: "format!(\"{:?}\", err.with_source_code(NamedSource::new(filename, data)))"
+description: "0 HEAD\r\n1 GEDC\r\n2 VERS 5.5.1\r\n1 CHAR ASCII\r\n0 TEXT HÖÖT\r\n0 TRLR\r\n"
+expression: "format!(\"{:?}\",\n    Report::new(err).with_source_code(NamedSource::new(filename, data)))"
 input_file: gedcom/tests/encoding_inputs/ascii_specified_malformed.ged
 ---
 gedcom::encoding::invalid_data
 
-  × Invalid data in GEDCOM file
-  ╰─▶ the byte at index 25 is not ASCII
-   ╭─[ascii_specified_malformed.ged:3:4]
- 2 │ 1 CHAR ASCII
- 3 │ 0 HÖÖT
-   ·    ┬
-   ·    ╰── this is not valid data for the encoding ASCII
- 4 │ 0 TRLR
+  × GEDCOM file contained data which was invalid in the detected encoding
+  ├─▶ Invalid data for encoding ASCII
+  ╰─▶ the byte at index 52 is not ASCII
+   ╭─[ascii_specified_malformed.ged:5:9]
+ 4 │ 1 CHAR ASCII
+ 5 │ 0 TEXT HÖÖT
+   ·         ┬
+   ·         ╰── this is not valid data for the encoding ASCII
+ 6 │ 0 TRLR
    ╰────
 
 Advice: gedcom::encoding_reason::header
 
-  ☞ encoding was specified in GEDCOM header
-   ╭─[ascii_specified_malformed.ged:2:8]
- 1 │ 0 HEAD
- 2 │ 1 CHAR ASCII
+  ☞ this encoding was specified in the GEDCOM header
+   ╭─[ascii_specified_malformed.ged:4:8]
+ 3 │ 2 VERS 5.5.1
+ 4 │ 1 CHAR ASCII
    ·        ──┬──
    ·          ╰── encoding was specified here
- 3 │ 0 HÖÖT
+ 5 │ 0 TEXT HÖÖT
    ╰────

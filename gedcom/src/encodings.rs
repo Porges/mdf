@@ -3,7 +3,7 @@ use std::{borrow::Cow, fmt::Display};
 use miette::{Diagnostic, SourceSpan};
 use thiserror::Error;
 
-use crate::parser::GEDCOMSource;
+use crate::parser::{encodings::SupportedEncoding, GEDCOMSource};
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum GEDCOMEncoding {
@@ -23,6 +23,42 @@ impl Display for GEDCOMEncoding {
         };
 
         write!(f, "{}", s)
+    }
+}
+
+#[derive(Error, Diagnostic, Debug)]
+#[error("GEDCOM encoding {encoding} is ambiguous")]
+#[diagnostic(help("This value could imply the following encodings: {}",
+    .possibilities.iter().map(|e| format!("{}", e)).collect::<Vec<_>>().join(", ")))]
+pub struct AmbiguousEncoding {
+    encoding: GEDCOMEncoding,
+    possibilities: &'static [SupportedEncoding],
+}
+
+impl TryInto<SupportedEncoding> for GEDCOMEncoding {
+    type Error = AmbiguousEncoding;
+
+    fn try_into(self) -> Result<SupportedEncoding, Self::Error> {
+        match self {
+            GEDCOMEncoding::ASCII => Ok(SupportedEncoding::ASCII),
+            GEDCOMEncoding::ANSEL => Ok(SupportedEncoding::ANSEL),
+            GEDCOMEncoding::UTF8 => Ok(SupportedEncoding::UTF8),
+            GEDCOMEncoding::UNICODE => Err(AmbiguousEncoding {
+                encoding: self,
+                possibilities: &[SupportedEncoding::UTF16LE, SupportedEncoding::UTF16BE],
+            }),
+        }
+    }
+}
+
+impl From<SupportedEncoding> for GEDCOMEncoding {
+    fn from(value: SupportedEncoding) -> Self {
+        match value {
+            SupportedEncoding::ASCII => GEDCOMEncoding::ASCII,
+            SupportedEncoding::ANSEL => GEDCOMEncoding::ANSEL,
+            SupportedEncoding::UTF8 => GEDCOMEncoding::UTF8,
+            SupportedEncoding::UTF16BE | SupportedEncoding::UTF16LE => GEDCOMEncoding::UNICODE,
+        }
     }
 }
 

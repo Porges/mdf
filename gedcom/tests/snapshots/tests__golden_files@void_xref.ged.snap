@@ -1,15 +1,16 @@
 ---
 source: gedcom/tests/tests.rs
-description: "0 OK\r\n1 @VOID@ BAD\r\n"
-expression: "format!(\"{:?}\",\n    err.with_source_code(NamedSource::new(filename.to_string_lossy(), data)))"
+description: "0 HEAD\r\n1 GEDC\r\n2 VERS 5.5.1\r\n1 CHAR ASCII\r\n0 OK\r\n1 @VOID@ BAD\r\n"
+expression: "format!(\"{:?}\",\n    Report::new(err).with_source_code(NamedSource::new(filename.to_string_lossy(),\n    data)))"
 input_file: gedcom/tests/syntax_inputs/void_xref.ged
 ---
 gedcom::parse_error::reserved_xref
 
-  × Reserved value '@VOID@' cannot be used as an XRef
-   ╭─[void_xref.ged:2:3]
- 1 │ 0 OK
- 2 │ 1 @VOID@ BAD
+  × GEDCOM file contains a syntax error
+  ╰─▶ Reserved value '@VOID@' cannot be used as an XRef
+   ╭─[void_xref.ged:6:3]
+ 5 │ 0 OK
+ 6 │ 1 @VOID@ BAD
    ·   ───┬──
    ·      ╰── @VOID@ is a reserved value
    ╰────

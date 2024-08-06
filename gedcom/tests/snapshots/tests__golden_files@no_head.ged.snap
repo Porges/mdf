@@ -1,9 +1,11 @@
 ---
 source: gedcom/tests/tests.rs
 description: "0 TRLR\r\n1 THING\r\n"
-expression: kdl
+expression: "format!(\"{:?}\",\n    Report::new(err).with_source_code(NamedSource::new(filename, data)))"
 input_file: gedcom/tests/format_inputs/no_head.ged
 ---
-TRLR {
-    THING
-}
+gedcom::encoding::not_gedcom
+
+  × Unable to determine encoding of GEDCOM file
+  ╰─▶ Input does not appear to be a GEDCOM file
+  help: GEDCOM files must start with a '0 HEAD' record, but this was not found

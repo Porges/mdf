@@ -1,8 +1,16 @@
 use std::fmt::Display;
 
-use ascii::AsAsciiStr;
+use miette::SourceSpan;
+use vec1::Vec1;
 
-use crate::parser::{encodings::SupportedEncoding, GEDCOMSource};
+use crate::{
+    encodings::{parse_encoding_raw, GEDCOMEncoding},
+    parser::{
+        encodings::{DetectedEncoding, EncodingError, EncodingReason, SupportedEncoding},
+        records::RawRecord,
+        GEDCOMSource, Sourced,
+    },
+};
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum GEDCOMVersion {
@@ -30,6 +38,98 @@ impl GEDCOMVersion {
         match self {
             GEDCOMVersion::V7 => Some(SupportedEncoding::UTF8),
             _ => None,
+        }
+    }
+}
+
+impl Sourced<GEDCOMVersion> {
+    pub fn detect_encoding_from_head_record<S: GEDCOMSource + ?Sized>(
+        &self,
+        head: &Sourced<RawRecord<S>>,
+        external_encoding: Option<DetectedEncoding>,
+    ) -> Result<DetectedEncoding, EncodingError> {
+        debug_assert!(head.line.tag.eq("HEAD"));
+
+        match self.value {
+            GEDCOMVersion::V3 => todo!(),
+            GEDCOMVersion::V4 => todo!(),
+            GEDCOMVersion::V5 => {
+                let encoding = head.subrecord_optional("CHAR").expect("TODO better error");
+                let line_data = encoding.line.data.expect("TODO better error");
+                let file_encoding = parse_encoding_raw(line_data.value).map_err(|source| {
+                    EncodingError::InvalidEncoding {
+                        span: line_data.span,
+                        source,
+                    }
+                })?;
+
+                let encoding = if let Some(external_encoding) = external_encoding {
+                    // if we have an external encoding we have to make sure it's compatible
+                    // with what the file claims
+                    if GEDCOMEncoding::from(external_encoding.encoding) == file_encoding {
+                        external_encoding.encoding
+                    } else {
+                        // note that we need to adjust the span to account for the BOM
+                        // TODO: a more holistic way to handle this?
+                        let span_offset = match external_encoding.reason {
+                            EncodingReason::BOMDetected { bom_length } => bom_length,
+                            _ => 0,
+                        };
+
+                        let span = SourceSpan::from((
+                            line_data.span.offset() + span_offset,
+                            line_data.span.len(),
+                        ));
+
+                        return Err(EncodingError::ExternalEncodingMismatch {
+                            file_encoding,
+                            span,
+                            external_encoding: external_encoding.encoding,
+                            reason: Vec1::new(external_encoding.reason),
+                        });
+                    }
+                } else if let Ok(result) = file_encoding.try_into() {
+                    // no external encoding and we can convert file encoding
+                    result
+                } else {
+                    // no external encoding and we cannot convert file encoding
+                    // (this happens if file encoding == UNICODE but it was not
+                    // detected as UTF16 externally)
+                    return Err(EncodingError::FileEncodingMismatch {
+                        file_encoding,
+                        span: line_data.span,
+                    });
+                };
+
+                Ok(DetectedEncoding {
+                    encoding,
+                    reason: EncodingReason::SpecifiedInHeader {
+                        span: line_data.span,
+                    },
+                })
+            }
+            // v7 is _always_ UTF-8
+            GEDCOMVersion::V7 => {
+                if let Some(external_encoding) = external_encoding {
+                    if external_encoding.encoding != SupportedEncoding::UTF8 {
+                        return Err(EncodingError::VersionEncodingMismatch {
+                            version: GEDCOMVersion::V7,
+                            version_encoding: SupportedEncoding::UTF8,
+                            version_span: self.span,
+                            external_encoding: external_encoding.encoding,
+                            reason: Vec1::new(external_encoding.reason),
+                        });
+                    }
+                }
+
+                Ok(DetectedEncoding {
+                    encoding: SupportedEncoding::UTF8,
+                    reason: EncodingReason::DeterminedByVersion {
+                        span: self.span,
+                        version: GEDCOMVersion::V7,
+                    },
+                })
+            }
         }
     }
 }

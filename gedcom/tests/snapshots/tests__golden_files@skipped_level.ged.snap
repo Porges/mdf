@@ -1,15 +1,16 @@
 ---
 source: gedcom/tests/tests.rs
-description: "0 TAG\r\n2 TAG\r\n"
-expression: "format!(\"{:?}\",\n    err.with_source_code(NamedSource::new(filename.to_string_lossy(), data)))"
+description: "0 HEAD\r\n1 GEDC\r\n2 VERS 5.5.1\r\n1 CHAR ASCII\r\n0 TAG\r\n2 TAG\r\n"
+expression: "format!(\"{:?}\",\n    Report::new(err).with_source_code(NamedSource::new(filename.to_string_lossy(),\n    data)))"
 input_file: gedcom/tests/syntax_inputs/skipped_level.ged
 ---
-gedcom::tree_error::invalid_child_level
+gedcom::record_error::invalid_child_level
 
-  × Invalid child level 2, expected 1 or less
-   ╭─[skipped_level.ged:2:1]
- 1 │ 0 TAG
- 2 │ 2 TAG
+  × GEDCOM file contains a record-hierarchy error
+  ╰─▶ Invalid child level 2, expected 1 or less
+   ╭─[skipped_level.ged:6:1]
+ 5 │ 0 TAG
+ 6 │ 2 TAG
    · ┬
    · ╰── this should be less than or equal to 1
    ╰────

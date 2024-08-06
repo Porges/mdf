@@ -1,14 +1,16 @@
 ---
 source: gedcom/tests/tests.rs
-description: "0 @x@\r\n"
-expression: "format!(\"{:?}\",\n    err.with_source_code(NamedSource::new(filename.to_string_lossy(), data)))"
+description: "0 HEAD\r\n1 GEDC\r\n2 VERS 5.5.1\r\n1 CHAR ASCII\r\n0 @x@\r\n"
+expression: "format!(\"{:?}\",\n    Report::new(err).with_source_code(NamedSource::new(filename.to_string_lossy(),\n    data)))"
 input_file: gedcom/tests/syntax_inputs/xref_no_tag.ged
 ---
 gedcom::parse_error::no_tag
 
-  × No tag found
-   ╭─[xref_no_tag.ged:1:1]
- 1 │ 0 @x@
+  × GEDCOM file contains a syntax error
+  ╰─▶ No tag found
+   ╭─[xref_no_tag.ged:5:1]
+ 4 │ 1 CHAR ASCII
+ 5 │ 0 @x@
    · ──┬──
    ·   ╰── no tag in this line
    ╰────

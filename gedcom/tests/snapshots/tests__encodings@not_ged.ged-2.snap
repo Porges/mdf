@@ -1,8 +1,8 @@
 ---
 source: gedcom/tests/tests.rs
-description: "1 HEAD\r\n1 TAG\r\n"
-expression: "format!(\"{:?}\",\n    Report::new(err).with_source_code(NamedSource::new(filename.to_string_lossy(),\n    data)))"
-input_file: gedcom/tests/syntax_inputs/incorrect_level.ged
+description: "Hello, world!\r\n"
+expression: "format!(\"{:?}\",\n    Report::new(err).with_source_code(NamedSource::new(filename, data)))"
+input_file: gedcom/tests/encoding_inputs/not_ged.ged
 ---
 gedcom::encoding::not_gedcom
 

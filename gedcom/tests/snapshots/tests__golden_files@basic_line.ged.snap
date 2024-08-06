@@ -1,7 +1,13 @@
 ---
 source: gedcom/tests/tests.rs
-description: "0 TAG\r\n"
+description: "0 HEAD\r\n1 GEDC\r\n2 VERS 5.5.1\r\n1 CHAR ASCII\r\n0 TAG\r\n"
 expression: kdl
 input_file: gedcom/tests/syntax_inputs/basic_line.ged
 ---
+HEAD {
+    GEDC {
+        VERS "5.5.1"
+    }
+    CHAR "ASCII"
+}
 TAG

@@ -1,7 +1,7 @@
 ---
 source: gedcom/tests/tests.rs
-description: "0 HEAD\r\n1 GEDC\r\n0 TRLR\r\n"
+description: "0 HEAD\r\n0 TRLR\r\n"
 expression: encoding_report
 input_file: gedcom/tests/encoding_inputs/unknown.ged
 ---
-Unable to determine encoding of GEDCOM file
+No external encoding detected (ASCII-compatible)

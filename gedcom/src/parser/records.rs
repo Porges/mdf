@@ -1,6 +1,9 @@
 use miette::SourceSpan;
 
-use super::{lines::RawLine, GEDCOMSource, Sourced};
+use super::{
+    lines::{LineSyntaxError, RawLine},
+    GEDCOMSource, Sourced,
+};
 use crate::parser;
 
 /// Represents an assembled GEDCOM record, or sub-record,
@@ -30,26 +33,13 @@ impl<'a, S: GEDCOMSource + ?Sized> Sourced<RawRecord<'a, S>> {
 }
 
 #[derive(thiserror::Error, Debug, miette::Diagnostic)]
-pub enum RecordStructureError {
-    #[error("Invalid child level {level}, expected {expected_level} or less")]
-    #[diagnostic(code(gedcom::record_error::invalid_child_level))]
-    InvalidChildLevel {
-        level: usize,
-        expected_level: usize,
-        #[label("this should be less than or equal to {expected_level}")]
-        span: SourceSpan,
-    },
-
-    #[error("Syntax error while parsing record")]
-    #[diagnostic(code(gedcome::record_error::line_syntax))]
-    LineSyntaxError {
-        #[source]
-        #[diagnostic_source]
-        source: parser::lines::LineSyntaxError,
-
-        #[label("syntax error inside this record")]
-        span: Option<SourceSpan>,
-    },
+#[error("Invalid child level {level}, expected {expected_level} or less")]
+#[diagnostic(code(gedcom::record_error::invalid_child_level))]
+pub struct RecordStructureError {
+    level: usize,
+    expected_level: usize,
+    #[label("this should be less than or equal to {expected_level}")]
+    span: SourceSpan,
 }
 
 pub struct RecordBuilder<'a, S: GEDCOMSource + ?Sized = str> {
@@ -100,7 +90,7 @@ impl<'a, S: GEDCOMSource + ?Sized> RecordBuilder<'a, S> {
 
         let expected_level = self.stack.len();
         if level.value != expected_level {
-            return Err(RecordStructureError::InvalidChildLevel {
+            return Err(RecordStructureError {
                 level: level.value,
                 expected_level,
                 span: level.span,
@@ -112,6 +102,7 @@ impl<'a, S: GEDCOMSource + ?Sized> RecordBuilder<'a, S> {
         Ok(to_emit)
     }
 
+    /*
     pub fn handle_syntax_error(
         self,
         source: parser::lines::LineSyntaxError,
@@ -122,9 +113,16 @@ impl<'a, S: GEDCOMSource + ?Sized> RecordBuilder<'a, S> {
             span: self.stack.last().map(|r| r.line.span),
         }
     }
+    */
 
     pub fn complete(mut self) -> Option<Sourced<RawRecord<'a, S>>> {
         self.pop_to_level(0)
+    }
+}
+
+impl<'a, S: GEDCOMSource + ?Sized> Default for RecordBuilder<'a, S> {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -162,18 +160,15 @@ pub fn iterate_records<'a>(
     }
 }
 
-pub fn read_first_record<S: GEDCOMSource + ?Sized>(
-    input: &S,
-) -> Result<Option<Sourced<RawRecord<S>>>, RecordStructureError> {
+pub fn read_first_record<S, E>(input: &S) -> Result<Option<Sourced<RawRecord<S>>>, E>
+where
+    S: GEDCOMSource + ?Sized,
+    E: From<RecordStructureError> + From<LineSyntaxError>,
+{
     let mut builder = RecordBuilder::new();
     for line in parser::lines::iterate_lines(input) {
-        match line {
-            Ok(line) => {
-                if let Some(record) = builder.handle_line(line)? {
-                    return Ok(Some(record));
-                }
-            }
-            Err(err) => return Err(builder.handle_syntax_error(err)),
+        if let Some(record) = builder.handle_line(line?)? {
+            return Ok(Some(record));
         }
     }
 

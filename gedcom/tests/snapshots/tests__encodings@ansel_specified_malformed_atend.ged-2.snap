@@ -1,27 +1,28 @@
 ---
 source: gedcom/tests/tests.rs
-description: "0 HEAD\r\n1 CHAR ANSEL\r\n0 SOME t�"
-expression: "format!(\"{:?}\", err.with_source_code(NamedSource::new(filename, data)))"
+description: "0 HEAD\r\n1 GEDC\r\n2 VERS 5.5.1\r\n1 CHAR ANSEL\r\n0 SOME t�"
+expression: "format!(\"{:?}\",\n    Report::new(err).with_source_code(NamedSource::new(filename, data)))"
 input_file: gedcom/tests/encoding_inputs/ansel_specified_malformed_atend.ged
 ---
 gedcom::encoding::invalid_data
 
-  × Invalid data in GEDCOM file
+  × GEDCOM file contained data which was invalid in the detected encoding
+  ├─▶ Invalid data for encoding ANSEL
   ╰─▶ combining character at end of input
-   ╭─[ansel_specified_malformed_atend.ged:3:9]
- 2 │ 1 CHAR ANSEL
- 3 │ 0 SOME t�
+   ╭─[ansel_specified_malformed_atend.ged:5:9]
+ 4 │ 1 CHAR ANSEL
+ 5 │ 0 SOME t�
    ·         ┬
    ·         ╰── this is not valid data for the encoding ANSEL
    ╰────
 
 Advice: gedcom::encoding_reason::header
 
-  ☞ encoding was specified in GEDCOM header
-   ╭─[ansel_specified_malformed_atend.ged:2:8]
- 1 │ 0 HEAD
- 2 │ 1 CHAR ANSEL
+  ☞ this encoding was specified in the GEDCOM header
+   ╭─[ansel_specified_malformed_atend.ged:4:8]
+ 3 │ 2 VERS 5.5.1
+ 4 │ 1 CHAR ANSEL
    ·        ──┬──
    ·          ╰── encoding was specified here
- 3 │ 0 SOME t�
+ 5 │ 0 SOME t�
    ╰────

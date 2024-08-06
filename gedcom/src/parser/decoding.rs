@@ -1,15 +1,14 @@
 use std::borrow::Cow;
 
 use crate::{
-    encodings::{parse_encoding_raw, GEDCOMEncoding},
     parser::encodings::external_file_encoding,
     versions::{parse_version_head_gedc_vers, GEDCOMVersion},
     FileStructureError,
 };
 
 use super::{
-    encodings::{DetectedEncoding, EncodingError, EncodingReason, SupportedEncoding},
-    options::ParseOptions,
+    encodings::{DetectedEncoding, EncodingError, InvalidDataForEncodingError},
+    lines::LineSyntaxError,
     records::{read_first_record, RawRecord, RecordStructureError},
     versions::VersionError,
     GEDCOMSource, Sourced,
@@ -62,37 +61,22 @@ use super::{
 /// If you want to exert more control about how the version or encoding are determined,
 /// you can pass appropriate options to the [`parse`] function. See the documentation
 /// on [`detect_file_encoding_opt`].
-pub fn detect_and_decode<'a>(
-    input: &'a [u8],
-    parse_options: &ParseOptions,
-) -> Result<(GEDCOMVersion, Cow<'a, str>), DecodingError> {
+pub fn detect_and_decode(input: &[u8]) -> Result<(GEDCOMVersion, Cow<str>), DecodingError> {
     if let Some(external_encoding) = external_file_encoding(input)? {
         // now we can decode the file to actually look inside it
         let decoded = external_encoding.decode(input)?;
-        // TODO: need to do something about consistency between
-        // parse_options and what has been determined from external encoding
-        let (version, file_encoding) =
-            parse_gedcom_header(decoded.as_ref(), Some(external_encoding.encoding))?;
-
+        // get version and double-check encoding with file
+        let ext_enc = external_encoding.encoding;
+        let (version, f_enc) = parse_gedcom_header(decoded.as_ref(), Some(external_encoding))?;
+        // we don’t need the encoding here since we already decoded
+        // it will always be the same
+        debug_assert_eq!(f_enc.encoding, ext_enc);
         Ok((*version, decoded))
     } else {
         // we need to determine the encoding from the file itself
-        let (version, file_encoding) = parse_gedcom_header(input, parse_options)?;
-
-        let encoding = match file_encoding.value {
-            GEDCOMEncoding::ASCII => SupportedEncoding::ASCII,
-            GEDCOMEncoding::ANSEL => SupportedEncoding::ANSEL,
-            GEDCOMEncoding::UTF8 => SupportedEncoding::UTF8,
-            GEDCOMEncoding::UNICODE => {
-                return Err(EncodingError::FileEncodingMismatch {
-                    file_encoding: file_encoding.value,
-                    span: file_encoding.span,
-                }
-                .into());
-            }
-        };
-
-        let decoded = encoding.decode(input)?;
+        let (version, file_encoding) = parse_gedcom_header(input, None)?;
+        // now we can actually decode the input
+        let decoded = file_encoding.decode(input)?;
         Ok((*version, decoded))
     }
 }
@@ -100,29 +84,28 @@ pub fn detect_and_decode<'a>(
 #[derive(thiserror::Error, Debug, miette::Diagnostic)]
 pub enum DecodingError {
     #[error("Unable to determine version of GEDCOM file")]
-    VersionError(
-        #[from]
-        #[diagnostic_source]
-        VersionError,
-    ),
+    #[diagnostic(transparent)]
+    VersionError(#[from] VersionError),
+
     #[error("Unable to determine encoding of GEDCOM file")]
-    EncodingError(
-        #[from]
-        #[diagnostic_source]
-        EncodingError,
-    ),
+    #[diagnostic(transparent)]
+    EncodingError(#[from] EncodingError),
+
+    #[error("GEDCOM file contained data which was invalid in the detected encoding")]
+    #[diagnostic(transparent)]
+    InvalidDataForEncoding(#[from] InvalidDataForEncodingError),
+
     #[error("GEDCOM file structure is invalid")]
-    FileStructureError(
-        #[from]
-        #[diagnostic_source]
-        FileStructureError,
-    ),
+    #[diagnostic(transparent)]
+    FileStructureError(#[from] FileStructureError),
+
+    #[error("GEDCOM file contains a record-hierarchy error")]
+    #[diagnostic(transparent)]
+    RecordStructureError(#[from] RecordStructureError),
+
     #[error("GEDCOM file contains a syntax error")]
-    RecordStructureError(
-        #[from]
-        #[diagnostic_source]
-        RecordStructureError,
-    ),
+    #[diagnostic(transparent)]
+    SyntaxError(#[from] LineSyntaxError),
 }
 
 /// This function is a variant of [`detect_file_encoding`] which allows the caller
@@ -155,9 +138,9 @@ pub enum DecodingError {
 
 pub fn parse_gedcom_header<S: GEDCOMSource + ?Sized>(
     input: &S,
-    known_encoding: Option<SupportedEncoding>,
+    external_encoding: Option<DetectedEncoding>,
 ) -> Result<(Sourced<GEDCOMVersion>, DetectedEncoding), DecodingError> {
-    let first_record = read_first_record(input)?;
+    let first_record = read_first_record::<_, DecodingError>(input)?;
     let head = first_record
         .as_ref()
         .and_then(|r| r.ensure_tag("HEAD"))
@@ -165,64 +148,31 @@ pub fn parse_gedcom_header<S: GEDCOMSource + ?Sized>(
             span: first_record.as_ref().map(|r| r.span),
         })?;
 
-    let version = version_from_head(head)?;
-
-    // if the version requires a particular encoding, apply it here
-    if let Some(encoding) = version.required_encoding() {
-        // TODO: need to confirm this against parsing options
-        return Ok((
-            version,
-            DetectedEncoding {
-                encoding,
-                reason: EncodingReason::DeterminedByVersion {
-                    span: version.span,
-                    version: version.value,
-                },
-            },
-        ));
-    }
-
-    let file_encoding = match encoding_from_head::<_, DecodingError>(head) {
-        Ok(encoding_from_head) => parse_options.handle_encoding(Ok(todo!())),
-        // options gets a chance to handle an encoding error or file structure error,
-        // but not a record structure or syntax error
-        Err(DecodingError::EncodingError(e)) => parse_options.handle_encoding(Err(e)),
-        Err(DecodingError::VersionError(_)) => unreachable!(), // safety check
-        Err(e) => return Err(e),
-    }?;
-
-    if external_encoding.encoding != file_encoding.encoding {
-        return Err(EncodingError::ExternalEncodingMismatch {
-            file_encoding: file_encoding.value,
-            span: file_encoding.span,
-            external_encoding: external_encoding.encoding,
-            reason: external_encoding.reason,
-        }
-        .into());
-    }
-
-    Ok((version, file_encoding))
+    let version = detect_version_from_head_record(head)?;
+    let encoding = version.detect_encoding_from_head_record(head, external_encoding)?;
+    Ok((version, encoding))
 }
 
-fn version_from_head<S: GEDCOMSource + ?Sized>(
+fn detect_version_from_head_record<S: GEDCOMSource + ?Sized>(
     head: &Sourced<RawRecord<S>>,
 ) -> Result<Sourced<GEDCOMVersion>, VersionError> {
     if let Some(gedc) = head.subrecord_optional("GEDC") {
         if let Some(vers) = gedc.subrecord_optional("VERS") {
+            // GEDCOM 4.x or above (including 5.x and 7.x)
             let data = vers.line.data.expect("TODO: error");
-            return Ok(data
+            return data
                 .try_map(|d| parse_version_head_gedc_vers(d))
                 .map_err(|source| VersionError::InvalidVersion {
                     source,
                     span: data.span,
-                })?);
+                });
         }
     }
 
     if let Some(sour) = head.subrecord_optional("SOUR") {
         // GEDCOM 2.x or 3.0
         if let Some(vers) = sour.subrecord_optional("VERS") {
-            // this is 3.0 – TODO check value
+            // this is 3.0 – TODO check line data value
             return Ok(Sourced {
                 value: GEDCOMVersion::V3,
                 span: vers.line.span,
@@ -232,23 +182,5 @@ fn version_from_head<S: GEDCOMSource + ?Sized>(
         todo!("2.x handling")
     }
 
-    return Err(VersionError::NoVersion {});
-}
-
-fn encoding_from_head<S, E>(head: &Sourced<RawRecord<S>>) -> Result<Sourced<GEDCOMEncoding>, E>
-where
-    S: GEDCOMSource + ?Sized,
-    E: From<FileStructureError> + From<EncodingError>,
-{
-    let char = head
-        .subrecord("CHAR", "character set")
-        .map_err(|_| FileStructureError::HEADRecordMissingCHAR { span: head.span })?;
-
-    let data = char.line.data.expect("TODO: error");
-    Ok(data.try_map(|d| parse_encoding_raw(d)).map_err(|source| {
-        EncodingError::InvalidEncoding {
-            source,
-            span: data.span,
-        }
-    })?)
+    Err(VersionError::NoVersion {})
 }

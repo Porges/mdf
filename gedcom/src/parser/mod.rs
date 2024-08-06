@@ -4,7 +4,6 @@ use ascii::{AsciiChar, AsciiStr};
 use decoding::DecodingError;
 use lines::iterate_lines;
 use miette::{SourceOffset, SourceSpan};
-use options::ParseOptions;
 use records::{RawRecord, RecordBuilder};
 
 pub mod decoding;
@@ -154,9 +153,8 @@ impl<T> std::ops::Deref for Sourced<T> {
 pub fn parse<'a>(
     input: &'a [u8],
     buffer: &'a mut String,
-    options: &ParseOptions,
 ) -> Result<Vec<Sourced<RawRecord<'a>>>, DecodingError> {
-    let (_version, input) = decoding::detect_and_decode(input, options)?;
+    let (_version, input) = decoding::detect_and_decode(input)?;
 
     // if we want to return records without copying data in most cases,
     // the caller must provide a buffer where we can copy data if needed
@@ -179,7 +177,7 @@ pub fn parse<'a>(
                     result.push(record);
                 }
             }
-            Err(err) => return Err(record_builder.handle_syntax_error(err).into()),
+            Err(err) => return Err(err.into()),
         }
     }
 

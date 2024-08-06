@@ -1,9 +1,15 @@
 ---
 source: gedcom/tests/tests.rs
-description: "0 _ROOT1\r\n1 _CHILD\r\n2 _GRANDCHILD\r\n0 _ROOT2\r\n"
+description: "0 HEAD\r\n1 GEDC\r\n2 VERS 5.5.1\r\n1 CHAR ASCII\r\n0 _ROOT1\r\n1 _CHILD\r\n2 _GRANDCHILD\r\n0 _ROOT2\r\n"
 expression: kdl
 input_file: gedcom/tests/syntax_inputs/basic_grandparent.ged
 ---
+HEAD {
+    GEDC {
+        VERS "5.5.1"
+    }
+    CHAR "ASCII"
+}
 _ROOT1 {
     _CHILD {
         _GRANDCHILD

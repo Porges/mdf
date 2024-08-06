@@ -1,8 +1,7 @@
 ---
 source: gedcom/tests/tests.rs
-description: "0 HEAD\r\n1 GEDC\r\n2 CHAR UTF-8\r\n0 MALFORMED h�3�ré\r\n"
+description: "0 HEAD\r\n1 CHAR UTF-8\r\n0 MALFORMED h�3�ré\r\n"
 expression: encoding_report
 input_file: gedcom/tests/encoding_inputs/utf8_specified_malformed.ged
 ---
-Encoding detected: UTF-8
-Reason: encoding was specified in GEDCOM header
+No external encoding detected (ASCII-compatible)

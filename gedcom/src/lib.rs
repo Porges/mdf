@@ -1,5 +1,5 @@
 use core::str;
-use std::{borrow::Cow, convert::Infallible};
+use std::borrow::Cow;
 
 use encodings::{DataError, GEDCOMEncoding, MissingRequiredSubrecord};
 use miette::SourceSpan;
@@ -20,21 +20,6 @@ pub mod v7;
 pub mod versions;
 
 #[derive(thiserror::Error, Debug, miette::Diagnostic)]
-pub enum GedcomError {
-    #[error("Line syntax error")]
-    #[diagnostic(transparent)]
-    LineSyntaxError(#[from] parser::lines::LineSyntaxError),
-
-    #[error("Record structure error")]
-    #[diagnostic(transparent)]
-    RecordStructureError(#[from] parser::records::RecordStructureError),
-
-    #[error("File structure error")]
-    #[diagnostic(transparent)]
-    FileStructureError(#[from] FileStructureError),
-}
-
-#[derive(thiserror::Error, Debug, miette::Diagnostic)]
 pub enum ValidationError {
     #[error("Syntax errors detected")]
     SyntaxErrorsDetected {
@@ -43,11 +28,6 @@ pub enum ValidationError {
     },
 }
 
-impl From<Infallible> for GedcomError {
-    fn from(_: Infallible) -> Self {
-        unreachable!()
-    }
-}
 impl<'a, S: GEDCOMSource + ?Sized> RawRecord<'a, S> {
     pub fn get_data_opt<T, E: std::error::Error + Send + Sync + 'static>(
         &self,
@@ -153,62 +133,6 @@ pub enum FileStructureError {
     MissingHeadRecord {
         #[label("this is the first record in the file; the HEAD record should appear before it")]
         span: Option<SourceSpan>,
-    },
-
-    #[error("GEDCOM information is missing: HEAD record is missing `GEDC` entry")]
-    #[diagnostic(
-        code(gedcom::schema_error::missing_gedc_record),
-        help("this has been required since GEDCOM 4.0 (1989), so this might be an older file")
-    )]
-    HeadRecordMissingGEDC {
-        #[label("this record should contain a GEDC entry")]
-        span: SourceSpan,
-    },
-
-    #[error("version is missing: HEAD.GEDC record is missing `VERS` subrecord")]
-    #[diagnostic(
-        code(gedcom::schema_error::missing_vers_record),
-        help("this has been required since GEDCOM 5.0 (1991), so this might be an older file")
-    )]
-    GEDCRecordMissingVERS {
-        #[label("this record should contain a VERS entry")]
-        span: SourceSpan,
-    },
-
-    #[error("character encoding is missing: HEAD.GEDC record is missing `CHAR` subrecord")]
-    #[diagnostic(
-        code(gedcom::schema_error::missing_char_record),
-        help(
-            "this record has been required since GEDCOM 5.0 (1991), so this might be an older file"
-        )
-    )]
-    HEADRecordMissingCHAR {
-        #[label("this record should contain a CHAR entry")]
-        span: SourceSpan,
-    },
-
-    #[error("incorrect version: file version {file_version} does not match the required version {required_version}")]
-    #[diagnostic(
-        code(gedcom::schema_error::incorrect_file_version),
-        help("the required version was specified on the commandline")
-    )]
-    IncorrectFileVersion {
-        file_version: GEDCOMVersion,
-        required_version: GEDCOMVersion,
-        #[label("this version does not match the required version")]
-        span: SourceSpan,
-    },
-
-    #[error("incorrect encoding: file encoding {file_encoding} does not match the required encoding {required_encoding}")]
-    #[diagnostic(
-        code(gedcom::schema_error::incorrect_file_encoding),
-        help("the required version was specified on the commandline")
-    )]
-    IncorrectFileEncoding {
-        file_encoding: GEDCOMEncoding,
-        required_encoding: GEDCOMEncoding,
-        #[label("this value does not match the required encoding value")]
-        span: SourceSpan,
     },
 
     #[error("Missing trailer (TRLR) record")]

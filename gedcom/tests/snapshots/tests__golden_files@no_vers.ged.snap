@@ -1,10 +1,8 @@
 ---
 source: gedcom/tests/tests.rs
 description: "0 HEAD\r\n1 GEDC\r\n0 TRLR\r\n"
-expression: kdl
+expression: "format!(\"{:?}\",\n    Report::new(err).with_source_code(NamedSource::new(filename, data)))"
 input_file: gedcom/tests/format_inputs/no_vers.ged
 ---
-HEAD {
-    GEDC
-}
-TRLR
+  × Unable to determine version of GEDCOM file
+  ╰─▶ GEDCOM file appeared to be syntactically valid, but no version could be found

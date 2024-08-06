@@ -1,8 +1,7 @@
 ---
 source: gedcom/tests/tests.rs
-description: "0 HEAD\r\n1 GEDC\r\n2 CHAR ASCII\r\n0 HÖÖT\r\n0 TRLR\r\n"
+description: "0 HEAD\r\n1 CHAR ASCII\r\n0 HÖÖT\r\n0 TRLR\r\n"
 expression: encoding_report
 input_file: gedcom/tests/encoding_inputs/ascii_specified_malformed.ged
 ---
-Encoding detected: ASCII
-Reason: encoding was specified in GEDCOM header
+No external encoding detected (ASCII-compatible)

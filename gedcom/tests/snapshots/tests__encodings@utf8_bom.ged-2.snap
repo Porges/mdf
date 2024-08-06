@@ -1,8 +1,21 @@
 ---
 source: gedcom/tests/tests.rs
-description: "﻿0 HEAD\r\n0 TRLR\r\n"
-expression: kdl
+description: "﻿0 HEAD\r\n1 GEDC\r\n2 VERS 5.5.1\r\n1 CHAR UNICODE\r\n0 TRLR\r\n"
+expression: "format!(\"{:?}\",\n    Report::new(err).with_source_code(NamedSource::new(filename, data)))"
 input_file: gedcom/tests/encoding_inputs/utf8_bom.ged
 ---
-HEAD
-TRLR
+gedcom::encoding::external_encoding_mismatch
+
+  × Unable to determine encoding of GEDCOM file
+  ╰─▶ The file’s GEDCOM header specifies the encoding to be UNICODE, but the file encoding was determined to be UTF-8
+   ╭─[utf8_bom.ged:4:8]
+ 3 │ 2 VERS 5.5.1
+ 4 │ 1 CHAR UNICODE
+   ·        ───┬───
+   ·           ╰── encoding was specified here
+ 5 │ 0 TRLR
+   ╰────
+
+Advice: gedcom::encoding_reason::bom
+
+  ☞ this encoding was detected from the byte-order mark (BOM) at the start of the file

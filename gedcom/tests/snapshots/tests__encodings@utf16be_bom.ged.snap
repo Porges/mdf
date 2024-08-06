@@ -1,8 +1,8 @@
 ---
 source: gedcom/tests/tests.rs
-description: "��\u00000\u0000 \u0000H\u0000E\u0000A\u0000D\u0000\r\u0000\n\u00000\u0000 \u0000T\u0000R\u0000L\u0000R\u0000\r\u0000\n"
+description: "��\u00000\u0000 \u0000H\u0000E\u0000A\u0000D\u0000\r\u0000\n\u00001\u0000 \u0000G\u0000E\u0000D\u0000C\u0000\r\u0000\n\u00002\u0000 \u0000V\u0000E\u0000R\u0000S\u0000 \u00005\u0000.\u00005\u0000.\u00001\u0000\r\u0000\n\u00001\u0000 \u0000C\u0000H\u0000A\u0000R\u0000 \u0000U\u0000N\u0000I\u0000C\u0000O\u0000D\u0000E\u0000\r\u0000\n\u00000\u0000 \u0000T\u0000R\u0000L\u0000R\u0000\r\u0000\n"
 expression: encoding_report
 input_file: gedcom/tests/encoding_inputs/utf16be_bom.ged
 ---
-Encoding detected: UTF-16 (big-endian)
-Reason: encoding was detected from the byte-order mark (BOM)
+External encoding detected: UTF-16 (big-endian)
+Reason: this encoding was detected from the byte-order mark (BOM) at the start of the file

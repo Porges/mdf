@@ -2,6 +2,7 @@ use std::borrow::Cow;
 
 use ascii::AsAsciiStr;
 use miette::SourceSpan;
+use vec1::Vec1;
 
 use crate::{
     encodings::{GEDCOMEncoding, InvalidGEDCOMEncoding},
@@ -27,17 +28,6 @@ pub enum SupportedEncoding {
     UTF16BE,
     /// The UTF-16 Little Endian encoding.
     UTF16LE,
-}
-
-impl From<SupportedEncoding> for GEDCOMEncoding {
-    fn from(value: SupportedEncoding) -> Self {
-        match value {
-            SupportedEncoding::ASCII => GEDCOMEncoding::ASCII,
-            SupportedEncoding::ANSEL => GEDCOMEncoding::ANSEL,
-            SupportedEncoding::UTF8 => GEDCOMEncoding::UTF8,
-            SupportedEncoding::UTF16BE | SupportedEncoding::UTF16LE => GEDCOMEncoding::UNICODE,
-        }
-    }
 }
 
 impl std::fmt::Display for SupportedEncoding {
@@ -66,23 +56,25 @@ pub struct DetectedEncoding {
 
 #[derive(thiserror::Error, Debug, miette::Diagnostic, Copy, Clone)]
 pub enum EncodingReason {
-    #[error("encoding was detected from the byte-order mark (BOM)")]
+    #[error("this encoding was detected from the byte-order mark (BOM) at the start of the file")]
     #[diagnostic(severity(Advice), code(gedcom::encoding_reason::bom))]
     BOMDetected { bom_length: usize },
 
-    #[error("encoding was detected from start of file conent")]
+    #[error(
+        "this encoding was detected from start of file content (no byte-order mark was present)"
+    )]
     #[diagnostic(severity(Advice), code(gedcom::encoding_reason::sniffed))]
     Sniffed {},
 
-    #[error("encoding was specified in GEDCOM header")]
+    #[error("this encoding was specified in the GEDCOM header")]
     #[diagnostic(severity(Advice), code(gedcom::encoding_reason::header))]
     SpecifiedInHeader {
         #[label("encoding was specified here")]
         span: SourceSpan,
     },
 
-    #[error("this encoding is required by GEDCOM version {version}")]
-    #[diagnostic(severity(Advice), code(gedcom::encoding_reason::version))]
+    #[error("this encoding was used because it is required by GEDCOM version {version}")]
+    #[diagnostic(severity(Advice))]
     DeterminedByVersion {
         version: GEDCOMVersion,
 
@@ -91,7 +83,7 @@ pub enum EncodingReason {
     },
 
     #[error(
-        "encoding was not detected in GEDCOM file, so was assumed based upon provided parsing options"
+        "an encoding was not detected in the GEDCOM file, so was assumed based upon provided parsing options"
     )]
     #[diagnostic(severity(Advice), code(gedcom::encoding_reason::assumed))]
     Assumed {},
@@ -107,25 +99,40 @@ pub enum EncodingError {
     NotGedcomFile {},
 
     #[error(
-        "The file’s GEDCOM header specifies the encoding to be {file_encoding}, but the file encoding was determined to be {external_encoding}",
+        "GEDCOM version {version} requires the encoding to be {version_encoding}, but the file encoding was determined to be {external_encoding}",
     )]
-    #[diagnostic(code(gedcom::encoding::utf16_mismatch))]
-    ExternalEncodingMismatch {
-        file_encoding: GEDCOMEncoding,
+    #[diagnostic(code(gedcom::encoding::version_encoding_mismatch))]
+    VersionEncodingMismatch {
+        version: GEDCOMVersion,
+        version_encoding: SupportedEncoding,
+        #[label("file version was specified here")]
+        version_span: SourceSpan,
 
         external_encoding: SupportedEncoding,
 
-        #[diagnostic_source]
-        reason: EncodingReason,
+        #[related]
+        reason: Vec1<EncodingReason>,
+    },
 
+    #[error(
+        "The file’s GEDCOM header specifies the encoding to be {file_encoding}, but the file encoding was determined to be {external_encoding}",
+    )]
+    #[diagnostic(code(gedcom::encoding::external_encoding_mismatch))]
+    ExternalEncodingMismatch {
+        file_encoding: GEDCOMEncoding,
         #[label("encoding was specified here")]
         span: SourceSpan,
+
+        external_encoding: SupportedEncoding,
+
+        #[related]
+        reason: Vec1<EncodingReason>,
     },
 
     #[error(
         "The file’s GEDCOM header specifies the encoding to be {file_encoding}, but the file is in an unknown ASCII-compatible encoding ",
     )]
-    #[diagnostic(code(gedcom::encoding::utf16_mismatch))]
+    #[diagnostic(code(gedcom::encoding::file_encoding_mismatch))]
     FileEncodingMismatch {
         file_encoding: GEDCOMEncoding,
 
@@ -133,14 +140,8 @@ pub enum EncodingError {
         span: SourceSpan,
     },
 
-    #[error("Unable to determine encoding of GEDCOM file")]
-    #[diagnostic(
-        code(gedcom::encoding::no_encoding),
-        help("the GEDCOM file seemed to be valid but did not contain any encoding information")
-    )]
-    UnableToDetermine {},
-
     #[error("Unknown encoding specified in GEDCOM file")]
+    #[diagnostic(code(gedcom::encoding::invalid_encoding))]
     InvalidEncoding {
         #[diagnostic_source]
         source: InvalidGEDCOMEncoding,
@@ -151,26 +152,28 @@ pub enum EncodingError {
 
     #[error("Detected byte-order mark (BOM) for unsupported encoding {encoding}")]
     #[diagnostic(help("UTF-32 is not permitted as an encoding by any GEDCOM specification"))]
+    #[diagnostic(code(gedcom::encoding::invalid_bom))]
     InvalidBOM { encoding: &'static str },
+}
 
-    #[error("Invalid data in GEDCOM file")]
-    #[diagnostic(code(gedcom::encoding::invalid_data))]
-    InvalidData {
-        encoding: SupportedEncoding,
+#[derive(thiserror::Error, Debug, miette::Diagnostic)]
+#[error("Invalid data for encoding {encoding}")]
+#[diagnostic(code(gedcom::encoding::invalid_data))]
+pub struct InvalidDataForEncodingError {
+    encoding: SupportedEncoding,
 
-        #[source]
-        source: Option<Box<dyn std::error::Error + Send + Sync + 'static>>,
+    #[source]
+    source: Option<Box<dyn std::error::Error + Send + Sync + 'static>>,
 
-        #[label("this is not valid data for the encoding {encoding}")]
-        span: Option<SourceSpan>,
+    #[label("this is not valid data for the encoding {encoding}")]
+    span: Option<SourceSpan>,
 
-        #[related] // TODO: this should be a single reason but miette only supports iterables
-        reason: Vec<EncodingReason>,
-    },
+    #[related] // TODO: this should really be one value but Miette requires iterable
+    reason: Vec1<EncodingReason>,
 }
 
 impl DetectedEncoding {
-    pub fn decode<'a>(&self, data: &'a [u8]) -> Result<Cow<'a, str>, EncodingError> {
+    pub fn decode<'a>(&self, data: &'a [u8]) -> Result<Cow<'a, str>, InvalidDataForEncodingError> {
         // trim off BOM, if any
         let offset_adjustment = match self.reason {
             EncodingReason::BOMDetected { bom_length } => bom_length,
@@ -182,44 +185,44 @@ impl DetectedEncoding {
         match self.encoding {
             SupportedEncoding::ASCII => Ok(data
                 .as_ascii_str()
-                .map_err(|source| EncodingError::InvalidData {
+                .map_err(|source| InvalidDataForEncodingError {
                     encoding: self.encoding,
                     source: Some(Box::new(source)),
                     span: Some(SourceSpan::from((
                         offset_adjustment + source.valid_up_to(),
                         1,
                     ))),
-                    reason: vec![self.reason],
+                    reason: Vec1::new(self.reason),
                 })?
                 .as_str()
                 .into()),
             SupportedEncoding::ANSEL => {
-                ansel::decode(data).map_err(|source| EncodingError::InvalidData {
+                ansel::decode(data).map_err(|source| InvalidDataForEncodingError {
                     encoding: self.encoding,
                     source: Some(Box::new(source)),
                     span: Some(SourceSpan::from((offset_adjustment + source.offset(), 1))),
-                    reason: vec![self.reason],
+                    reason: Vec1::new(self.reason),
                 })
             }
             SupportedEncoding::UTF8 => Ok(std::str::from_utf8(data)
-                .map_err(|source| EncodingError::InvalidData {
+                .map_err(|source| InvalidDataForEncodingError {
                     encoding: self.encoding,
                     source: Some(Box::new(source)),
                     span: Some(SourceSpan::from((
                         offset_adjustment + source.valid_up_to(),
                         source.error_len().unwrap_or(1),
                     ))),
-                    reason: vec![self.reason],
+                    reason: Vec1::new(self.reason),
                 })?
                 .into()),
             SupportedEncoding::UTF16BE => {
                 let (result, had_errors) = encoding_rs::UTF_16BE.decode_without_bom_handling(data);
                 if had_errors {
-                    Err(EncodingError::InvalidData {
+                    Err(InvalidDataForEncodingError {
                         encoding: self.encoding,
                         source: None,
                         span: None,
-                        reason: vec![self.reason],
+                        reason: Vec1::new(self.reason),
                     })
                 } else {
                     Ok(result)
@@ -228,11 +231,11 @@ impl DetectedEncoding {
             SupportedEncoding::UTF16LE => {
                 let (result, had_errors) = encoding_rs::UTF_16LE.decode_without_bom_handling(data);
                 if had_errors {
-                    Err(EncodingError::InvalidData {
+                    Err(InvalidDataForEncodingError {
                         encoding: self.encoding,
                         source: None,
                         span: None,
-                        reason: vec![self.reason],
+                        reason: Vec1::new(self.reason),
                     })
                 } else {
                     Ok(result)

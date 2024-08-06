@@ -13,6 +13,6 @@ pub enum VersionError {
         source: InvalidGEDCOMVersionError,
     },
 
-    #[error("No version could be detected from GEDCOM file")]
+    #[error("GEDCOM file appeared to be syntactically valid, but no version could be found")]
     NoVersion {},
 }
