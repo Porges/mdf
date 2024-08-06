@@ -1,0 +1,8 @@
+---
+source: gedcom/tests/tests.rs
+assertion_line: 185
+description: "﻿0 HEAD\r\n0 MALFORMED h�x�ré\r\n"
+expression: encoding_report
+input_file: gedcom/tests/encoding_inputs/utf8_bom_malformed.ged
+---
+GEDCOM file contains a syntax error

@@ -5,11 +5,17 @@ edition = "2021"
 authors = ["George Pollard <porges@porg.es>"]
 license = "GPL-3.0"
 
+[features]
+default = ["miette-highlighting"]
+miette-highlighting = ["miette/fancy-base"]
+legacy-encodings = ["dep:oem_cp"]
+
 [dependencies]
 ascii = "1.1.0"
 encoding_rs = "0.8.34"
 # TODO: update once this is merged https://github.com/zkat/miette/pull/393
-miette = { git = "https://github.com/Porges/miette", branch = "invalid_unicode"}
+miette = { git = "https://github.com/Porges/miette", branch = "invalid_unicode" }
+oem_cp = { version = "2.0.0", optional = true }
 owo-colors = "4.0.0"
 thiserror = "1.0.63"
 tracing = { version = "0.1", features = ["attributes"] }

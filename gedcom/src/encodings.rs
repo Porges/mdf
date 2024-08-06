@@ -3,6 +3,8 @@ use std::{borrow::Cow, fmt::Display};
 use miette::{Diagnostic, SourceSpan};
 use thiserror::Error;
 
+use crate::parser::GEDCOMSource;
+
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum GEDCOMEncoding {
     ASCII,
@@ -25,18 +27,10 @@ impl Display for GEDCOMEncoding {
 }
 
 #[derive(Error, Diagnostic, Debug)]
-#[error(
-    "malformed record: record {record_tag} ({record_description}) requires a subrecord {subrecord_tag} ({subrecord_description}), but it was not found"
-)]
-pub struct MissingRequiredSubrecord<'a> {
-    pub record_tag: Cow<'a, str>,
-    pub record_description: &'static str,
-
-    #[label("this record must contain a {subrecord_tag} subrecord")]
-    pub record_span: SourceSpan,
-
-    pub subrecord_tag: String,
-    pub subrecord_description: &'static str,
+#[error("Required subrecord {tag} ({description}) was not found")]
+pub struct MissingRequiredSubrecord {
+    pub tag: &'static str,
+    pub description: &'static str,
 }
 
 #[derive(Error, Diagnostic, Debug)]
@@ -100,7 +94,14 @@ impl<'a> DataError<'a> {
 #[error("invalid GEDCOM encoding")]
 pub struct InvalidGEDCOMEncoding {}
 
-pub fn parse_encoding_raw(value: &[u8]) -> Result<GEDCOMEncoding, InvalidGEDCOMEncoding> {
+pub fn parse_encoding_raw<S: GEDCOMSource + ?Sized>(
+    value: &S,
+) -> Result<GEDCOMEncoding, InvalidGEDCOMEncoding> {
+    let value = value
+        .as_ascii_str()
+        .map_err(|_| InvalidGEDCOMEncoding {})?
+        .as_bytes();
+
     match value {
         b"ANSEL" => Ok(GEDCOMEncoding::ANSEL),
         b"ASCII" => Ok(GEDCOMEncoding::ASCII),

@@ -1,6 +1,15 @@
 use std::{path::PathBuf, sync::Once};
 
-use gedcom::{ParseOptions, RawRecord, Sourced};
+use gedcom::{
+    parser::{
+        decoding,
+        encodings::SupportedEncoding,
+        options::{OptionSetting, ParseOptions},
+        parse,
+        records::RawRecord,
+    },
+    versions::GEDCOMVersion,
+};
 use kdl::{KdlDocument, KdlEntry, KdlNode};
 use miette::{NamedSource, Report};
 
@@ -39,27 +48,15 @@ fn produces_expected_allged_tree() {
 
     let data = std::fs::read(path).unwrap();
     let buffer = &mut String::new();
-    let parsed = parse(&data, buffer).unwrap();
+    let parsed = parse(&data, buffer, LENIENT_OPTIONS).unwrap();
 
     insta::assert_snapshot!(to_kdl(parsed.into_iter().map(|r| r.value)));
 }
 
-fn parse<'a>(
-    data: &'a [u8],
-    buffer: &'a mut String,
-) -> Result<Vec<Sourced<RawRecord<'a, str>>>, miette::Report> {
-    let lenient_options = ParseOptions {
-        version: gedcom::OptionSetting::Assume(gedcom::versions::GEDCOMVersion::V5),
-        encoding: gedcom::OptionSetting::Assume(gedcom::SupportedEncoding::ASCII),
-    };
-
-    let lines = gedcom::iterate_lines(data, buffer, &lenient_options)?;
-    let validated_lines = lines.collect::<Result<Vec<_>, _>>()?;
-    let records = gedcom::build_tree(validated_lines.into_iter());
-    let validated_records = records.collect::<Result<Vec<_>, _>>()?;
-
-    Ok(validated_records)
-}
+const LENIENT_OPTIONS: &ParseOptions = &ParseOptions {
+    version: OptionSetting::Assume(GEDCOMVersion::V5),
+    encoding: OptionSetting::Assume(SupportedEncoding::ANSEL),
+};
 
 #[test]
 fn torture_test_valid() {
@@ -69,8 +66,8 @@ fn torture_test_valid() {
         let data = std::fs::read(path).unwrap();
         let filename = path.file_name().unwrap().to_string_lossy();
         let buffer = &mut String::new();
-        let parsed = parse(&data, buffer)
-            .map_err(|e| e.with_source_code(NamedSource::new(filename, data.clone())))
+        let parsed = parse(&data, buffer, LENIENT_OPTIONS)
+            .map_err(|e| Report::new(e).with_source_code(NamedSource::new(filename, data.clone())))
             .unwrap();
         insta::assert_snapshot!(to_kdl(parsed.into_iter().map(|r| r.value)));
     });
@@ -87,14 +84,14 @@ fn golden_files() -> miette::Result<()> {
             // provide GEDCOM source alongside output
             description => String::from_utf8_lossy(&data),
         }, {
-            match parse(&data, &mut String::new()) {
+            match parse(&data, &mut String::new(), LENIENT_OPTIONS) {
                 Ok(records) => {
                     let kdl = to_kdl(records.into_iter().map(|r| r.value));
                     insta::assert_snapshot!(kdl);
                 }
                 Err(err) => insta::assert_snapshot!(format!(
                     "{:?}",
-                    err.with_source_code(NamedSource::new(filename.to_string_lossy(), data))
+                    Report::new(err).with_source_code(NamedSource::new(filename.to_string_lossy(), data))
                 )),
             };
         });
@@ -107,14 +104,14 @@ fn golden_files() -> miette::Result<()> {
             // provide GEDCOM source alongside output
             description => String::from_utf8_lossy(&data),
         }, {
-            match parse(&data, &mut String::new()) {
+            match parse(&data, &mut String::new(), LENIENT_OPTIONS) {
                 Ok(records) => {
                     let kdl = to_kdl(records.into_iter().map(|r| r.value));
                     insta::assert_snapshot!(kdl);
                 }
                 Err(err) => insta::assert_snapshot!(format!(
                     "{:?}",
-                    err.with_source_code(NamedSource::new(filename, data))
+                    Report::new(err).with_source_code(NamedSource::new(filename, data))
                 )),
             };
         });
@@ -164,31 +161,36 @@ fn test_encodings() {
 
     insta::glob!("encoding_inputs/*.ged", |path| {
         let data = std::fs::read(path).unwrap();
+        let data_ref: &[u8] = data.as_ref();
         let filename = path.file_name().unwrap().to_string_lossy();
-        let detected_encoding = gedcom::detect_file_encoding(&data);
-        let encoding_report = match detected_encoding {
-            Ok(detected) => format!(
-                "Encoding detected: {}\nReason: {}",
-                detected.encoding,
-                Report::new(detected.reason)
-                    .with_source_code(NamedSource::new(filename.clone(), data.clone()))
-            ),
-            Err(err) => format!("{}", Report::new(err)),
-        };
+        let encoding_report =
+            match decoding::version_and_encoding_from_gedcom(data_ref, LENIENT_OPTIONS) {
+                Ok((_version, detected)) => format!(
+                    "Encoding detected: {}\nReason: {}",
+                    detected.encoding,
+                    Report::new(detected.reason)
+                        .with_source_code(NamedSource::new(filename.clone(), data.clone()))
+                ),
+                Err(err) => format!(
+                    "{}",
+                    Report::new(err)
+                        .with_source_code(NamedSource::new(filename.clone(), data.clone()))
+                ),
+            };
 
         insta::with_settings!({
             // provide GEDCOM source alongside output
             description => String::from_utf8_lossy(&data),
         }, {
             insta::assert_snapshot!(encoding_report);
-            match parse(&data, &mut String::new()) {
+            match parse(&data, &mut String::new(), &LENIENT_OPTIONS) {
                 Ok(records) => {
                     let kdl = to_kdl(records.into_iter().map(|r| r.value));
                     insta::assert_snapshot!(kdl);
                 }
                 Err(err) => insta::assert_snapshot!(format!(
                     "{:?}",
-                    err.with_source_code(NamedSource::new(filename, data))
+                    Report::new(err).with_source_code(NamedSource::new(filename, data))
                 )),
             };
         });

@@ -1,0 +1,17 @@
+---
+source: gedcom/tests/tests.rs
+assertion_line: 191
+description: "0 HEAD\r\n1 GEDC\r\n2 VERS 7.0\r\n0 TEXT h�3�ré\r\n0 TRLR\r\n"
+expression: "format!(\"{:?}\",\n    Report::new(err).with_source_code(NamedSource::new(filename, data)))"
+input_file: gedcom/tests/encoding_inputs/utf8_assumedversion_malformed.ged
+---
+  × Unable to determine encoding of GEDCOM file
+  ├─▶ gedcom::encoding::invalid_data
+  │   
+  │     × Invalid data in GEDCOM file
+  │   
+  │   Advice: gedcom::encoding_reason::version
+  │   
+  │     ☞ this encoding is required by GEDCOM version 7.0
+  │   
+  ╰─▶ invalid utf-8 sequence of 1 bytes from index 36

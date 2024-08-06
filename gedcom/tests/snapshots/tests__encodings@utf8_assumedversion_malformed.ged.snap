@@ -5,4 +5,4 @@ expression: encoding_report
 input_file: gedcom/tests/encoding_inputs/utf8_assumedversion_malformed.ged
 ---
 Encoding detected: UTF-8
-Reason: encoding was determined by GEDCOM version; v7 must always be UTF-8
+Reason: this encoding is required by GEDCOM version 7.0

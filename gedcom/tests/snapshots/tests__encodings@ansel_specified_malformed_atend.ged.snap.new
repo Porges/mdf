@@ -1,0 +1,8 @@
+---
+source: gedcom/tests/tests.rs
+assertion_line: 185
+description: "0 HEAD\r\n1 CHAR ANSEL\r\n0 SOME t�"
+expression: encoding_report
+input_file: gedcom/tests/encoding_inputs/ansel_specified_malformed_atend.ged
+---
+GEDCOM file structure is invalid
