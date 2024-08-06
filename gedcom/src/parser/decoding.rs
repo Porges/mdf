@@ -157,7 +157,9 @@ fn detect_version_from_head_record<S: GEDCOMSource + ?Sized>(
     head: &Sourced<RawRecord<S>>,
 ) -> Result<Sourced<GEDCOMVersion>, VersionError> {
     if let Some(gedc) = head.subrecord_optional("GEDC") {
+        tracing::debug!("located GEDC record");
         if let Some(vers) = gedc.subrecord_optional("VERS") {
+            tracing::debug!("located VERS record");
             // GEDCOM 4.x or above (including 5.x and 7.x)
             let data = vers.line.data.expect("TODO: error");
             return data

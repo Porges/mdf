@@ -27,8 +27,9 @@ fn can_parse_allged_lines() {
     path.push("tests/external/gpdf/allged.ged");
 
     let data = std::fs::read(path).unwrap();
+    let mut buffer = String::new();
 
-    let line_count = gedcom::validate_syntax(&data).unwrap();
+    let line_count = gedcom::validate_syntax(&data, &mut buffer).unwrap();
     assert_eq!(line_count, 1159);
 }
 
