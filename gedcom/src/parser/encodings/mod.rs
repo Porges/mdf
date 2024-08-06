@@ -29,6 +29,17 @@ pub enum SupportedEncoding {
     UTF16LE,
 }
 
+impl From<SupportedEncoding> for GEDCOMEncoding {
+    fn from(value: SupportedEncoding) -> Self {
+        match value {
+            SupportedEncoding::ASCII => GEDCOMEncoding::ASCII,
+            SupportedEncoding::ANSEL => GEDCOMEncoding::ANSEL,
+            SupportedEncoding::UTF8 => GEDCOMEncoding::UTF8,
+            SupportedEncoding::UTF16BE | SupportedEncoding::UTF16LE => GEDCOMEncoding::UNICODE,
+        }
+    }
+}
+
 impl std::fmt::Display for SupportedEncoding {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let str = match self {
@@ -96,13 +107,27 @@ pub enum EncodingError {
     NotGedcomFile {},
 
     #[error(
-        "The file’s GEDCOM header specifies the encoding to be {encoding}, but the file encoding was determined to be {detected}"
+        "The file’s GEDCOM header specifies the encoding to be {file_encoding}, but the file encoding was determined to be {external_encoding}",
     )]
     #[diagnostic(code(gedcom::encoding::utf16_mismatch))]
-    EncodingMismatch {
-        encoding: GEDCOMEncoding,
+    ExternalEncodingMismatch {
+        file_encoding: GEDCOMEncoding,
 
-        detected: SupportedEncoding,
+        external_encoding: SupportedEncoding,
+
+        #[diagnostic_source]
+        reason: EncodingReason,
+
+        #[label("encoding was specified here")]
+        span: SourceSpan,
+    },
+
+    #[error(
+        "The file’s GEDCOM header specifies the encoding to be {file_encoding}, but the file is in an unknown ASCII-compatible encoding ",
+    )]
+    #[diagnostic(code(gedcom::encoding::utf16_mismatch))]
+    FileEncodingMismatch {
+        file_encoding: GEDCOMEncoding,
 
         #[label("encoding was specified here")]
         span: SourceSpan,

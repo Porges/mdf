@@ -163,20 +163,18 @@ fn test_encodings() {
         let data = std::fs::read(path).unwrap();
         let data_ref: &[u8] = data.as_ref();
         let filename = path.file_name().unwrap().to_string_lossy();
-        let encoding_report =
-            match decoding::version_and_encoding_from_gedcom(data_ref, LENIENT_OPTIONS) {
-                Ok((_version, detected)) => format!(
-                    "Encoding detected: {}\nReason: {}",
-                    detected.encoding,
-                    Report::new(detected.reason)
-                        .with_source_code(NamedSource::new(filename.clone(), data.clone()))
-                ),
-                Err(err) => format!(
-                    "{}",
-                    Report::new(err)
-                        .with_source_code(NamedSource::new(filename.clone(), data.clone()))
-                ),
-            };
+        let encoding_report = match decoding::parse_gedcom_header(data_ref, LENIENT_OPTIONS) {
+            Ok((_version, detected)) => format!(
+                "Encoding detected: {}\nReason: {}",
+                detected.encoding,
+                Report::new(detected.reason)
+                    .with_source_code(NamedSource::new(filename.clone(), data.clone()))
+            ),
+            Err(err) => format!(
+                "{}",
+                Report::new(err).with_source_code(NamedSource::new(filename.clone(), data.clone()))
+            ),
+        };
 
         insta::with_settings!({
             // provide GEDCOM source alongside output

@@ -1,8 +1,0 @@
----
-source: gedcom/tests/tests.rs
-assertion_line: 185
-description: "0 HEAD\r\n1 CHAR ANSEL\r\n0 MACRON¯\r\n0 TRLR\r\n"
-expression: encoding_report
-input_file: gedcom/tests/encoding_inputs/ansel_specified_malformed_badchar.ged
----
-GEDCOM file contains a syntax error
