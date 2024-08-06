@@ -154,13 +154,13 @@ pub fn parse<'a>(
     input: &'a [u8],
     buffer: &'a mut String,
 ) -> Result<Vec<Sourced<RawRecord<'a>>>, DecodingError> {
-    let (_version, input) = decoding::detect_and_decode(input)?;
+    let (_version, decoded_input) = decoding::detect_and_decode(input)?;
 
     // if we want to return records without copying data in most cases,
     // the caller must provide a buffer where we can copy data if needed
     // (this happens when parsing UTF-16, or ANSEL if any non-ASCII characters are present)
-    let input: &'a str = match input {
-        Cow::Borrowed(input) => input,
+    let input: &'a str = match decoded_input {
+        Cow::Borrowed(borrowed) => borrowed,
         Cow::Owned(owned) => {
             *buffer = owned;
             buffer.as_str()
