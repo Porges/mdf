@@ -2,7 +2,7 @@ use std::borrow::Cow;
 
 use crate::{
     parser::encodings::external_file_encoding,
-    versions::{parse_version_head_gedc_vers, GEDCOMVersion},
+    versions::{parse_version_head_gedc_vers, GEDCOMVersion, SupportedGEDCOMVersion},
     FileStructureError,
 };
 
@@ -121,7 +121,15 @@ pub fn parse_gedcom_header<S: GEDCOMSource + ?Sized>(
         })?;
 
     let version = detect_version_from_head_record(head)?;
-    let encoding = version.detect_encoding_from_head_record(head, external_encoding)?;
+    let supported_version: Sourced<SupportedGEDCOMVersion> =
+        version
+            .try_into()
+            .map_err(|source| VersionError::UnsupportedVersion {
+                source,
+                span: version.span,
+            })?;
+
+    let encoding = supported_version.detect_encoding_from_head_record(head, external_encoding)?;
     Ok((version, encoding))
 }
 
@@ -145,15 +153,12 @@ fn detect_version_from_head_record<S: GEDCOMSource + ?Sized>(
 
     if let Some(sour) = head.subrecord_optional("SOUR") {
         // GEDCOM 2.x or 3.0
-        if let Some(vers) = sour.subrecord_optional("VERS") {
+        if let Some(_vers) = sour.subrecord_optional("VERS") {
             // this is 3.0 – TODO check line data value
-            return Ok(Sourced {
-                value: GEDCOMVersion::V3,
-                span: vers.line.span,
-            });
+            todo!("3.x handling");
+        } else {
+            todo!("2.x handling");
         }
-
-        todo!("2.x handling")
     }
 
     Err(VersionError::NoVersion {})

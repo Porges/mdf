@@ -1,8 +1,8 @@
 ---
-source: gedcom/tests/tests.rs
-description: "0 HEAD\r\n1 GEDC\r\n2 VERS 5.5.1\r\n1 CHAR ASCII\r\n0 _ROOT\r\n1 _CHILD1\r\n2 _GRANDCHILD\r\n1 _CHILD2\r\n"
+source: gedcomfy/tests/tests.rs
+description: "0 HEAD\r\n1 GEDC\r\n2 VERS 5.5.1\r\n1 CHAR ASCII\r\n0 _ROOT\r\n1 _CHILD c1\r\n2 _GRANDCHILD gc1\r\n1 _CHILD c2\r\n"
 expression: kdl
-input_file: gedcom/tests/syntax_inputs/basic_nested_2_siblings.ged
+input_file: gedcomfy/tests/syntax_inputs/basic_nested_2_siblings.ged
 ---
 HEAD {
     GEDC {
@@ -11,8 +11,8 @@ HEAD {
     CHAR "ASCII"
 }
 _ROOT {
-    _CHILD1 {
-        _GRANDCHILD
+    _CHILD "c1" {
+        _GRANDCHILD "gc1"
     }
-    _CHILD2
+    _CHILD "c2"
 }

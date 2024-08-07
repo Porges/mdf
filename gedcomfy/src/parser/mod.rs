@@ -139,6 +139,31 @@ impl<T> Sourced<T> {
             span: self.span,
         })
     }
+
+    pub fn try_into<U>(self) -> Result<Sourced<U>, T::Error>
+    where
+        T: TryInto<U>,
+    {
+        match self.value.try_into() {
+            Ok(value) => Ok(Sourced {
+                value,
+                span: self.span,
+            }),
+            Err(err) => Err(err),
+        }
+    }
+}
+
+impl<T, E> Sourced<Result<T, E>> {
+    pub fn transpose(self) -> Result<Sourced<T>, E> {
+        match self.value {
+            Ok(value) => Ok(Sourced {
+                value,
+                span: self.span,
+            }),
+            Err(err) => Err(err),
+        }
+    }
 }
 
 /// A [`Sourced``] value derefs to the inner value, making
@@ -181,7 +206,7 @@ pub fn parse<'a>(
         }
     }
 
-    if let Some(record) = record_builder.complete() {
+    if let Some(record) = record_builder.complete()? {
         result.push(record);
     }
 

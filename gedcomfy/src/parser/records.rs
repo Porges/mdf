@@ -33,13 +33,22 @@ impl<'a, S: GEDCOMSource + ?Sized> Sourced<RawRecord<'a, S>> {
 }
 
 #[derive(thiserror::Error, Debug, miette::Diagnostic)]
-#[error("Invalid child level {level}, expected {expected_level} or less")]
-#[diagnostic(code(gedcom::record_error::invalid_child_level))]
-pub struct RecordStructureError {
-    level: usize,
-    expected_level: usize,
-    #[label("this should be less than or equal to {expected_level}")]
-    span: SourceSpan,
+pub enum RecordStructureError {
+    #[error("Invalid child level {level}, expected {expected_level} or less")]
+    #[diagnostic(code(gedcom::record_error::invalid_child_level))]
+    InvalidChildLevel {
+        level: usize,
+        expected_level: usize,
+        #[label("this should be less than or equal to {expected_level}")]
+        span: SourceSpan,
+    },
+
+    #[error("A record without subrecords must have a value")]
+    #[diagnostic(code(gedcom::record_error::value_missing))]
+    MissingRecordValue {
+        #[label("this record must contain a value, since it has no subrecords")]
+        span: SourceSpan,
+    },
 }
 
 pub struct RecordBuilder<'a, S: GEDCOMSource + ?Sized = str> {
@@ -51,9 +60,23 @@ impl<'a, S: GEDCOMSource + ?Sized> RecordBuilder<'a, S> {
         Self { stack: Vec::new() }
     }
 
-    fn pop_to_level(&mut self, level: usize) -> Option<Sourced<RawRecord<'a, S>>> {
+    fn pop_to_level(
+        &mut self,
+        level: usize,
+    ) -> Result<Option<Sourced<RawRecord<'a, S>>>, RecordStructureError> {
         while self.stack.len() > level {
             let child = self.stack.pop().unwrap(); // UNWRAP: guaranteed, len > 0
+
+            // this sort of feels like the wrong place to enforce this
+            if child.records.is_empty()
+                && child.line.data.is_none()
+                && !child.line.tag.eq("CONT")
+                && !child.line.tag.eq("TRLR")
+            {
+                return Err(RecordStructureError::MissingRecordValue {
+                    span: child.line.span,
+                });
+            }
 
             let span = if let Some(last_child) = child.records.last() {
                 // if the child has children, re-calculate the span of the record,
@@ -71,7 +94,7 @@ impl<'a, S: GEDCOMSource + ?Sized> RecordBuilder<'a, S> {
             match self.stack.last_mut() {
                 None => {
                     debug_assert_eq!(level, 0); // only happens when popping to top level
-                    return Some(sourced);
+                    return Ok(Some(sourced));
                 }
                 Some(parent) => {
                     parent.records.push(sourced);
@@ -79,18 +102,18 @@ impl<'a, S: GEDCOMSource + ?Sized> RecordBuilder<'a, S> {
             }
         }
 
-        None
+        Ok(None)
     }
 
     pub fn handle_line(
         &mut self,
         (level, line): (Sourced<usize>, Sourced<RawLine<'a, S>>),
     ) -> Result<Option<Sourced<RawRecord<'a, S>>>, RecordStructureError> {
-        let to_emit = self.pop_to_level(level.value);
+        let to_emit = self.pop_to_level(level.value)?;
 
         let expected_level = self.stack.len();
         if level.value != expected_level {
-            return Err(RecordStructureError {
+            return Err(RecordStructureError::InvalidChildLevel {
                 level: level.value,
                 expected_level,
                 span: level.span,
@@ -115,7 +138,7 @@ impl<'a, S: GEDCOMSource + ?Sized> RecordBuilder<'a, S> {
     }
     */
 
-    pub fn complete(mut self) -> Option<Sourced<RawRecord<'a, S>>> {
+    pub fn complete(mut self) -> Result<Option<Sourced<RawRecord<'a, S>>>, RecordStructureError> {
         self.pop_to_level(0)
     }
 }
@@ -150,7 +173,7 @@ pub fn iterate_records<'a>(
             }
 
             // lines has been exhausted - finish the builder
-            self.builder.take().and_then(|b| b.complete().map(Ok))
+            self.builder.take().and_then(|b| b.complete().transpose())
         }
     }
 
@@ -172,5 +195,5 @@ where
         }
     }
 
-    Ok(builder.complete())
+    Ok(builder.complete()?)
 }

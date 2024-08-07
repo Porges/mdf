@@ -4,13 +4,13 @@ use tracing::{field::Visit, span, Level, Subscriber};
 use tracing_subscriber::Layer;
 
 pub(crate) struct CliclackLayer {
-    known_spans: BTreeMap<span::Id, ()>,
+    _known_spans: BTreeMap<span::Id, ()>,
 }
 
 impl CliclackLayer {
     pub(crate) fn new() -> Self {
         Self {
-            known_spans: BTreeMap::new(),
+            _known_spans: BTreeMap::new(),
         }
     }
 }
@@ -28,7 +28,7 @@ impl<S: Subscriber> Layer<S> for CliclackLayer {
         &self,
         attrs: &span::Attributes<'_>,
         id: &span::Id,
-        ctx: tracing_subscriber::layer::Context<'_, S>,
+        _ctx: tracing_subscriber::layer::Context<'_, S>,
     ) {
         panic!("attrs: {:?}, id: {:?}", attrs, id);
     }

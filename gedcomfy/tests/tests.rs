@@ -49,7 +49,7 @@ fn produces_expected_allged_tree() {
 fn torture_test_valid() {
     ensure_hook();
 
-    insta::glob!("external/gedcom-samples/Torture Test/*.ged", |path| {
+    insta::glob!("external/torture-test-55-files/*.ged", |path| {
         let data = std::fs::read(path).unwrap();
         let filename = path.file_name().unwrap().to_string_lossy();
         let buffer = &mut String::new();

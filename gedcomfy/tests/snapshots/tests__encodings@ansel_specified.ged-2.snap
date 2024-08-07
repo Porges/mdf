@@ -1,8 +1,8 @@
 ---
-source: gedcom/tests/tests.rs
+source: gedcomfy/tests/tests.rs
 description: "0 HEAD\r\n1 GEDC\r\n2 VERS 5.5.1\r\n1 CHAR ANSEL\r\n0 TEXT a ��orn in my side\r\n0 TRLR\r\n"
 expression: kdl
-input_file: gedcom/tests/encoding_inputs/ansel_specified.ged
+input_file: gedcomfy/tests/encoding_inputs/ansel_specified.ged
 ---
 HEAD {
     GEDC {

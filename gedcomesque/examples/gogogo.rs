@@ -1,11 +1,10 @@
 use std::{path::PathBuf, time::Instant};
 
 use gedcomesque::entities::individual::{ActiveModel as IndividualActive, Entity as Individual};
-use miette::{Error, IntoDiagnostic, NamedSource};
+use miette::{IntoDiagnostic, NamedSource};
 use sea_orm::{
-    sea_query::TableCreateStatement, ActiveModelTrait, ActiveValue, ConnectionTrait, Database,
-    DatabaseConnection, DbBackend, EntityTrait, PaginatorTrait, Schema, Statement,
-    TransactionTrait,
+    sea_query::TableCreateStatement, ActiveValue, ConnectionTrait, Database, DatabaseConnection,
+    DbBackend, EntityTrait, PaginatorTrait, Schema, TransactionTrait,
 };
 
 #[tokio::main(flavor = "current_thread")]
@@ -18,9 +17,9 @@ async fn main() -> miette::Result<()> {
         miette::Report::new(e).with_source_code(NamedSource::new(filename, data.clone()))
     })?;
 
-    let db: DatabaseConnection = Database::connect("sqlite:gogogo.db?mode=rwc")
-        .await
-        .into_diagnostic()?;
+    // let target = "sqlite:gogogo.db?mode=rwc";
+    let memtarget = "sqlite::memory:";
+    let db: DatabaseConnection = Database::connect(memtarget).await.into_diagnostic()?;
 
     // db.execute_unprepared("PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL;")
     //     .await
@@ -75,8 +74,8 @@ async fn main() -> miette::Result<()> {
         start_time.elapsed().as_secs_f64()
     );
 
-    let guys = Individual::find().count(&db).await.into_diagnostic()?;
-    println!("found {guys} records");
+    let dudes = Individual::find().count(&db).await.into_diagnostic()?;
+    println!("found {dudes} records");
 
     Ok(())
 }

@@ -6,7 +6,7 @@ use vec1::Vec1;
 
 use crate::{
     encodings::{GEDCOMEncoding, InvalidGEDCOMEncoding},
-    versions::GEDCOMVersion,
+    versions::SupportedGEDCOMVersion,
 };
 
 pub mod ansel;
@@ -76,7 +76,7 @@ pub enum EncodingReason {
     #[error("this encoding was used because it is required by GEDCOM version {version}")]
     #[diagnostic(severity(Advice))]
     DeterminedByVersion {
-        version: GEDCOMVersion,
+        version: SupportedGEDCOMVersion,
 
         #[label("version was specified here")]
         span: SourceSpan,
@@ -103,7 +103,7 @@ pub enum EncodingError {
     )]
     #[diagnostic(code(gedcom::encoding::version_encoding_mismatch))]
     VersionEncodingMismatch {
-        version: GEDCOMVersion,
+        version: SupportedGEDCOMVersion,
         version_encoding: SupportedEncoding,
         #[label("file version was specified here")]
         version_span: SourceSpan,
