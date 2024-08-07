@@ -1,5 +1,5 @@
 [workspace]
-members = ["gedcomfy", "mdf"]
+members = ["gedcomfy", "gedcomesque", "mdf"]
 resolver = "2"
 
 [profile.release]
@@ -8,4 +8,3 @@ lto = "thin"
 
 [profile.dev.package]
 insta.opt-level = 3
-similar.opt-level = 3

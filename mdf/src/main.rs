@@ -1,7 +1,14 @@
-use std::{path::PathBuf, time::Instant};
+mod cliclack_layer;
+
+use std::{
+    io::{stdout, IsTerminal},
+    path::PathBuf,
+    time::Instant,
+};
 
 use clap::{Parser, Subcommand};
 use miette::{Context, IntoDiagnostic, NamedSource};
+use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 #[derive(Parser)]
 enum MdfArgs {
@@ -20,7 +27,21 @@ enum GedcomCommands {
 }
 
 fn main() -> miette::Result<()> {
-    tracing_subscriber::fmt::init();
+    if stdout().is_terminal() {
+        // HACK: override console wants_emoji detection
+        // https://github.com/console-rs/console/blob/de2f15a31a8fef0b0e65ef4bdf92cd03c3061dac/src/windows_term/mod.rs#L505
+        std::env::set_var("WT_SESSION", "1");
+
+        // interactive, format log messages using nice `cliclack`
+        tracing_subscriber::Registry::default()
+            .with(cliclack_layer::CliclackLayer::new())
+            .init();
+
+        cliclack::intro("Welcome to MDF!").into_diagnostic()?;
+    } else {
+        // non-interactive, format log messages using default `fmt`
+        tracing_subscriber::fmt::init();
+    }
 
     miette::set_hook(Box::new(|_| {
         Box::new(
@@ -58,9 +79,13 @@ fn main() -> miette::Result<()> {
                     path = %path.display(),
                     "file is (syntactically) valid",
                 );
-
-                Ok(())
             }
         },
     }
+
+    if stdout().is_terminal() {
+        cliclack::outro("Goodbye!").into_diagnostic()?;
+    }
+
+    Ok(())
 }

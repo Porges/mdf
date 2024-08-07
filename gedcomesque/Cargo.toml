@@ -1,0 +1,14 @@
+[package]
+name = "gedcomesque"
+version = "0.1.0"
+edition = "2021"
+authors = ["George Pollard <porges@porg.es>"]
+license = "GPL-3.0"
+
+[dependencies]
+sea-orm = {version = "1.0.0", features = ["sqlx-sqlite", "macros", "runtime-tokio"] }
+
+[dev-dependencies]
+miette = { git = "https://github.com/Porges/miette", branch = "invalid_unicode" , features = ["fancy-no-backtrace"] }
+tokio = { version = "1.39.2", features = ["rt", "macros"] }
+gedcomfy = { path = "../gedcomfy" }
