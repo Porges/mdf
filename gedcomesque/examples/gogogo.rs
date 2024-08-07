@@ -4,7 +4,8 @@ use gedcomesque::entities::individual::{ActiveModel as IndividualActive, Entity 
 use miette::{Error, IntoDiagnostic, NamedSource};
 use sea_orm::{
     sea_query::TableCreateStatement, ActiveModelTrait, ActiveValue, ConnectionTrait, Database,
-    DatabaseConnection, DbBackend, EntityTrait, PaginatorTrait, Schema,
+    DatabaseConnection, DbBackend, EntityTrait, PaginatorTrait, Schema, Statement,
+    TransactionTrait,
 };
 
 #[tokio::main(flavor = "current_thread")]
@@ -20,6 +21,10 @@ async fn main() -> miette::Result<()> {
     let db: DatabaseConnection = Database::connect("sqlite:gogogo.db?mode=rwc")
         .await
         .into_diagnostic()?;
+
+    // db.execute_unprepared("PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL;")
+    //     .await
+    //     .into_diagnostic()?;
 
     let builder = DbBackend::Sqlite;
     let schema = Schema::new(builder);
@@ -55,12 +60,15 @@ async fn main() -> miette::Result<()> {
 
     let start_time = Instant::now();
 
+    let txn = db.begin().await.into_diagnostic()?;
     for chunk in to_insert.chunks(1000) {
         Individual::insert_many(chunk.to_owned())
-            .exec(&db)
+            .exec(&txn)
             .await
             .into_diagnostic()?;
     }
+
+    txn.commit().await.into_diagnostic()?;
 
     println!(
         "inserted all records - elapsed {}s",
