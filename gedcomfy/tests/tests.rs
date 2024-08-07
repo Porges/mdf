@@ -1,6 +1,6 @@
 use std::{path::PathBuf, sync::Once};
 
-use gedcom::parser::{encodings::external_file_encoding, parse, records::RawRecord};
+use gedcomfy::parser::{encodings::external_file_encoding, parse, records::RawRecord};
 use kdl::{KdlDocument, KdlEntry, KdlNode};
 use miette::{NamedSource, Report};
 
@@ -29,7 +29,7 @@ fn can_parse_allged_lines() {
     let data = std::fs::read(path).unwrap();
     let mut buffer = String::new();
 
-    let line_count = gedcom::validate_syntax(&data, &mut buffer).unwrap();
+    let line_count = gedcomfy::validate_syntax(&data, &mut buffer).unwrap();
     assert_eq!(line_count, 1159);
 }
 

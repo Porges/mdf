@@ -25,7 +25,7 @@ fn main() -> miette::Result<()> {
     miette::set_hook(Box::new(|_| {
         Box::new(
             miette::MietteHandlerOpts::default()
-                .with_syntax_highlighting(gedcom::highlighting::GEDCOMHighlighter {})
+                .with_syntax_highlighting(gedcomfy::highlighting::GEDCOMHighlighter {})
                 .build(),
         )
     }))?;
@@ -42,7 +42,7 @@ fn main() -> miette::Result<()> {
 
                 let mut buffer = String::new();
 
-                let count = gedcom::validate_syntax(&data, &mut buffer)
+                let count = gedcomfy::validate_syntax(&data, &mut buffer)
                     .with_context(|| format!("validating {}", path.display()))
                     .map_err(|e| {
                         e.with_source_code(

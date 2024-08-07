@@ -1,5 +1,5 @@
 [workspace]
-members = ["gedcom", "mdf"]
+members = ["gedcomfy", "mdf"]
 resolver = "2"
 
 [profile.release]

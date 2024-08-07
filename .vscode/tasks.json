@@ -5,6 +5,7 @@
 			"type": "cargo",
 			"command": "llvm-cov",
 			"args": [
+				"nextest",
 				"--lcov",
 				"--output-path",
 				"${workspaceFolder}\\lcov.info"

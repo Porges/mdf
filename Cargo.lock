@@ -172,7 +172,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "gedcom"
+name = "gedcomfy"
 version = "0.1.0"
 dependencies = [
  "ascii",
@@ -284,7 +284,7 @@ name = "mdf"
 version = "0.1.0"
 dependencies = [
  "clap",
- "gedcom",
+ "gedcomfy",
  "miette 7.2.0",
  "tracing",
  "tracing-subscriber",
