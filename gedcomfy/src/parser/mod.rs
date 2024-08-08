@@ -17,6 +17,13 @@ pub mod versions;
 /// parse information from GEDCOM files.
 pub trait GEDCOMSource: ascii::AsAsciiStr + PartialEq<AsciiStr> {
     fn lines(&self) -> impl Iterator<Item = &Self>;
+    fn split_once(&self, char: AsciiChar) -> Option<(&Self, &Self)>;
+    fn split_once_opt(&self, char: AsciiChar) -> (&Self, Option<&Self>) {
+        match self.split_once(char) {
+            Some((a, b)) => (a, Some(b)),
+            None => (self, None),
+        }
+    }
     fn splitn(&self, n: usize, char: AsciiChar) -> impl Iterator<Item = &Self>;
     fn span_of(&self, source: &Self) -> SourceSpan;
     fn starts_with(&self, char: AsciiChar) -> bool;
@@ -64,6 +71,10 @@ impl GEDCOMSource for str {
     fn slice_from(&self, offset: usize) -> &Self {
         &(*self)[offset..]
     }
+
+    fn split_once(&self, char: AsciiChar) -> Option<(&Self, &Self)> {
+        (*self).split_once(char.as_char())
+    }
 }
 
 impl GEDCOMSource for [u8] {
@@ -105,6 +116,12 @@ impl GEDCOMSource for [u8] {
     fn slice_from(&self, offset: usize) -> &Self {
         &(*self)[offset..]
     }
+
+    fn split_once(&self, char: AsciiChar) -> Option<(&Self, &Self)> {
+        let ix = self.iter().position(|&x| x == char.as_byte())?;
+        let (before, after) = self.split_at(ix);
+        Some((before, &after[1..]))
+    }
 }
 
 /// A value that is sourced from a specific location in a GEDCOM file.
@@ -112,7 +129,7 @@ impl GEDCOMSource for [u8] {
 /// This is used in many places to ensure that we can track back values
 /// to their original location, which means that we can provide good
 /// diagnostics in the case of errors.
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub struct Sourced<T> {
     pub value: T,
     pub span: SourceSpan,

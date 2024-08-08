@@ -1,4 +1,4 @@
-use ascii::{AsciiChar, AsciiStr};
+use ascii::{AsAsciiStr, AsciiChar, AsciiStr};
 use miette::SourceSpan;
 
 use super::{GEDCOMSource, Sourced};
@@ -44,12 +44,17 @@ pub enum LineSyntaxError {
         span: SourceSpan,
     },
 
+    #[error("A line should consist of at least two space-separated parts")]
+    #[diagnostic(code(gedcom::parse_error::no_space))]
+    NoSpace {
+        #[label("no space in this line")]
+        span: SourceSpan,
+    },
+
     #[error("Invalid character in tag")]
     #[diagnostic(
         code(gedcom::parse_error::invalid_tag),
-        help(
-            "tag names may only contain the characters a-z, A-Z, and 0-9, or a leading underscore"
-        )
+        help("tag names must begin with either an uppercase letter or underscore, followed by letters or numbers")
     )]
     InvalidTagCharacter {
         #[label("this character is not permitted in a tag")]
@@ -67,9 +72,9 @@ pub enum LineSyntaxError {
 /// the encoding of the file before decoding the rest of the file.
 ///
 /// ## Syntax
-pub fn iterate_lines<'a, S: GEDCOMSource + ?Sized>(
-    source_code: &'a S,
-) -> impl Iterator<Item = Result<(Sourced<usize>, Sourced<RawLine<'a, S>>), LineSyntaxError>> {
+pub fn iterate_lines<S: GEDCOMSource + ?Sized>(
+    source_code: &S,
+) -> impl Iterator<Item = Result<(Sourced<usize>, Sourced<RawLine<S>>), LineSyntaxError>> {
     // Line syntax is as follows:
     /*
     Line    = Level D [Xref D] Tag [D LineVal] EOL
@@ -93,116 +98,219 @@ pub fn iterate_lines<'a, S: GEDCOMSource + ?Sized>(
     lineStr = (nonAt / atsign atsign) *nonEOL ; leading @ doubled
     */
 
-    // TODO: line data should be parsed as pointer|data
-
-    let to_sourced = |s: &'a S| Sourced {
-        value: s,
-        span: source_code.span_of(s),
-    };
-
     source_code.lines().filter_map(move |line| {
         debug_assert!(!line.ends_with(AsciiChar::LineFeed));
         debug_assert!(!line.ends_with(AsciiChar::CarriageReturn));
         debug_assert!(!line.starts_with(AsciiChar::LineFeed));
         debug_assert!(!line.starts_with(AsciiChar::CarriageReturn));
 
-        let mut parts = line.splitn(4, AsciiChar::Space).peekable();
-        let Some(level_part) = parts.next() else {
-            unreachable!("even an empty line produces one part")
-        };
-
-        if level_part.is_empty() {
+        if line.is_empty() {
             return None; // skipping empty line
         }
 
-        let result = || -> Result<_, _> {
-            let level_str = level_part
-                .as_ascii_str()
-                .map_err(|source| LineSyntaxError::InvalidLevel {
-                    source: Box::new(source),
-                    value: "<not ascii>".to_string(),
-                    span: source_code.span_of(level_part),
-                })?
-                .as_str();
-
-            let level =
-                level_str
-                    .parse::<usize>()
-                    .map_err(|source| LineSyntaxError::InvalidLevel {
-                        source: Box::new(source),
-                        value: level_str.to_string(),
-                        span: source_code.span_of(level_part),
-                    })?;
-
-            let level = Sourced {
-                value: level,
-                span: source_code.span_of(level_part),
-            };
-
-            // XRef starts and ends with '@' but interior does not _have_ to be ASCII
-            let xref =
-                parts.next_if(|s| s.starts_with(AsciiChar::At) && s.ends_with(AsciiChar::At));
-
-            if let Some(xref) = xref {
-                let void = unsafe { AsciiStr::from_ascii_unchecked(b"@VOID@") };
-                // tag may not be the reserved 'null' value
-                if xref.eq(void) {
-                    return Err(LineSyntaxError::ReservedXRef {
-                        reserved_value: void.to_string(),
-                        span: source_code.span_of(xref),
-                    });
-                }
-            }
-
-            let xref = xref.map(to_sourced);
-
-            let source_tag = parts.next().ok_or_else(|| LineSyntaxError::NoTag {
-                span: source_code.span_of(line),
-            })?;
-
-            // ensure tag is valid (only ASCII alphanumeric, may have underscore at start)
-            let tag = source_tag.as_ascii_str().map_err(|source| {
-                // produce error pointing to the first non-valid char
-                let full_span = source_code.span_of(source_tag);
-                let span = SourceSpan::from((full_span.offset() + source.valid_up_to(), 1));
-                LineSyntaxError::InvalidTagCharacter { span }
-            })?;
-
-            if let Some((ix, _)) = tag.chars().enumerate().find(|&(ix, char)| {
-                if char == AsciiChar::UnderScore {
-                    ix > 0
-                } else {
-                    !char.is_ascii_alphanumeric()
-                }
-            }) {
-                let full_span = source_code.span_of(source_tag);
-                let span = SourceSpan::from((full_span.offset() + ix, 1));
-                return Err(LineSyntaxError::InvalidTagCharacter { span });
-            }
-
-            let tag = Sourced {
-                value: tag,
-                span: source_code.span_of(source_tag),
-            };
-
-            let data = parts.next().map(|p| {
-                // this is a bit ugly
-                // if xref was not present, there's two more splits...
-                // re-slice the remainder of the string
-                let span = line.span_of(p);
-                let full_data = line.slice_from(span.offset());
-                to_sourced(full_data)
-            });
-
-            Ok((
-                level,
-                Sourced {
-                    span: source_code.span_of(line),
-                    value: RawLine { tag, xref, data },
-                },
-            ))
-        }();
-
-        Some(result)
+        Some(parse_line(source_code, line))
     })
+}
+
+fn parse_line<'a, S: GEDCOMSource + ?Sized>(
+    source_code: &'a S,
+    line: &'a S,
+) -> Result<(Sourced<usize>, Sourced<RawLine<'a, S>>), LineSyntaxError> {
+    debug_assert!(!line.is_empty());
+
+    let to_sourced = |s: &'a S| Sourced {
+        value: s,
+        span: source_code.span_of(s),
+    };
+
+    let Some((level_part, rest_part)) = line.split_once(AsciiChar::Space) else {
+        return Err(LineSyntaxError::NoTag {
+            span: source_code.span_of(line),
+        });
+    };
+
+    let level_str = level_part
+        .as_ascii_str()
+        .map_err(|source| LineSyntaxError::InvalidLevel {
+            source: Box::new(source),
+            value: "<not ascii>".to_string(),
+            span: source_code.span_of(level_part),
+        })?
+        .as_str();
+
+    let level = level_str
+        .parse::<usize>()
+        .map_err(|source| LineSyntaxError::InvalidLevel {
+            source: Box::new(source),
+            value: level_str.to_string(),
+            span: source_code.span_of(level_part),
+        })?;
+
+    let level = Sourced {
+        value: level,
+        span: source_code.span_of(level_part),
+    };
+
+    let (xref, rest_part) = if rest_part.starts_with(AsciiChar::At) {
+        let Some((xref_part, rest_part)) = rest_part.slice_from(1).split_once(AsciiChar::At) else {
+            return Err(LineSyntaxError::NoSpace {
+                span: source_code.span_of(line),
+            });
+        };
+
+        // tag may not be the reserved 'null' value
+        if xref_part.eq("VOID".as_ascii_str().unwrap()) {
+            return Err(LineSyntaxError::ReservedXRef {
+                reserved_value: "VOID".to_string(),
+                span: source_code.span_of(xref_part),
+            });
+        }
+
+        // TODO: this should produce a diagnostic
+        let rest_part = if rest_part.starts_with(AsciiChar::Space) {
+            rest_part.slice_from(1)
+        } else {
+            rest_part
+        };
+
+        // otherwise, don't validate the interior
+        // it does not have to be ASCII
+        (Some(to_sourced(xref_part)), rest_part)
+    } else {
+        (None, rest_part)
+    };
+
+    let (tag_part, rest_part) = rest_part.split_once_opt(AsciiChar::Space);
+    if tag_part.is_empty() {
+        return Err(LineSyntaxError::NoTag {
+            span: source_code.span_of(line),
+        });
+    }
+
+    // ensure tag is valid (only ASCII uppercase alphanum, may have underscore at start)
+    let tag = tag_part.as_ascii_str().map_err(|source| {
+        // produce error pointing to the first non-valid char
+        let full_span = source_code.span_of(tag_part);
+        let span = SourceSpan::from((full_span.offset() + source.valid_up_to(), 1));
+        LineSyntaxError::InvalidTagCharacter { span }
+    })?;
+
+    if let Some((ix, _)) = tag.chars().enumerate().find(|&(ix, char)| {
+        // first character can only be uppercase or underscore
+        // rest can be any ascii alphanumeric
+        if ix == 0 {
+            !char.is_ascii_uppercase() && char != AsciiChar::UnderScore
+        } else {
+            !char.is_ascii_alphanumeric()
+        }
+    }) {
+        let full_span = source_code.span_of(tag_part);
+        let span = SourceSpan::from((full_span.offset() + ix, 1));
+        return Err(LineSyntaxError::InvalidTagCharacter { span });
+    }
+
+    let tag = Sourced {
+        value: tag,
+        span: source_code.span_of(tag_part),
+    };
+
+    // TODO: line data should be parsed as pointer|data
+    let data = rest_part.map(to_sourced);
+
+    Ok((
+        level,
+        Sourced {
+            span: source_code.span_of(line),
+            value: RawLine { tag, xref, data },
+        },
+    ))
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    use miette::Result;
+
+    #[test]
+    fn basic_line() -> Result<()> {
+        let src = "0 HEAD";
+        let result = parse_line(src, src)?;
+        assert_eq!(0, result.0.value);
+        assert_eq!("HEAD", result.1.tag.value);
+        Ok(())
+    }
+
+    #[test]
+    fn basic_xref_line() -> Result<()> {
+        let src = "2 @XREF@ TAG";
+        let result = parse_line(src, src)?;
+        assert_eq!(2, result.0.value);
+        assert_eq!("TAG", result.1.tag.value);
+        assert_eq!("XREF", result.1.xref.unwrap().value);
+        Ok(())
+    }
+
+    #[test]
+    fn basic_line_with_data() -> Result<()> {
+        let src = "3 TAG SOME DATA HERE";
+        let result = parse_line(src, src)?;
+        assert_eq!(3, result.0.value);
+        assert_eq!("TAG", result.1.tag.value);
+        assert_eq!(None, result.1.xref);
+        assert_eq!("SOME DATA HERE", result.1.data.unwrap().value);
+        Ok(())
+    }
+
+    #[test]
+    fn basic_xref_line_with_data() -> Result<()> {
+        let src = "3 @XREF@ TAG SOME DATA HERE TOO";
+        let result = parse_line(src, src)?;
+        assert_eq!(3, result.0.value);
+        assert_eq!("TAG", result.1.tag.value);
+        assert_eq!("XREF", result.1.xref.unwrap().value);
+        assert_eq!("SOME DATA HERE TOO", result.1.data.unwrap().value);
+        Ok(())
+    }
+
+    #[test]
+    fn basic_line_u8() -> Result<()> {
+        let src: &[u8] = b"0 HEAD";
+        let result = parse_line(src, src)?;
+        assert_eq!(0, result.0.value);
+        assert_eq!("HEAD", result.1.tag.value);
+        Ok(())
+    }
+
+    #[test]
+    fn basic_xref_line_u8() -> Result<()> {
+        let src: &[u8] = b"2 @XREF@ TAG";
+        let result = parse_line(src, src)?;
+        assert_eq!(2, result.0.value);
+        assert_eq!("TAG", result.1.tag.value);
+        assert_eq!(b"XREF", result.1.xref.unwrap().value);
+        Ok(())
+    }
+
+    #[test]
+    fn basic_line_with_data_u8() -> Result<()> {
+        let src: &[u8] = b"3 TAG SOME DATA HERE";
+        let result = parse_line(src, src)?;
+        assert_eq!(3, result.0.value);
+        assert_eq!("TAG", result.1.tag.value);
+        assert_eq!(None, result.1.xref);
+        assert_eq!(b"SOME DATA HERE", result.1.data.unwrap().value);
+        Ok(())
+    }
+
+    #[test]
+    fn basic_xref_line_with_data_u8() -> Result<()> {
+        let src: &[u8] = b"3 @XREF@ TAG SOME DATA HERE TOO";
+        let result = parse_line(src, src)?;
+        assert_eq!(3, result.0.value);
+        assert_eq!("TAG", result.1.tag.value);
+        assert_eq!(b"XREF", result.1.xref.unwrap().value);
+        assert_eq!(b"SOME DATA HERE TOO", result.1.data.unwrap().value);
+        Ok(())
+    }
 }

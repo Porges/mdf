@@ -111,7 +111,7 @@ impl Sourced<SupportedGEDCOMVersion> {
         head: &Sourced<RawRecord<S>>,
         external_encoding: Option<DetectedEncoding>,
     ) -> Result<DetectedEncoding, EncodingError> {
-        debug_assert!(head.line.tag.eq("HEAD"));
+        debug_assert!(head.line.tag.value.eq("HEAD"));
 
         match self.value {
             SupportedGEDCOMVersion::V5_5 | // TODO: this is kinda fake

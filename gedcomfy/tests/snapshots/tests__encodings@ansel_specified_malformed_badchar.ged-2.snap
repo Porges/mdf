@@ -15,4 +15,4 @@ gedcom::parse_error::invalid_tag
    ·         ╰── this character is not permitted in a tag
  6 │ 0 TRLR
    ╰────
-  help: tag names may only contain the characters a-z, A-Z, and 0-9, or a leading underscore
+  help: tag names must begin with either an uppercase letter or underscore, followed by letters or numbers

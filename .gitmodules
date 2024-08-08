@@ -7,6 +7,3 @@
 [submodule "gedcom/tests/external/gedcom-samples"]
 	path = gedcomfy/tests/external/gedcom-samples
 	url = https://github.com/findmypast/gedcom-samples.git
-[submodule "gedcom/tests/external/gpdf"]
-	path = gedcomfy/tests/external/gpdf
-	url = https://github.com/billthefarmer/gpdf

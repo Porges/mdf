@@ -1,6 +1,6 @@
 ---
-source: gedcom/tests/tests.rs
-expression: to_kdl(validated_records.into_iter().map(|r| r.value))
+source: gedcomfy/tests/tests.rs
+expression: to_kdl(parsed.into_iter().map(|r| r.value))
 ---
 HEAD {
     CHAR "ASCII" {
@@ -63,7 +63,7 @@ HEAD {
     }
     _MYOWNTAG "This is a non-standard tag. Not recommended but allowed"
 }
-SUBM xref="@SUBMITTER@" {
+SUBM xref="SUBMITTER" {
     NAME "/Submitter-Name/"
     ADDR "Submitter address line 1" {
         CONT "Submitter address line 2"
@@ -91,7 +91,7 @@ SUBM xref="@SUBMITTER@" {
     }
     _MYOWNTAG "This is a non-standard tag. Not recommended but allowed"
 }
-SUBN xref="@SUBMISSION@" {
+SUBN xref="SUBMISSION" {
     _MYOWNTAG "SUBN does not allow NOTE tags :-(( so, here is my not: SUBN seems to be LDS internal data. The sample data I put in here are probably nonsence."
     SUBM "@SUBMITTER@"
     FAMF "NameOfFamilyFile"
@@ -100,7 +100,7 @@ SUBN xref="@SUBMISSION@" {
     DESC "1"
     ORDI "yes"
 }
-INDI xref="@PERSON1@" {
+INDI xref="PERSON1" {
     NAME "given name /surname/jr." {
         SOUR "@SOURCE1@" {
             PAGE "42"
@@ -1091,39 +1091,39 @@ INDI xref="@PERSON1@" {
     }
     _MYOWNTAG "This is a non-standard tag. Not recommended but allowed"
 }
-INDI xref="@PERSON2@" {
+INDI xref="PERSON2" {
     NAME "/Wife/"
     SEX "F"
     FAMS "@FAMILY1@"
 }
-INDI xref="@PERSON3@" {
+INDI xref="PERSON3" {
     NAME "/Child 1/"
     FAMC "@FAMILY1@"
 }
-INDI xref="@PERSON4@" {
+INDI xref="PERSON4" {
     NAME "/Child 2/"
     FAMC "@FAMILY1@"
 }
-INDI xref="@PERSON5@" {
+INDI xref="PERSON5" {
     NAME "/Father/"
     SEX "M"
     FAMS "@PARENTS@"
 }
-INDI xref="@PERSON6@" {
+INDI xref="PERSON6" {
     NAME "/Adoptive mother/"
     SEX "F"
     FAMS "@ADOPTIVE_PARENTS@"
 }
-INDI xref="@PERSON7@" {
+INDI xref="PERSON7" {
     NAME "/Child 3/"
     FAMC "@FAMILY2@"
 }
-INDI xref="@PERSON8@" {
+INDI xref="PERSON8" {
     NAME "/2nd Wife/"
     SEX "F"
     FAMS "@FAMILY2@"
 }
-FAM xref="@FAMILY1@" {
+FAM xref="FAMILY1" {
     ANUL {
         DATE "31 DEC 1997"
         PLAC "The place"
@@ -1488,20 +1488,20 @@ FAM xref="@FAMILY1@" {
     }
     _MYOWNTAG "This is a non-standard tag. Not recommended but allowed"
 }
-FAM xref="@PARENTS@" {
+FAM xref="PARENTS" {
     HUSB "@PERSON5@"
     CHIL "@PERSON1@"
 }
-FAM xref="@ADOPTIVE_PARENTS@" {
+FAM xref="ADOPTIVE_PARENTS" {
     WIFE "@PERSON6@"
     CHIL "@PERSON1@"
 }
-FAM xref="@FAMILY2@" {
+FAM xref="FAMILY2" {
     HUSB "@PERSON1@"
     WIFE "@PERSON8@"
     CHIL "@PERSON7@"
 }
-SOUR xref="@SOURCE1@" {
+SOUR xref="SOURCE1" {
     DATA {
         EVEN "BIRT, CHR" {
             DATE "FROM 1 JAN 1980 TO 1 FEB 1982"

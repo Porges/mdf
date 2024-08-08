@@ -24,7 +24,7 @@ fn ensure_hook() {
 #[test]
 fn can_parse_allged_lines() {
     let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    path.push("tests/external/gpdf/allged.ged");
+    path.push("tests/external/others/allged.ged");
 
     let data = std::fs::read(path).unwrap();
     let mut buffer = String::new();
@@ -36,7 +36,7 @@ fn can_parse_allged_lines() {
 #[test]
 fn produces_expected_allged_tree() {
     let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    path.push("tests/external/gpdf/allged.ged");
+    path.push("tests/external/others/allged.ged");
 
     let data = std::fs::read(path).unwrap();
     let buffer = &mut String::new();

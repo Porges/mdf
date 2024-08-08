@@ -6,6 +6,7 @@ See individual README files for source information and licensing (if any):
 * [Example FamilySearch GEDCOM 7.0 Files](example-familysearch-gedcom-70-files/README.md)
 * [GEDCOM 5.5.5 Sample Files](gedcom-555-sample-files/README.md)
 * [GEDCOM 5.5 Torture Tests](torture-test-55-files/README.md)
+* [Other GEDCOM test files](others/README.md)
 
 ## Large files not yet included
 

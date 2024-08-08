@@ -1,7 +1,7 @@
 ---
-source: gedcom/tests/tests.rs
+source: gedcomfy/tests/tests.rs
 expression: to_kdl(parsed.into_iter().map(|r| r.value))
-input_file: gedcom/tests/external/gedcom-samples/Torture Test/TGC551.ged
+input_file: gedcomfy/tests/external/torture-test-55-files/TGC551.ged
 ---
 HEAD {
     SOUR "GEDitCOM" {
@@ -160,7 +160,7 @@ HEAD {
         CONC "GEDCOM 5.5 specs on the Internet at <http://homepages.rootsweb.com/~pmcbride/gedcom/55gctoc.htm>."
     }
 }
-SUBN xref="@SUBMISSION@" {
+SUBN xref="SUBMISSION" {
     SUBM "@SUBMITTER@"
     FAMF "NameOfFamilyFile"
     TEMP "Abbreviated Temple Code"
@@ -169,7 +169,7 @@ SUBN xref="@SUBMISSION@" {
     ORDI "yes"
     RIN "1"
 }
-SUBM xref="@SUBMITTER@" {
+SUBM xref="SUBMITTER" {
     NAME "John A. Nairn"
     ADDR "Submitter address line 1" {
         CONT "Submitter address line 2"
@@ -200,7 +200,7 @@ SUBM xref="@SUBMITTER@" {
         }
     }
 }
-SUBM xref="@SM2@" {
+SUBM xref="SM2" {
     NAME "Secondary Submitter"
     ADDR "Secondary Submitter Address 1" {
         CONT "Secondary Submitter Address 2"
@@ -213,7 +213,7 @@ SUBM xref="@SM2@" {
     }
     RIN "2"
 }
-SUBM xref="@SM3@" {
+SUBM xref="SM3" {
     NAME "H. Eichmann"
     ADDR "email: h.eichmann@@mbox.iqo.uni-hannover.de" {
         CONT "or: heiner_eichmann@@h.maus.de (no more than 16k!!!!)"
@@ -225,7 +225,7 @@ SUBM xref="@SM3@" {
     }
     RIN "3"
 }
-INDI xref="@I14@" {
+INDI xref="I14" {
     NAME "Charlie Accented /ANSEL/"
     SEX "M"
     BIRT {
@@ -244,7 +244,7 @@ INDI xref="@I14@" {
     }
     RIN "1"
 }
-INDI xref="@I13@" {
+INDI xref="I13" {
     NAME "Lucy Special /ANSEL/"
     SEX "F"
     BIRT {
@@ -262,7 +262,7 @@ INDI xref="@I13@" {
     }
     RIN "2"
 }
-INDI xref="@PERSON6@" {
+INDI xref="PERSON6" {
     NAME "Teresa Mary /Caregiver/"
     SEX "F"
     BIRT {
@@ -277,7 +277,7 @@ INDI xref="@PERSON6@" {
     }
     RIN "3"
 }
-INDI xref="@I12@" {
+INDI xref="I12" {
     NAME "Extra URL /Filelinks/"
     SEX "F"
     BIRT {
@@ -312,7 +312,7 @@ INDI xref="@I12@" {
     }
     RIN "4"
 }
-INDI xref="@I11@" {
+INDI xref="I11" {
     NAME "General Custom /Filelinks/"
     SEX "M"
     BIRT {
@@ -350,7 +350,7 @@ INDI xref="@I11@" {
     }
     RIN "5"
 }
-INDI xref="@I10@" {
+INDI xref="I10" {
     NAME "Nonstandard Multimedia /Filelinks/"
     SEX "F"
     BIRT {
@@ -402,7 +402,7 @@ INDI xref="@I10@" {
     }
     RIN "6"
 }
-INDI xref="@I9@" {
+INDI xref="I9" {
     NAME "Standard GEDCOM /Filelinks/"
     SEX "M"
     BIRT {
@@ -448,7 +448,7 @@ INDI xref="@I9@" {
     }
     RIN "7"
 }
-INDI xref="@PERSON2@" {
+INDI xref="PERSON2" {
     NAME "Mary First /Jones/"
     SEX "F"
     BIRT {
@@ -466,7 +466,7 @@ INDI xref="@PERSON2@" {
     }
     RIN "8"
 }
-INDI xref="@I15@" {
+INDI xref="I15" {
     NAME "Torture GEDCOM /Matriarch/"
     SEX "F"
     BIRT {
@@ -483,7 +483,7 @@ INDI xref="@I15@" {
     }
     RIN "9"
 }
-INDI xref="@PERSON8@" {
+INDI xref="PERSON8" {
     NAME "Elizabeth Second /Smith/"
     SEX "F"
     BIRT {
@@ -501,7 +501,7 @@ INDI xref="@PERSON8@" {
     }
     RIN "10"
 }
-INDI xref="@PERSON3@" {
+INDI xref="PERSON3" {
     NAME "Chris Locked /Torture/"
     BIRT {
         DATE "MAR 1999"
@@ -518,7 +518,7 @@ INDI xref="@PERSON3@" {
     RESN "locked"
     RIN "11"
 }
-INDI xref="@PERSON1@" {
+INDI xref="PERSON1" {
     NAME "Joseph Tag /Torture/" {
         NPFX "Prof."
         GIVN "Joseph"
@@ -1311,7 +1311,7 @@ INDI xref="@PERSON1@" {
         }
     }
 }
-INDI xref="@PERSON7@" {
+INDI xref="PERSON7" {
     NAME "Pat Smith /Torture/"
     BIRT {
         DATE "1 JAN 2001"
@@ -1326,7 +1326,7 @@ INDI xref="@PERSON7@" {
     }
     RIN "13"
 }
-INDI xref="@PERSON4@" {
+INDI xref="PERSON4" {
     NAME "Sandy Privacy /Torture/"
     RESN "privacy"
     BIRT {
@@ -1342,7 +1342,7 @@ INDI xref="@PERSON4@" {
     }
     RIN "14"
 }
-INDI xref="@PERSON5@" {
+INDI xref="PERSON5" {
     NAME "William Joseph /Torture/"
     SEX "M"
     BIRT {
@@ -1363,7 +1363,7 @@ INDI xref="@PERSON5@" {
     }
     RIN "15"
 }
-FAM xref="@FAMILY1@" {
+FAM xref="FAMILY1" {
     HUSB "@PERSON1@"
     WIFE "@PERSON2@"
     MARR {
@@ -1687,7 +1687,7 @@ FAM xref="@FAMILY1@" {
         }
     }
 }
-FAM xref="@PARENTS@" {
+FAM xref="PARENTS" {
     HUSB "@PERSON5@"
     CHIL "@PERSON1@"
     NOTE "@N33@"
@@ -1698,7 +1698,7 @@ FAM xref="@PARENTS@" {
     }
     RIN "2"
 }
-FAM xref="@ADOPTIVE_PARENTS@" {
+FAM xref="ADOPTIVE_PARENTS" {
     WIFE "@PERSON6@"
     CHIL "@PERSON1@"
     NOTE "@N34@"
@@ -1709,7 +1709,7 @@ FAM xref="@ADOPTIVE_PARENTS@" {
     }
     RIN "3"
 }
-FAM xref="@FAMILY2@" {
+FAM xref="FAMILY2" {
     HUSB "@PERSON1@"
     WIFE "@PERSON8@"
     CHIL "@PERSON7@"
@@ -1721,7 +1721,7 @@ FAM xref="@FAMILY2@" {
     }
     RIN "4"
 }
-FAM xref="@F5@" {
+FAM xref="F5" {
     HUSB "@I9@"
     WIFE "@I15@"
     CHIL "@I10@"
@@ -1735,7 +1735,7 @@ FAM xref="@F5@" {
         }
     }
 }
-FAM xref="@F6@" {
+FAM xref="F6" {
     HUSB "@I14@"
     WIFE "@I13@"
     CHIL "@PERSON5@"
@@ -1747,7 +1747,7 @@ FAM xref="@F6@" {
         }
     }
 }
-FAM xref="@F7@" {
+FAM xref="F7" {
     WIFE "@I10@"
     CHIL "@I14@"
     NOTE "@N38@"
@@ -1758,7 +1758,7 @@ FAM xref="@F7@" {
         }
     }
 }
-SOUR xref="@SOURCE1@" {
+SOUR xref="SOURCE1" {
     TITL "Everything You Every Wanted to Know about GEDCOM Tags, But " {
         CONC "Were Afraid to Ask!"
         CONT "You can start new lines in this field too."
@@ -1824,7 +1824,7 @@ SOUR xref="@SOURCE1@" {
         }
     }
 }
-SOUR xref="@SR2@" {
+SOUR xref="SR2" {
     TITL "All I Know About GEDCOM, I Learned on the Internet"
     ABBR "What I Know About GEDCOM"
     AUTH "Second Source Author"
@@ -1836,7 +1836,7 @@ SOUR xref="@SR2@" {
     }
     RIN "2"
 }
-REPO xref="@R1@" {
+REPO xref="R1" {
     NAME "Family History Library"
     ADDR "35 North West Temple" {
         CONT "Salt Lake City, UT 84111"
@@ -1862,7 +1862,7 @@ REPO xref="@R1@" {
         }
     }
 }
-NOTE xref="@N1@" {
+NOTE xref="N1" {
     CONC "Test link to a graphics file about the main Submitter of this file."
     CHAN {
         DATE "24 May 1999" {
@@ -1870,7 +1870,7 @@ NOTE xref="@N1@" {
         }
     }
 }
-NOTE xref="@N2@" {
+NOTE xref="N2" {
     CONC "Comments on \"Family History Library\" REPOSITORY Record."
     CONT ""
     CONT "This record uses all possible GEDCOM tags for a REPOSITORY record. Some "
@@ -1895,7 +1895,7 @@ NOTE xref="@N2@" {
         }
     }
 }
-NOTE xref="@N4@" {
+NOTE xref="N4" {
     CONC "Comments on \"Joseph Tag Torture\" INDIVIDUAL Record."
     CONT ""
     CONT "This record contains all possible types of data that can be stored in an INDIVIDUAL (INDI) "
@@ -1974,7 +1974,7 @@ NOTE xref="@N4@" {
         }
     }
 }
-NOTE xref="@N5@" {
+NOTE xref="N5" {
     CONC "Notes on this LDS event. All possible LDS ordinance detail tags are used in "
     CONC "this event."
     CHAN {
@@ -1983,7 +1983,7 @@ NOTE xref="@N5@" {
         }
     }
 }
-NOTE xref="@N6@" {
+NOTE xref="N6" {
     CONC "Notes on this LDS Spouse Sealing Event."
     SOUR "@SOURCE1@"
     CHAN {
@@ -1992,7 +1992,7 @@ NOTE xref="@N6@" {
         }
     }
 }
-NOTE xref="@N8@" {
+NOTE xref="N8" {
     CONC "Some specific note about the birth event."
     CONT ""
     CONT "These notes are in a separate NOTE record. These notes also have their own source "
@@ -2017,7 +2017,7 @@ NOTE xref="@N8@" {
         }
     }
 }
-NOTE xref="@N9@" {
+NOTE xref="N9" {
     CONC "These are notes in a NOTE record. It is a bit redundant, but you can add source "
     CONC "citations directly to NOTE records in addition to adding source citations to the "
     CONC "initial GEDCOM structure that the notes are about."
@@ -2030,7 +2030,7 @@ NOTE xref="@N9@" {
         }
     }
 }
-NOTE xref="@N11@" {
+NOTE xref="N11" {
     CONC "A possessions source note."
     CHAN {
         DATE "18 Jun 2000" {
@@ -2038,7 +2038,7 @@ NOTE xref="@N11@" {
         }
     }
 }
-NOTE xref="@N12@" {
+NOTE xref="N12" {
     CONC "This is a second source citation in this record."
     CHAN {
         DATE "6 Mar 2000" {
@@ -2046,7 +2046,7 @@ NOTE xref="@N12@" {
         }
     }
 }
-NOTE xref="@N14@" {
+NOTE xref="N14" {
     CONC "These notes can be used to add more information about the multimedia file linked to "
     CONC "this SOURCE record."
     CHAN {
@@ -2055,7 +2055,7 @@ NOTE xref="@N14@" {
         }
     }
 }
-NOTE xref="@N15@" {
+NOTE xref="N15" {
     CONC "Comments on \"Everything You Every Wanted to Know about GEDCOM Tags\" SOURCE Record."
     CONT ""
     CONT "This is a set of notes about this SOURCE record. These notes are for anything else "
@@ -2080,7 +2080,7 @@ NOTE xref="@N15@" {
         }
     }
 }
-NOTE xref="@N16@" {
+NOTE xref="N16" {
     CONC "Comments on \"All I Know About GEDCOM, I Learned on the Internet\" SOURCE record."
     CONT ""
     CONT "This is another SOURCE record. How does the importing software handle multiple "
@@ -2091,7 +2091,7 @@ NOTE xref="@N16@" {
         }
     }
 }
-NOTE xref="@N17@" {
+NOTE xref="N17" {
     CONC "How does software handle embedded SOURCE records on import? Such source "
     CONC "citations are common in old GEDCOM files. More modern GEDCOM files should "
     CONC "use source citations to SOURCE records."
@@ -2101,7 +2101,7 @@ NOTE xref="@N17@" {
         }
     }
 }
-NOTE xref="@N18@" {
+NOTE xref="N18" {
     CONC "Comments on \"Standard GEDCOM Filelinks\" INDIVIDUAL Record."
     CONT ""
     CONT "The GEDCOM standard lets you link records to multimedia objects kept in separate "
@@ -2152,7 +2152,7 @@ NOTE xref="@N18@" {
         }
     }
 }
-NOTE xref="@N19@" {
+NOTE xref="N19" {
     CONC "A note about this LDS spouse sealing source."
     CHAN {
         DATE "12 Mar 2000" {
@@ -2160,7 +2160,7 @@ NOTE xref="@N19@" {
         }
     }
 }
-NOTE xref="@N20@" {
+NOTE xref="N20" {
     CONC "Comments on \"Chris Locked Torture\" record."
     CONT ""
     CONT "These notes test line breaking in note records with multiple lines. These notes are for "
@@ -2198,7 +2198,7 @@ NOTE xref="@N20@" {
         }
     }
 }
-NOTE xref="@N21@" {
+NOTE xref="N21" {
     CONC "Comments on \"Nonstandard Multimedia Filelinks\" INDIVIDUAL Record."
     CONT ""
     CONT "File links in GEDCOM are created by having an OBJE structure with the path name "
@@ -2223,7 +2223,7 @@ NOTE xref="@N21@" {
         }
     }
 }
-NOTE xref="@N22@" {
+NOTE xref="N22" {
     CONC "Comments on \"General Custom Filelinks\" INDIVIDUAL Record."
     CONT ""
     CONT "File links in GEDCOM are created by having an OBJE structure with the path name "
@@ -2244,7 +2244,7 @@ NOTE xref="@N22@" {
         }
     }
 }
-NOTE xref="@N23@" {
+NOTE xref="N23" {
     CONC "Comments on \"Extra URL Filelinks\" INDIVIDUAL Record."
     CONT ""
     CONT "File links in GEDCOM are created by having an OBJE structure with the path name "
@@ -2269,7 +2269,7 @@ NOTE xref="@N23@" {
         }
     }
 }
-NOTE xref="@N24@" {
+NOTE xref="N24" {
     CONC "Comments on \"Charlie Accented ANSEL\" INDIVIDUAL Record."
     CONT ""
     CONT "To represent accented characters, the ANSEL character set uses two-byte codes. The "
@@ -2460,7 +2460,7 @@ NOTE xref="@N24@" {
         }
     }
 }
-NOTE xref="@N25@" {
+NOTE xref="N25" {
     CONC "Comments on \"Lucy Special ANSEL\" INDIVIDUAL Record."
     CONT ""
     CONT "The following are the special characters supported by the ANSEL character set. The first two letters "
@@ -2513,7 +2513,7 @@ NOTE xref="@N25@" {
         }
     }
 }
-NOTE xref="@N27@" {
+NOTE xref="N27" {
     CONC "Comments on \"Teresa Mary Caregiver\" INDIVIDUAL Record."
     CONT ""
     CONT "This record is the adoptive mother of \"Joseph Tag Torture\". She is linked to a family "
@@ -2524,7 +2524,7 @@ NOTE xref="@N27@" {
         }
     }
 }
-NOTE xref="@N28@" {
+NOTE xref="N28" {
     CONC "Comments on \"William Joseph Torture\" INDIVIDUAL Record."
     CONT ""
     CONT "This record is the natural father of \"Joseph Tag Torture\". He is linked to a family "
@@ -2535,7 +2535,7 @@ NOTE xref="@N28@" {
         }
     }
 }
-NOTE xref="@N29@" {
+NOTE xref="N29" {
     CONC "Comments on \"Sandy Privacy Torture\" INDIVIDUAL Record."
     CONT ""
     CONT "This record has a restriction setting of \"privacy.\" In public applications of "
@@ -2549,7 +2549,7 @@ NOTE xref="@N29@" {
         }
     }
 }
-NOTE xref="@N30@" {
+NOTE xref="N30" {
     CONC "Comments on \"Pat Smith Torture\" INDIVIDUAL Record."
     CONT ""
     CONT "The record simply provides a child to \"Joseph Tag Torture\" in his family with \"Mary First "
@@ -2560,7 +2560,7 @@ NOTE xref="@N30@" {
         }
     }
 }
-NOTE xref="@N31@" {
+NOTE xref="N31" {
     CONC "Comments on \"Mary First Jones\" INDIVIDUAL Record."
     CONT ""
     CONT "This record is used to provide the first wife to \"Joseph Tag Torture.\" Not many other "
@@ -2571,7 +2571,7 @@ NOTE xref="@N31@" {
         }
     }
 }
-NOTE xref="@N32@" {
+NOTE xref="N32" {
     CONC "Comments on \"Elizabeth Second Smith\" INDIVIDUAL Record."
     CONT ""
     CONT "This record is used to provide a second wife to \"Joseph Tag Torture.\" Not many "
@@ -2582,7 +2582,7 @@ NOTE xref="@N32@" {
         }
     }
 }
-NOTE xref="@N33@" {
+NOTE xref="N33" {
     CONC "Comments on \"William Joseph Torture-<unknown>\" FAMILY Record."
     CONT ""
     CONT "This record has the natural father of \"Joseph Tag Torture.\" The wife is not known."
@@ -2592,7 +2592,7 @@ NOTE xref="@N33@" {
         }
     }
 }
-NOTE xref="@N34@" {
+NOTE xref="N34" {
     CONC "Comments on \"<unknown>-Teresa Mary Caregiver\" FAMILY Record."
     CONT ""
     CONT "This record has the adoptive mother of \"Joseph Tag Torture.\" The husband is not "
@@ -2603,7 +2603,7 @@ NOTE xref="@N34@" {
         }
     }
 }
-NOTE xref="@N35@" {
+NOTE xref="N35" {
     CONC "Comments on \"Joseph Tag Torture-Elizabeth Second Smith\" FAMILY Record."
     CONT ""
     CONT "This record has a second marriage for \"Joseph Tag Torture\" and the family has one "
@@ -2614,7 +2614,7 @@ NOTE xref="@N35@" {
         }
     }
 }
-NOTE xref="@N36@" {
+NOTE xref="N36" {
     CONC "Comments on \"Standard GEDCOM Filelinks-Torture GEDCOM Matriarch\" "
     CONC "FAMILY record."
     CONT ""
@@ -2626,7 +2626,7 @@ NOTE xref="@N36@" {
         }
     }
 }
-NOTE xref="@N37@" {
+NOTE xref="N37" {
     CONC "Comments on \"Charlie Accented ANSEL-Lucy Special ANSEL\" FAMILY Record."
     CONT ""
     CONT "The two spouses in this family test reading of the ANSEL character set."
@@ -2636,7 +2636,7 @@ NOTE xref="@N37@" {
         }
     }
 }
-NOTE xref="@N38@" {
+NOTE xref="N38" {
     CONC "Comments on \"<unknown>-Nonstandard Multimedia Filelinks\" FAMILY Record."
     CONT ""
     CONT "The record is simply used to make family connections between records in this file."
@@ -2646,7 +2646,7 @@ NOTE xref="@N38@" {
         }
     }
 }
-OBJE xref="@M1@" {
+OBJE xref="M1" {
     TITL "Dummy Multimedia Object"
     FORM "PICT"
     BLOB {

@@ -24,7 +24,7 @@ impl<'a, S: GEDCOMSource + ?Sized> RawRecord<'a, S> {
 
 impl<'a, S: GEDCOMSource + ?Sized> Sourced<RawRecord<'a, S>> {
     pub fn ensure_tag(&self, tag: &str) -> Option<&Self> {
-        if self.line.tag.eq(tag) {
+        if self.line.tag.value.eq(tag) {
             Some(self)
         } else {
             None
@@ -70,8 +70,8 @@ impl<'a, S: GEDCOMSource + ?Sized> RecordBuilder<'a, S> {
             // this sort of feels like the wrong place to enforce this
             if child.records.is_empty()
                 && child.line.data.is_none()
-                && !child.line.tag.eq("CONT")
-                && !child.line.tag.eq("TRLR")
+                && !child.line.tag.value.eq("CONT")
+                && !child.line.tag.value.eq("TRLR")
             {
                 return Err(RecordStructureError::MissingRecordValue {
                     span: child.line.span,
