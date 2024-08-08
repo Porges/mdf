@@ -58,6 +58,7 @@ impl From<SupportedEncoding> for GEDCOMEncoding {
             SupportedEncoding::ANSEL => GEDCOMEncoding::ANSEL,
             SupportedEncoding::UTF8 => GEDCOMEncoding::UTF8,
             SupportedEncoding::UTF16BE | SupportedEncoding::UTF16LE => GEDCOMEncoding::UNICODE,
+            SupportedEncoding::Windows1252 => todo!(),
         }
     }
 }

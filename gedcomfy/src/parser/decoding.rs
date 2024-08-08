@@ -7,8 +7,9 @@ use crate::{
 };
 
 use super::{
-    encodings::{DetectedEncoding, EncodingError, InvalidDataForEncodingError},
+    encodings::{DetectedEncoding, EncodingError, EncodingReason, InvalidDataForEncodingError},
     lines::LineSyntaxError,
+    options::ParseOptions,
     records::{read_first_record, RawRecord, RecordStructureError},
     versions::VersionError,
     GEDCOMSource, Sourced,
@@ -61,8 +62,20 @@ use super::{
 /// If you want to exert more control about how the version or encoding are determined,
 /// you can pass appropriate options to the [`parse`] function. See the documentation
 /// on [`detect_file_encoding_opt`].
-pub fn detect_and_decode(input: &[u8]) -> Result<(GEDCOMVersion, Cow<str>), DecodingError> {
-    if let Some(external_encoding) = external_file_encoding(input)? {
+pub fn detect_and_decode(
+    input: &[u8],
+    parse_options: ParseOptions,
+) -> Result<(GEDCOMVersion, Cow<str>), DecodingError> {
+    if let Some(encoding) = parse_options.force_encoding {
+        let detected_encoding = DetectedEncoding {
+            encoding,
+            reason: EncodingReason::Forced {},
+        };
+
+        let decoded = detected_encoding.decode(input)?;
+        let version = parse_gedcom_header_only_version(decoded.as_ref())?;
+        Ok((*version, decoded))
+    } else if let Some(external_encoding) = external_file_encoding(input)? {
         // now we can decode the file to actually look inside it
         let decoded = external_encoding.decode(input)?;
         // get version and double-check encoding with file
@@ -106,6 +119,29 @@ pub enum DecodingError {
     #[error("GEDCOM file contains a syntax error")]
     #[diagnostic(transparent)]
     SyntaxError(#[from] LineSyntaxError),
+}
+
+pub fn parse_gedcom_header_only_version<S: GEDCOMSource + ?Sized>(
+    input: &S,
+) -> Result<Sourced<GEDCOMVersion>, DecodingError> {
+    let first_record = read_first_record::<_, DecodingError>(input)?;
+    let head = first_record
+        .as_ref()
+        .and_then(|r| r.ensure_tag("HEAD"))
+        .ok_or_else(|| FileStructureError::MissingHeadRecord {
+            span: first_record.as_ref().map(|r| r.span),
+        })?;
+
+    let version = detect_version_from_head_record(head)?;
+    let _supported_version: Sourced<SupportedGEDCOMVersion> =
+        version
+            .try_into()
+            .map_err(|source| VersionError::UnsupportedVersion {
+                source,
+                span: version.span,
+            })?;
+
+    Ok(version)
 }
 
 pub fn parse_gedcom_header<S: GEDCOMSource + ?Sized>(

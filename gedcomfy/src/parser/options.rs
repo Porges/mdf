@@ -35,9 +35,9 @@ pub enum OptionSetting<T> {
 /// - [`OptionSetting::Require`] will require the use of a specific encoding or version,
 ///   and produce an error if it is not found. This may be useful in rare cases.
 
+#[derive(Default)]
 pub struct ParseOptions {
-    pub version: OptionSetting<GEDCOMVersion>,
-    pub encoding: OptionSetting<SupportedEncoding>,
+    pub force_encoding: Option<SupportedEncoding>,
 }
 
 impl ParseOptions {
@@ -53,14 +53,5 @@ impl ParseOptions {
         input: Result<DetectedEncoding, EncodingError>,
     ) -> Result<DetectedEncoding, EncodingError> {
         input // TODO
-    }
-}
-
-impl Default for ParseOptions {
-    fn default() -> Self {
-        Self {
-            version: OptionSetting::ErrorIfMissing,
-            encoding: OptionSetting::ErrorIfMissing,
-        }
     }
 }

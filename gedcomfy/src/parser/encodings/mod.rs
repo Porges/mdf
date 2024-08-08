@@ -28,6 +28,9 @@ pub enum SupportedEncoding {
     UTF16BE,
     /// The UTF-16 Little Endian encoding.
     UTF16LE,
+    /// This is not permitted by any GEDCOM specification, but is included
+    /// as it is needed to parse some mal-encoded GEDCOM files.
+    Windows1252,
 }
 
 impl std::fmt::Display for SupportedEncoding {
@@ -38,6 +41,7 @@ impl std::fmt::Display for SupportedEncoding {
             SupportedEncoding::UTF8 => "UTF-8",
             SupportedEncoding::UTF16BE => "UTF-16 (big-endian)",
             SupportedEncoding::UTF16LE => "UTF-16 (little-endian)",
+            SupportedEncoding::Windows1252 => "Windows-1252",
         };
 
         write!(f, "{}", str)
@@ -87,6 +91,10 @@ pub enum EncodingReason {
     )]
     #[diagnostic(severity(Advice), code(gedcom::encoding_reason::assumed))]
     Assumed {},
+
+    #[error("this encoding was selected explicitly in the parsing options")]
+    #[diagnostic(severity(Advice), code(gedcom::encoding_reason::forced))]
+    Forced {},
 }
 
 #[derive(thiserror::Error, Debug, miette::Diagnostic)]
@@ -169,7 +177,28 @@ pub struct InvalidDataForEncodingError {
     span: Option<SourceSpan>,
 
     #[related] // TODO: this should really be one value but Miette requires iterable
-    reason: Vec1<EncodingReason>,
+    reason: Vec1<Box<dyn miette::Diagnostic + Send + Sync + 'static>>,
+}
+
+#[derive(thiserror::Error, Debug, miette::Diagnostic)]
+#[error("the invalid data appears to be valid in {}other encoding{}:{}",
+    if .possible_encodings.len() == 1 { "an" } else { "" },
+    if .possible_encodings.len() > 1 { "s" } else { "" },
+    .possible_encodings.iter().map(|e| format!("\n→ {}", e)).collect::<Vec<_>>().concat())]
+#[diagnostic(
+    severity(Advice),
+    code(gedcom::possible_encodings),
+    help("encoding can be chosen explicitly using the `--force-encoding` option")
+)]
+struct DetectedPossibleEncodings {
+    possible_encodings: Vec1<PossibleEncoding>,
+}
+
+#[derive(thiserror::Error, Debug, miette::Diagnostic)]
+#[error("{data_in_encoding} (using {encoding})")]
+struct PossibleEncoding {
+    encoding: SupportedEncoding,
+    data_in_encoding: String,
 }
 
 impl DetectedEncoding {
@@ -183,25 +212,80 @@ impl DetectedEncoding {
         let data = &data[offset_adjustment..];
 
         match self.encoding {
-            SupportedEncoding::ASCII => Ok(data
-                .as_ascii_str()
-                .map_err(|source| InvalidDataForEncodingError {
+            SupportedEncoding::ASCII => match data.as_ascii_str() {
+                Ok(result) => Ok(result.as_str().into()),
+                Err(source) => {
+                    // see if we can detect that it would be valid in another encoding
+                    let mut reason: Vec1<Box<dyn miette::Diagnostic + Send + Sync + 'static>> =
+                        Vec1::new(Box::new(self.reason));
+
+                    // TODO: this is very ugly code
+                    let mut to_show = Vec::from_iter(
+                        data[..source.valid_up_to()]
+                            .iter()
+                            .rev()
+                            .take(20)
+                            .take_while(|b| b.is_ascii_alphabetic())
+                            .copied(),
+                    );
+
+                    to_show.reverse();
+                    to_show.push(data[source.valid_up_to()]);
+                    to_show.extend(
+                        data[source.valid_up_to() + 1..]
+                            .iter()
+                            .take(20)
+                            .take_while(|b| b.is_ascii_alphabetic())
+                            .copied(),
+                    );
+
+                    let mut possible_encodings = Vec::new();
+                    for encoding in [SupportedEncoding::Windows1252, SupportedEncoding::UTF8] {
+                        // TODO, hack structure initialization
+                        let dother = DetectedEncoding {
+                            encoding,
+                            reason: EncodingReason::Assumed {},
+                        };
+
+                        let bold = owo_colors::style().bold();
+
+                        if let Ok(decoded) = dother.decode(&to_show) {
+                            possible_encodings.push(PossibleEncoding {
+                                encoding,
+                                data_in_encoding: bold.style(decoded).to_string(),
+                            });
+                        }
+                    }
+
+                    if let Ok(possible_encodings) = Vec1::try_from_vec(possible_encodings) {
+                        reason.push(Box::new(DetectedPossibleEncodings { possible_encodings }));
+                    }
+
+                    Err(InvalidDataForEncodingError {
+                        encoding: self.encoding,
+                        source: Some(Box::new(source)),
+                        span: Some(SourceSpan::from((
+                            offset_adjustment + source.valid_up_to(),
+                            1,
+                        ))),
+                        reason,
+                    })
+                }
+            },
+            SupportedEncoding::Windows1252 => Ok(encoding_rs::WINDOWS_1252
+                .decode_without_bom_handling_and_without_replacement(data)
+                .ok_or_else(|| InvalidDataForEncodingError {
                     encoding: self.encoding,
-                    source: Some(Box::new(source)),
-                    span: Some(SourceSpan::from((
-                        offset_adjustment + source.valid_up_to(),
-                        1,
-                    ))),
-                    reason: Vec1::new(self.reason),
-                })?
-                .as_str()
-                .into()),
+                    source: None,
+                    span: None,
+                    reason: Vec1::new(Box::new(self.reason)),
+                })?),
             SupportedEncoding::ANSEL => {
                 ansel::decode(data).map_err(|source| InvalidDataForEncodingError {
                     encoding: self.encoding,
                     source: Some(Box::new(source)),
                     span: Some(SourceSpan::from((offset_adjustment + source.offset(), 1))),
-                    reason: Vec1::new(self.reason),
+                    reason: Vec1::new(Box::new(self.reason)),
                 })
             }
             SupportedEncoding::UTF8 => Ok(std::str::from_utf8(data)
@@ -212,35 +296,25 @@ impl DetectedEncoding {
                         offset_adjustment + source.valid_up_to(),
                         source.error_len().unwrap_or(1),
                     ))),
-                    reason: Vec1::new(self.reason),
+                    reason: Vec1::new(Box::new(self.reason)),
                 })?
                 .into()),
-            SupportedEncoding::UTF16BE => {
-                let (result, had_errors) = encoding_rs::UTF_16BE.decode_without_bom_handling(data);
-                if had_errors {
-                    Err(InvalidDataForEncodingError {
-                        encoding: self.encoding,
-                        source: None,
-                        span: None,
-                        reason: Vec1::new(self.reason),
-                    })
-                } else {
-                    Ok(result)
-                }
-            }
-            SupportedEncoding::UTF16LE => {
-                let (result, had_errors) = encoding_rs::UTF_16LE.decode_without_bom_handling(data);
-                if had_errors {
-                    Err(InvalidDataForEncodingError {
-                        encoding: self.encoding,
-                        source: None,
-                        span: None,
-                        reason: Vec1::new(self.reason),
-                    })
-                } else {
-                    Ok(result)
-                }
-            }
+            SupportedEncoding::UTF16BE => Ok(encoding_rs::UTF_16BE
+                .decode_without_bom_handling_and_without_replacement(data)
+                .ok_or_else(|| InvalidDataForEncodingError {
+                    encoding: self.encoding,
+                    source: None,
+                    span: None,
+                    reason: Vec1::new(Box::new(self.reason)),
+                })?),
+            SupportedEncoding::UTF16LE => Ok(encoding_rs::UTF_16LE
+                .decode_without_bom_handling_and_without_replacement(data)
+                .ok_or_else(|| InvalidDataForEncodingError {
+                    encoding: self.encoding,
+                    source: None,
+                    span: None,
+                    reason: Vec1::new(Box::new(self.reason)),
+                })?),
         }
     }
 }

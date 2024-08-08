@@ -6,7 +6,7 @@ use miette::SourceSpan;
 use parser::{
     decoding::DecodingError,
     lines::{iterate_lines, LineSyntaxError},
-    options::OptionSetting,
+    options::{OptionSetting, ParseOptions},
     records::RawRecord,
     GEDCOMSource, Sourced,
 };
@@ -22,10 +22,10 @@ pub mod versions;
 
 #[derive(thiserror::Error, Debug, miette::Diagnostic)]
 pub enum ValidationError {
-    #[error("{} syntax error(s) detected", .errors.len())]
+    #[error("{} syntax error{} detected", .errors.len(), if .errors.len() > 1 { "s" } else { "" })]
     SyntaxErrorsDetected {
         #[related]
-        errors: Vec<LineSyntaxError>,
+        errors: Vec1<LineSyntaxError>,
     },
     #[error("Encoding error detected: further validation errors will not be found")]
     #[diagnostic(transparent)]
@@ -76,7 +76,15 @@ impl<'a, S: GEDCOMSource + ?Sized> RawRecord<'a, S> {
 /// Checks that the lines in the file are (minimally) well-formed.
 /// Returns the number of lines in the file if successful.
 pub fn validate_syntax(source: &[u8], buffer: &mut String) -> Result<usize, ValidationError> {
-    let (_version, source) = parser::decoding::detect_and_decode(source)?;
+    validate_syntax_opt(source, buffer, ParseOptions::default())
+}
+
+pub fn validate_syntax_opt(
+    source: &[u8],
+    buffer: &mut String,
+    parse_options: ParseOptions,
+) -> Result<usize, ValidationError> {
+    let (_version, source) = parser::decoding::detect_and_decode(source, parse_options)?;
     let source: &str = match source {
         Cow::Borrowed(input) => input,
         Cow::Owned(owned) => {
@@ -94,10 +102,10 @@ pub fn validate_syntax(source: &[u8], buffer: &mut String) -> Result<usize, Vali
         Err(e) => Some(e),
     }));
 
-    if errors.is_empty() {
-        Ok(line_count)
-    } else {
+    if let Ok(errors) = Vec1::try_from(errors) {
         Err(ValidationError::SyntaxErrorsDetected { errors })
+    } else {
+        Ok(line_count)
     }
 }
 

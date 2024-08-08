@@ -1,5 +1,3 @@
-mod cliclack_layer;
-
 use std::{
     io::{stdout, IsTerminal},
     path::PathBuf,
@@ -7,8 +5,8 @@ use std::{
 };
 
 use clap::{Parser, Subcommand};
+use gedcomfy::parser::{encodings::SupportedEncoding, options::ParseOptions};
 use miette::{Context, IntoDiagnostic, NamedSource};
-use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 #[derive(Parser)]
 enum MdfArgs {
@@ -23,21 +21,35 @@ struct GedcomArgs {
 
 #[derive(Debug, Subcommand)]
 enum GedcomCommands {
-    Validate { path: PathBuf },
+    Validate {
+        path: PathBuf,
+        #[arg(long, rename_all = "kebab-case")]
+        force_encoding: Option<Encoding>,
+    },
+}
+
+#[derive(clap::ValueEnum, Clone, Copy, Debug)]
+#[allow(non_camel_case_types)] // want hyphens in these
+pub enum Encoding {
+    UTF_8,
+    Windows_1252,
+}
+
+impl From<Encoding> for SupportedEncoding {
+    fn from(value: Encoding) -> SupportedEncoding {
+        match value {
+            Encoding::UTF_8 => SupportedEncoding::UTF8,
+            Encoding::Windows_1252 => SupportedEncoding::Windows1252,
+        }
+    }
 }
 
 fn main() -> miette::Result<()> {
+    let args = MdfArgs::parse();
+
+    let mut log = paris::Logger::new();
     if stdout().is_terminal() {
-        // HACK: override console wants_emoji detection
-        // https://github.com/console-rs/console/blob/de2f15a31a8fef0b0e65ef4bdf92cd03c3061dac/src/windows_term/mod.rs#L505
-        std::env::set_var("WT_SESSION", "1");
-
-        // interactive, format log messages using nice `cliclack`
-        tracing_subscriber::Registry::default()
-            .with(cliclack_layer::CliclackLayer::new())
-            .init();
-
-        cliclack::intro("Welcome to MDF!").into_diagnostic()?;
+        // TODO
     } else {
         // non-interactive, format log messages using default `fmt`
         tracing_subscriber::fmt::init();
@@ -51,40 +63,55 @@ fn main() -> miette::Result<()> {
         )
     }))?;
 
-    let args = MdfArgs::parse();
     match args {
         MdfArgs::Gedcom(args) => match args.command {
-            GedcomCommands::Validate { path } => {
-                let start_time = Instant::now();
+            GedcomCommands::Validate {
+                path,
+                force_encoding,
+            } => {
+                let parse_options = ParseOptions {
+                    force_encoding: force_encoding.map(Into::into),
+                };
 
+                let start_time = Instant::now();
                 let data = std::fs::read(&path)
                     .into_diagnostic()
                     .with_context(|| format!("Loading file {}", path.display()))?;
 
                 let mut buffer = String::new();
 
-                let count = gedcomfy::validate_syntax(&data, &mut buffer)
-                    .with_context(|| format!("validating {}", path.display()))
-                    .map_err(|e| {
-                        e.with_source_code(
+                log.info(format!("File loaded: {}", path.display()));
+
+                log.loading("Validating file syntax…");
+
+                match gedcomfy::validate_syntax_opt(&data, &mut buffer, parse_options) {
+                    Ok(count) => {
+                        let elapsed = start_time.elapsed();
+                        log.done()
+                            .success("File syntax validation <bold>succeeded</>: {count} lines")
+                            .indent(1)
+                            .info(format!("Completed in {}s", elapsed.as_secs_f64()));
+
+                        tracing::info!(
+                            record_count = count,
+                            path = %path.display(),
+                            "file is (syntactically) valid",
+                        );
+                    }
+                    Err(e) => {
+                        let elapsed = start_time.elapsed();
+                        log.done()
+                            .warn("File syntax validation <bold>failed</>")
+                            .indent(1)
+                            .info(format!("Completed in {}s", elapsed.as_secs_f64()));
+
+                        return Err(miette::Report::new(e).with_source_code(
                             NamedSource::new(path.to_string_lossy(), data).with_language("GEDCOM"),
-                        )
-                    })?;
-
-                let elapsed = start_time.elapsed();
-
-                tracing::info!(
-                    record_count = count,
-                    elapsed = ?elapsed,
-                    path = %path.display(),
-                    "file is (syntactically) valid",
-                );
+                        ));
+                    }
+                }
             }
         },
-    }
-
-    if stdout().is_terminal() {
-        cliclack::outro("Goodbye!").into_diagnostic()?;
     }
 
     Ok(())

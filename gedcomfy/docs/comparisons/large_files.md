@@ -10,7 +10,7 @@ Note that at the moment, both of these files seem to have been created in such a
 
 ### gedcomfy
 
-Only discovers the first encoding error, and stops processing in under a second:
+At first it only discovers the first encoding error, and stops processing in under a second:
 
 ```
 Error: gedcom::encoding::invalid_data
@@ -38,6 +38,18 @@ Advice: gedcom::encoding_reason::header
     ·          ╰── encoding was specified here
  18 │ 1 LANG English
     ╰────
+
+Advice: gedcom::possible_encodings
+
+  ☞ the invalid data appears to be valid in another encoding:
+  │ → Mjöbergi (using Windows-1252)
+  help: encoding can be chosen explicitly using the `--force-encoding` option
+```
+
+If we supply `--force-encoding windows-1252`:
+
+```
+INFO mdf: file is (syntactically) valid record_count=5066522 elapsed=455.9538ms path=.\private\ITIS.ged
 ```
 
 ### GEDCOM Validator

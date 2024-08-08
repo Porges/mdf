@@ -4,6 +4,7 @@ use ascii::{AsciiChar, AsciiStr};
 use decoding::DecodingError;
 use lines::iterate_lines;
 use miette::{SourceOffset, SourceSpan};
+use options::ParseOptions;
 use records::{RawRecord, RecordBuilder};
 
 pub mod decoding;
@@ -196,7 +197,15 @@ pub fn parse<'a>(
     input: &'a [u8],
     buffer: &'a mut String,
 ) -> Result<Vec<Sourced<RawRecord<'a>>>, DecodingError> {
-    let (_version, decoded_input) = decoding::detect_and_decode(input)?;
+    parse_opt(input, buffer, ParseOptions::default())
+}
+
+pub fn parse_opt<'a>(
+    input: &'a [u8],
+    buffer: &'a mut String,
+    parse_options: ParseOptions,
+) -> Result<Vec<Sourced<RawRecord<'a>>>, DecodingError> {
+    let (_version, decoded_input) = decoding::detect_and_decode(input, parse_options)?;
 
     // if we want to return records without copying data in most cases,
     // the caller must provide a buffer where we can copy data if needed
