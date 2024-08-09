@@ -52,8 +52,8 @@ fn main() -> miette::Result<()> {
         // TODO
     } else {
         // non-interactive, format log messages using default `fmt`
-        tracing_subscriber::fmt::init();
     }
+    tracing_subscriber::fmt::init();
 
     miette::set_hook(Box::new(|_| {
         Box::new(

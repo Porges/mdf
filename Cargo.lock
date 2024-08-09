@@ -1088,7 +1088,7 @@ dependencies = [
 [[package]]
 name = "miette"
 version = "7.2.0"
-source = "git+https://github.com/Porges/miette?branch=invalid_unicode#e8827764ec987ff53f1d22473b6f426856cfd7b0"
+source = "git+https://github.com/zkat/miette#d6b4558502e82fa74e030ccb3c8040656590d7eb"
 dependencies = [
  "cfg-if",
  "miette-derive 7.2.0",
@@ -1116,7 +1116,7 @@ dependencies = [
 [[package]]
 name = "miette-derive"
 version = "7.2.0"
-source = "git+https://github.com/Porges/miette?branch=invalid_unicode#e8827764ec987ff53f1d22473b6f426856cfd7b0"
+source = "git+https://github.com/zkat/miette#d6b4558502e82fa74e030ccb3c8040656590d7eb"
 dependencies = [
  "proc-macro2",
  "quote",

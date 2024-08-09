@@ -230,30 +230,38 @@ impl DetectedEncoding {
                     );
 
                     to_show.reverse();
-                    to_show.push(data[source.valid_up_to()]);
                     to_show.extend(
-                        data[source.valid_up_to() + 1..]
+                        data[source.valid_up_to()..]
                             .iter()
-                            .take(20)
-                            .take_while(|b| b.is_ascii_alphabetic())
+                            .take(21)
+                            .take_while(|b| !b.is_ascii() || b.is_ascii_alphabetic())
                             .copied(),
                     );
 
+                    tracing::debug!("data to decode is {}", String::from_utf8_lossy(&to_show));
+
                     let mut possible_encodings = Vec::new();
                     for encoding in [SupportedEncoding::Windows1252, SupportedEncoding::UTF8] {
+                        tracing::debug!(?encoding, "attempting to decode with alternate encoding");
+
                         // TODO, hack structure initialization
                         let dother = DetectedEncoding {
                             encoding,
                             reason: EncodingReason::Assumed {},
                         };
 
-                        let bold = owo_colors::style().bold();
-
-                        if let Ok(decoded) = dother.decode(&to_show) {
-                            possible_encodings.push(PossibleEncoding {
-                                encoding,
-                                data_in_encoding: bold.style(decoded).to_string(),
-                            });
+                        match dother.decode(&to_show) {
+                            Ok(decoded) => {
+                                // if we decoded to something containing control characters,
+                                // it’s not valid
+                                if decoded.as_ref().chars().all(|c| !c.is_control()) {
+                                    possible_encodings.push(PossibleEncoding {
+                                        encoding,
+                                        data_in_encoding: decoded.into_owned(),
+                                    });
+                                }
+                            }
+                            Err(e) => tracing::debug!(?e, "failed"),
                         }
                     }
 
