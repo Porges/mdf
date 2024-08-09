@@ -5,6 +5,7 @@ use std::{
 };
 
 use clap::{Parser, Subcommand};
+use fancy_duration::FancyDuration;
 use gedcomfy::parser::{encodings::SupportedEncoding, options::ParseOptions};
 use miette::{Context, IntoDiagnostic, NamedSource};
 
@@ -47,7 +48,6 @@ impl From<Encoding> for SupportedEncoding {
 fn main() -> miette::Result<()> {
     let args = MdfArgs::parse();
 
-    let mut log = paris::Logger::new();
     if stdout().is_terminal() {
         // TODO
     } else {
@@ -80,18 +80,19 @@ fn main() -> miette::Result<()> {
 
                 let mut buffer = String::new();
 
-                log.info(format!("File loaded: {}", path.display()));
+                println!("File loaded: {}", path.display());
+                println!("Validating file syntax…");
 
-                log.loading("Validating file syntax…");
+                let validation_result =
+                    gedcomfy::validate_syntax_opt(&data, &mut buffer, parse_options);
+                println!(
+                    "Completed in {}",
+                    FancyDuration(start_time.elapsed()).truncate(2)
+                );
 
-                match gedcomfy::validate_syntax_opt(&data, &mut buffer, parse_options) {
+                match validation_result {
                     Ok(count) => {
-                        let elapsed = start_time.elapsed();
-                        log.done()
-                            .success("File syntax validation <bold>succeeded</>: {count} lines")
-                            .indent(1)
-                            .info(format!("Completed in {}s", elapsed.as_secs_f64()));
-
+                        println!("File syntax validation succeeded: {count} lines");
                         tracing::info!(
                             record_count = count,
                             path = %path.display(),
@@ -99,15 +100,13 @@ fn main() -> miette::Result<()> {
                         );
                     }
                     Err(e) => {
-                        let elapsed = start_time.elapsed();
-                        log.done()
-                            .warn("File syntax validation <bold>failed</>")
-                            .indent(1)
-                            .info(format!("Completed in {}s", elapsed.as_secs_f64()));
-
-                        return Err(miette::Report::new(e).with_source_code(
-                            NamedSource::new(path.to_string_lossy(), data).with_language("GEDCOM"),
-                        ));
+                        println!("File syntax validation failed");
+                        return Err(miette::Report::new(e)
+                            .context(format!("Validating {}", path.display()))
+                            .with_source_code(
+                                NamedSource::new(path.to_string_lossy(), data)
+                                    .with_language("GEDCOM"),
+                            ));
                     }
                 }
             }

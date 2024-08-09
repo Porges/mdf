@@ -11,4 +11,4 @@ gedcomfy = { path = "../gedcomfy" }
 miette = { git = "https://github.com/zkat/miette", features = ["fancy-no-backtrace"] }
 tracing-subscriber = "0.3.18"
 tracing = "0.1"
-paris = "1.5.15"
+fancy-duration = "0.9.2"
