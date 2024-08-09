@@ -2,6 +2,7 @@ use std::borrow::Cow;
 
 use ascii::AsAsciiStr;
 use miette::SourceSpan;
+use owo_colors::{OwoColorize, Stream};
 use vec1::Vec1;
 
 use crate::{
@@ -195,7 +196,8 @@ struct DetectedPossibleEncodings {
 }
 
 #[derive(thiserror::Error, Debug, miette::Diagnostic)]
-#[error("{data_in_encoding} (using {encoding})")]
+#[error("{} (using {encoding})",
+    .data_in_encoding.if_supports_color(Stream::Stderr, |e| e.bold()))] // TODO: hacky
 struct PossibleEncoding {
     encoding: SupportedEncoding,
     data_in_encoding: String,
