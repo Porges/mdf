@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use ascii::AsAsciiStr;
 
 #[derive(thiserror::Error, Debug, Clone, Copy)]
-pub enum AnselErr {
+pub(crate) enum AnselErr {
     #[error("the byte at index {offset} (value 0x{value:x}) is not ANSEL")]
     Invalid { offset: usize, value: u8 },
 
@@ -15,7 +15,7 @@ pub enum AnselErr {
 }
 
 impl AnselErr {
-    pub fn offset(self) -> usize {
+    pub(crate) fn offset(self) -> usize {
         match self {
             AnselErr::Invalid { offset, .. } => offset,
             AnselErr::StackedCombiningChars { offset } => offset,
@@ -24,7 +24,7 @@ impl AnselErr {
     }
 }
 
-pub fn decode(input: &[u8]) -> Result<Cow<str>, AnselErr> {
+pub(crate) fn decode(input: &[u8]) -> Result<Cow<str>, AnselErr> {
     match input.as_ascii_str() {
         // if it’s pure ASCII we don’t need to do anything
         Ok(ascii_str) => Ok(Cow::Borrowed(ascii_str.as_str())),
@@ -142,7 +142,7 @@ pub fn decode(input: &[u8]) -> Result<Cow<str>, AnselErr> {
                         b'\xCE' => '\u{006F}',
                         b'\xCF' => '\u{00DF}',
                         b'\xFC' => '\u{0338}',
-                        // TODO: MARC21?
+                        // TODO: MARC-8? chars? https://www.loc.gov/marc/specifications/codetables/ExtendedLatin.html
                         c => {
                             return Err(AnselErr::Invalid {
                                 value: c,

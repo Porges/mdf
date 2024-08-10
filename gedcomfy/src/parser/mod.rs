@@ -7,16 +7,17 @@ use miette::{SourceOffset, SourceSpan};
 use options::ParseOptions;
 use records::{RawRecord, RecordBuilder};
 
-pub mod decoding;
 pub mod encodings;
 pub mod lines;
 pub mod options;
 pub mod records;
-pub mod versions;
+
+pub(crate) mod decoding;
+pub(crate) mod versions;
 
 /// Represents the minimal amount of decoding needed to
 /// parse information from GEDCOM files.
-pub trait GEDCOMSource: ascii::AsAsciiStr + PartialEq<AsciiStr> {
+pub(crate) trait GEDCOMSource: ascii::AsAsciiStr + PartialEq<AsciiStr> {
     fn lines(&self) -> impl Iterator<Item = &Self>;
     fn split_once(&self, char: AsciiChar) -> Option<(&Self, &Self)>;
     fn split_once_opt(&self, char: AsciiChar) -> (&Self, Option<&Self>) {
@@ -137,28 +138,28 @@ pub struct Sourced<T> {
 }
 
 impl<T> Sourced<T> {
-    pub fn as_ref(&self) -> Sourced<&T> {
+    pub(crate) fn as_ref(&self) -> Sourced<&T> {
         Sourced {
             value: &self.value,
             span: self.span,
         }
     }
 
-    pub fn map<U>(self, f: impl FnOnce(T) -> U) -> Sourced<U> {
+    pub(crate) fn map<U>(self, f: impl FnOnce(T) -> U) -> Sourced<U> {
         Sourced {
             value: f(self.value),
             span: self.span,
         }
     }
 
-    pub fn try_map<U, E>(self, f: impl FnOnce(T) -> Result<U, E>) -> Result<Sourced<U>, E> {
+    pub(crate) fn try_map<U, E>(self, f: impl FnOnce(T) -> Result<U, E>) -> Result<Sourced<U>, E> {
         Ok(Sourced {
             value: f(self.value)?,
             span: self.span,
         })
     }
 
-    pub fn try_into<U>(self) -> Result<Sourced<U>, T::Error>
+    pub(crate) fn try_into<U>(self) -> Result<Sourced<U>, T::Error>
     where
         T: TryInto<U>,
     {
@@ -173,7 +174,7 @@ impl<T> Sourced<T> {
 }
 
 impl<T, E> Sourced<Result<T, E>> {
-    pub fn transpose(self) -> Result<Sourced<T>, E> {
+    pub(crate) fn transpose(self) -> Result<Sourced<T>, E> {
         match self.value {
             Ok(value) => Ok(Sourced {
                 value,

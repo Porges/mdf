@@ -1,1 +1,1 @@
-pub struct RecordParser {}
+pub(crate) struct RecordParser {}

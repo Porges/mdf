@@ -3,9 +3,9 @@ use miette::SourceSpan;
 use crate::versions::{InvalidGEDCOMVersionError, UnsupportedGEDCOMVersionError};
 
 #[derive(thiserror::Error, Debug, miette::Diagnostic)]
-pub enum VersionError {
+pub(crate) enum VersionError {
     #[error("Unknown version specified in GEDCOM file")]
-    InvalidVersion {
+    Invalid {
         #[label("this is an invalid version")]
         span: SourceSpan,
 
@@ -14,7 +14,7 @@ pub enum VersionError {
     },
 
     #[error("Unsupported version specified in GEDCOM file")]
-    UnsupportedVersion {
+    Unsupported {
         #[label("this is an unsupported version")]
         span: SourceSpan,
 
@@ -23,5 +23,5 @@ pub enum VersionError {
     },
 
     #[error("GEDCOM file appeared to be syntactically valid, but no version could be found")]
-    NoVersion {},
+    NotFound {},
 }

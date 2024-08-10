@@ -1,6 +1,6 @@
 use std::{path::PathBuf, sync::Once};
 
-use gedcomfy::parser::{encodings::external_file_encoding, parse, records::RawRecord};
+use gedcomfy::parser::{encodings::detect_external_encoding, parse, records::RawRecord};
 use kdl::{KdlDocument, KdlEntry, KdlNode};
 use miette::{NamedSource, Report};
 
@@ -150,11 +150,11 @@ fn test_encodings() {
         let data = std::fs::read(path).unwrap();
         let data_ref: &[u8] = data.as_ref();
         let filename = path.file_name().unwrap().to_string_lossy();
-        let encoding_report = match external_file_encoding(data_ref) {
+        let encoding_report = match detect_external_encoding(data_ref) {
             Ok(Some(detected)) => format!(
                 "External encoding detected: {}\nReason: {}",
-                detected.encoding,
-                Report::new(detected.reason)
+                detected.encoding(),
+                Report::new(detected.reason())
                     .with_source_code(NamedSource::new(filename.clone(), data.clone()))
             ),
             Ok(None) => "No external encoding detected (ASCII-compatible)".to_string(),

@@ -1,3 +1,5 @@
+//! This is a library for parsing and validating GEDCOM files.
+
 use core::str;
 use std::borrow::Cow;
 
@@ -15,10 +17,11 @@ use versions::GEDCOMVersion;
 
 pub mod encodings;
 pub mod highlighting;
+mod ntypes;
 pub mod parser;
-pub mod v5;
-pub mod v7;
-pub mod versions;
+pub(crate) mod v5;
+pub(crate) mod v7;
+pub(crate) mod versions;
 
 #[derive(thiserror::Error, Debug, miette::Diagnostic)]
 pub enum ValidationError {
@@ -36,13 +39,13 @@ pub enum ValidationError {
 }
 
 impl<'a, S: GEDCOMSource + ?Sized> RawRecord<'a, S> {
-    pub fn subrecord_optional(&self, subrecord_tag: &str) -> Option<&Sourced<RawRecord<S>>> {
+    pub(crate) fn subrecord_optional(&self, subrecord_tag: &str) -> Option<&Sourced<RawRecord<S>>> {
         self.records
             .iter()
             .find(|r| r.value.line.tag.value == subrecord_tag)
     }
 
-    pub fn subrecord(
+    pub(crate) fn subrecord(
         &self,
         subrecord_tag: &'static str,
         subrecord_description: &'static str,
@@ -54,7 +57,7 @@ impl<'a, S: GEDCOMSource + ?Sized> RawRecord<'a, S> {
             })
     }
 
-    pub fn subrecords_optional(
+    pub(crate) fn subrecords_optional(
         &self,
         tag: &'static str,
     ) -> impl Iterator<Item = &Sourced<RawRecord<S>>> {
@@ -63,7 +66,7 @@ impl<'a, S: GEDCOMSource + ?Sized> RawRecord<'a, S> {
             .filter(move |r| r.value.line.tag.value == tag)
     }
 
-    pub fn subrecords_required(
+    pub(crate) fn subrecords_required(
         &self,
         tag: &'static str,
         description: &'static str,
@@ -109,13 +112,13 @@ pub fn validate_syntax_opt(
     }
 }
 
-pub struct FileFormatOptions {
-    pub version_option: OptionSetting<GEDCOMVersion>,
-    pub encoding_option: OptionSetting<GEDCOMEncoding>,
+pub(crate) struct FileFormatOptions {
+    pub(crate) version_option: OptionSetting<GEDCOMVersion>,
+    pub(crate) encoding_option: OptionSetting<GEDCOMEncoding>,
 }
 
 #[derive(thiserror::Error, Debug, miette::Diagnostic)]
-pub enum FileStructureError {
+pub(crate) enum FileStructureError {
     #[error("Missing HEAD record")]
     #[diagnostic(code(gedcom::schema_error::missing_head_record))]
     MissingHeadRecord {

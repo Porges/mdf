@@ -14,7 +14,7 @@ use crate::{
 };
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub struct GEDCOMVersion {
+pub(crate) struct GEDCOMVersion {
     major: u8,
     minor: u8,
     patch: u8,
@@ -22,7 +22,7 @@ pub struct GEDCOMVersion {
 
 #[derive(thiserror::Error, Debug, miette::Diagnostic)]
 #[error("GEDCOM version {version} is unsupported")]
-pub struct UnsupportedGEDCOMVersionError {
+pub(crate) struct UnsupportedGEDCOMVersionError {
     version: GEDCOMVersion,
 }
 
@@ -52,7 +52,7 @@ impl TryInto<SupportedGEDCOMVersion> for GEDCOMVersion {
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub enum SupportedGEDCOMVersion {
+pub(crate) enum SupportedGEDCOMVersion {
     V5_5,
     V5_5_1,
     V7_0,
@@ -97,16 +97,16 @@ impl Display for GEDCOMVersion {
 }
 
 impl SupportedGEDCOMVersion {
-    pub fn required_encoding(&self) -> Option<SupportedEncoding> {
+    pub(crate) fn required_encoding(&self) -> Option<SupportedEncoding> {
         match self {
-            SupportedGEDCOMVersion::V7_0 => Some(SupportedEncoding::UTF8),
+            SupportedGEDCOMVersion::V7_0 => Some(SupportedEncoding::Utf8),
             _ => None,
         }
     }
 }
 
 impl Sourced<SupportedGEDCOMVersion> {
-    pub fn detect_encoding_from_head_record<S: GEDCOMSource + ?Sized>(
+    pub(crate) fn detect_encoding_from_head_record<S: GEDCOMSource + ?Sized>(
         &self,
         head: &Sourced<RawRecord<S>>,
         external_encoding: Option<DetectedEncoding>,
@@ -125,15 +125,15 @@ impl Sourced<SupportedGEDCOMVersion> {
                     }
                 })?;
 
-                let encoding = if let Some(external_encoding) = external_encoding {
+                let encoding = if let Some(external) = external_encoding {
                     // if we have an external encoding we have to make sure it's compatible
                     // with what the file claims
-                    if GEDCOMEncoding::from(external_encoding.encoding) == file_encoding {
-                        external_encoding.encoding
+                    if GEDCOMEncoding::from(external.encoding()) == file_encoding {
+                        external.encoding()
                     } else {
                         // note that we need to adjust the span to account for the BOM
                         // TODO: a more holistic way to handle this?
-                        let span_offset = match external_encoding.reason {
+                        let span_offset = match external.reason() {
                             EncodingReason::BOMDetected { bom_length } => bom_length,
                             _ => 0,
                         };
@@ -146,8 +146,8 @@ impl Sourced<SupportedGEDCOMVersion> {
                         return Err(EncodingError::ExternalEncodingMismatch {
                             file_encoding,
                             span,
-                            external_encoding: external_encoding.encoding,
-                            reason: Vec1::new(external_encoding.reason),
+                            external_encoding: external.encoding(),
+                            reason: Vec1::new(external.reason()),
                         });
                     }
                 } else if let Ok(result) = file_encoding.try_into() {
@@ -163,34 +163,32 @@ impl Sourced<SupportedGEDCOMVersion> {
                     });
                 };
 
-                Ok(DetectedEncoding {
+                Ok(DetectedEncoding::new(
                     encoding,
-                    reason: EncodingReason::SpecifiedInHeader {
+                    EncodingReason::SpecifiedInHeader {
                         span: line_data.span,
-                    },
-                })
+                    }))
             }
             // v7 is _always_ UTF-8
             SupportedGEDCOMVersion::V7_0 => {
-                if let Some(external_encoding) = external_encoding {
-                    if external_encoding.encoding != SupportedEncoding::UTF8 {
+                if let Some(external) = external_encoding {
+                    if external.encoding() != SupportedEncoding::Utf8 {
                         return Err(EncodingError::VersionEncodingMismatch {
                             version: SupportedGEDCOMVersion::V7_0,
-                            version_encoding: SupportedEncoding::UTF8,
+                            version_encoding: SupportedEncoding::Utf8,
                             version_span: self.span,
-                            external_encoding: external_encoding.encoding,
-                            reason: Vec1::new(external_encoding.reason),
+                            external_encoding: external.encoding(),
+                            reason: Vec1::new(external.reason()),
                         });
                     }
                 }
 
-                Ok(DetectedEncoding {
-                    encoding: SupportedEncoding::UTF8,
-                    reason: EncodingReason::DeterminedByVersion {
+                Ok(DetectedEncoding::new(
+                    SupportedEncoding::Utf8,
+                    EncodingReason::DeterminedByVersion {
                         span: self.span,
                         version: SupportedGEDCOMVersion::V7_0,
-                    },
-                })
+                    }))
             }
         }
     }
@@ -198,9 +196,9 @@ impl Sourced<SupportedGEDCOMVersion> {
 
 #[derive(thiserror::Error, Debug)]
 #[error("invalid GEDCOM version")]
-pub struct InvalidGEDCOMVersionError {}
+pub(crate) struct InvalidGEDCOMVersionError {}
 
-pub fn parse_version_head_gedc_vers<S: GEDCOMSource + ?Sized>(
+pub(crate) fn parse_version_head_gedc_vers<S: GEDCOMSource + ?Sized>(
     value: &S,
 ) -> Result<GEDCOMVersion, InvalidGEDCOMVersionError> {
     // TODO: distinguish between invalid and unsupported

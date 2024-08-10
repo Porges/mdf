@@ -10,7 +10,7 @@ use crate::{
     versions::SupportedGEDCOMVersion,
 };
 
-pub mod ansel;
+pub(crate) mod ansel;
 
 /// Represents the encodings supported by this crate.
 /// These are the encodings that are required by the GEDCOM specifications.
@@ -20,15 +20,15 @@ pub mod ansel;
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub enum SupportedEncoding {
     /// The ASCII encoding. This will reject any bytes with highest bit set.
-    ASCII,
+    Ascii,
     /// The ANSEl encoding. (Really this is MARC8?)
-    ANSEL,
+    Ansel,
     /// The UTF-8 encoding.
-    UTF8,
+    Utf8,
     /// The UTF-16 Big Endian encoding.
-    UTF16BE,
+    Utf16BigEndian,
     /// The UTF-16 Little Endian encoding.
-    UTF16LE,
+    Utf16LittleEndian,
     /// This is not permitted by any GEDCOM specification, but is included
     /// as it is needed to parse some mal-encoded GEDCOM files.
     Windows1252,
@@ -37,11 +37,11 @@ pub enum SupportedEncoding {
 impl std::fmt::Display for SupportedEncoding {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let str = match self {
-            SupportedEncoding::ASCII => "ASCII",
-            SupportedEncoding::ANSEL => "ANSEL",
-            SupportedEncoding::UTF8 => "UTF-8",
-            SupportedEncoding::UTF16BE => "UTF-16 (big-endian)",
-            SupportedEncoding::UTF16LE => "UTF-16 (little-endian)",
+            SupportedEncoding::Ascii => "ASCII",
+            SupportedEncoding::Ansel => "ANSEL",
+            SupportedEncoding::Utf8 => "UTF-8",
+            SupportedEncoding::Utf16BigEndian => "UTF-16 (big-endian)",
+            SupportedEncoding::Utf16LittleEndian => "UTF-16 (little-endian)",
             SupportedEncoding::Windows1252 => "Windows-1252",
         };
 
@@ -55,8 +55,22 @@ impl std::fmt::Display for SupportedEncoding {
 /// see [`EncodingReason`] for more information.
 #[derive(Debug)]
 pub struct DetectedEncoding {
-    pub encoding: SupportedEncoding,
-    pub reason: EncodingReason,
+    encoding: SupportedEncoding,
+    reason: EncodingReason,
+}
+
+impl DetectedEncoding {
+    pub(crate) fn new(encoding: SupportedEncoding, reason: EncodingReason) -> Self {
+        Self { encoding, reason }
+    }
+
+    pub fn encoding(&self) -> SupportedEncoding {
+        self.encoding
+    }
+
+    pub fn reason(&self) -> EncodingReason {
+        self.reason
+    }
 }
 
 #[derive(thiserror::Error, Debug, miette::Diagnostic, Copy, Clone)]
@@ -168,7 +182,7 @@ pub enum EncodingError {
 #[derive(thiserror::Error, Debug, miette::Diagnostic)]
 #[error("Invalid data for encoding {encoding}")]
 #[diagnostic(code(gedcom::encoding::invalid_data))]
-pub struct InvalidDataForEncodingError {
+pub(crate) struct InvalidDataForEncodingError {
     encoding: SupportedEncoding,
 
     #[source]
@@ -204,7 +218,10 @@ struct PossibleEncoding {
 }
 
 impl DetectedEncoding {
-    pub fn decode<'a>(&self, data: &'a [u8]) -> Result<Cow<'a, str>, InvalidDataForEncodingError> {
+    pub(crate) fn decode<'a>(
+        &self,
+        data: &'a [u8],
+    ) -> Result<Cow<'a, str>, InvalidDataForEncodingError> {
         // trim off BOM, if any
         let offset_adjustment = match self.reason {
             EncodingReason::BOMDetected { bom_length } => bom_length,
@@ -214,7 +231,7 @@ impl DetectedEncoding {
         let data = &data[offset_adjustment..];
 
         match self.encoding {
-            SupportedEncoding::ASCII => match data.as_ascii_str() {
+            SupportedEncoding::Ascii => match data.as_ascii_str() {
                 Ok(result) => Ok(result.as_str().into()),
                 Err(source) => {
                     // see if we can detect that it would be valid in another encoding
@@ -243,7 +260,7 @@ impl DetectedEncoding {
                     tracing::debug!("data to decode is {}", String::from_utf8_lossy(&to_show));
 
                     let mut possible_encodings = Vec::new();
-                    for encoding in [SupportedEncoding::Windows1252, SupportedEncoding::UTF8] {
+                    for encoding in [SupportedEncoding::Windows1252, SupportedEncoding::Utf8] {
                         tracing::debug!(?encoding, "attempting to decode with alternate encoding");
 
                         // TODO, hack structure initialization
@@ -290,7 +307,7 @@ impl DetectedEncoding {
                     span: None,
                     reason: Vec1::new(Box::new(self.reason)),
                 })?),
-            SupportedEncoding::ANSEL => {
+            SupportedEncoding::Ansel => {
                 ansel::decode(data).map_err(|source| InvalidDataForEncodingError {
                     encoding: self.encoding,
                     source: Some(Box::new(source)),
@@ -298,7 +315,7 @@ impl DetectedEncoding {
                     reason: Vec1::new(Box::new(self.reason)),
                 })
             }
-            SupportedEncoding::UTF8 => Ok(std::str::from_utf8(data)
+            SupportedEncoding::Utf8 => Ok(std::str::from_utf8(data)
                 .map_err(|source| InvalidDataForEncodingError {
                     encoding: self.encoding,
                     source: Some(Box::new(source)),
@@ -309,7 +326,7 @@ impl DetectedEncoding {
                     reason: Vec1::new(Box::new(self.reason)),
                 })?
                 .into()),
-            SupportedEncoding::UTF16BE => Ok(encoding_rs::UTF_16BE
+            SupportedEncoding::Utf16BigEndian => Ok(encoding_rs::UTF_16BE
                 .decode_without_bom_handling_and_without_replacement(data)
                 .ok_or_else(|| InvalidDataForEncodingError {
                     encoding: self.encoding,
@@ -317,7 +334,7 @@ impl DetectedEncoding {
                     span: None,
                     reason: Vec1::new(Box::new(self.reason)),
                 })?),
-            SupportedEncoding::UTF16LE => Ok(encoding_rs::UTF_16LE
+            SupportedEncoding::Utf16LittleEndian => Ok(encoding_rs::UTF_16LE
                 .decode_without_bom_handling_and_without_replacement(data)
                 .ok_or_else(|| InvalidDataForEncodingError {
                     encoding: self.encoding,
@@ -333,7 +350,7 @@ impl DetectedEncoding {
 /// determined without actually enumerating GEDCOM records.
 ///
 /// See the documentation on [`detect_and_decode`](crate::parser::decoding::detect_and_decode).
-pub fn external_file_encoding(input: &[u8]) -> Result<Option<DetectedEncoding>, EncodingError> {
+pub fn detect_external_encoding(input: &[u8]) -> Result<Option<DetectedEncoding>, EncodingError> {
     let result = match input {
         // specifically indicate why UTF-32 is not supported
         [b'\x00', b'\x00', b'\xFE', b'\xFF', ..] => {
@@ -348,24 +365,24 @@ pub fn external_file_encoding(input: &[u8]) -> Result<Option<DetectedEncoding>, 
         }
         // first, try possible BOMs:
         [b'\xEF', b'\xBB', b'\xBF', ..] => DetectedEncoding {
-            encoding: SupportedEncoding::UTF8,
+            encoding: SupportedEncoding::Utf8,
             reason: EncodingReason::BOMDetected { bom_length: 3 },
         },
         [b'\xFF', b'\xFE', ..] => DetectedEncoding {
-            encoding: SupportedEncoding::UTF16LE,
+            encoding: SupportedEncoding::Utf16LittleEndian,
             reason: EncodingReason::BOMDetected { bom_length: 2 },
         },
         [b'\xFE', b'\xFF', ..] => DetectedEncoding {
-            encoding: SupportedEncoding::UTF16BE,
+            encoding: SupportedEncoding::Utf16BigEndian,
             reason: EncodingReason::BOMDetected { bom_length: 2 },
         },
         // next, try sniffing the content, we look for '0' in the two non-ASCII-compatible encodings:
         [b'\x30', b'\x00', ..] => DetectedEncoding {
-            encoding: SupportedEncoding::UTF16LE,
+            encoding: SupportedEncoding::Utf16LittleEndian,
             reason: EncodingReason::Sniffed {},
         },
         [b'\x00', b'\x30', ..] => DetectedEncoding {
-            encoding: SupportedEncoding::UTF16BE,
+            encoding: SupportedEncoding::Utf16BigEndian,
             reason: EncodingReason::Sniffed {},
         },
         // unable to determine from the first bytes, so see if it’s at least

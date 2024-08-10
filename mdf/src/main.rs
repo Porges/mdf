@@ -39,7 +39,7 @@ pub enum Encoding {
 impl From<Encoding> for SupportedEncoding {
     fn from(value: Encoding) -> SupportedEncoding {
         match value {
-            Encoding::UTF_8 => SupportedEncoding::UTF8,
+            Encoding::UTF_8 => SupportedEncoding::Utf8,
             Encoding::Windows_1252 => SupportedEncoding::Windows1252,
         }
     }
@@ -69,9 +69,8 @@ fn main() -> miette::Result<()> {
                 path,
                 force_encoding,
             } => {
-                let parse_options = ParseOptions {
-                    force_encoding: force_encoding.map(Into::into),
-                };
+                let parse_options =
+                    ParseOptions::default().force_encoding(force_encoding.map(Into::into));
 
                 let start_time = Instant::now();
                 let data = std::fs::read(&path)

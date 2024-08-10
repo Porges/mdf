@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 
 use crate::{
-    parser::encodings::external_file_encoding,
+    parser::encodings::detect_external_encoding,
     versions::{parse_version_head_gedc_vers, GEDCOMVersion, SupportedGEDCOMVersion},
     FileStructureError,
 };
@@ -62,28 +62,26 @@ use super::{
 /// If you want to exert more control about how the version or encoding are determined,
 /// you can pass appropriate options to the [`parse`] function. See the documentation
 /// on [`detect_file_encoding_opt`].
-pub fn detect_and_decode(
+pub(crate) fn detect_and_decode(
     input: &[u8],
     parse_options: ParseOptions,
 ) -> Result<(GEDCOMVersion, Cow<str>), DecodingError> {
     if let Some(encoding) = parse_options.force_encoding {
-        let detected_encoding = DetectedEncoding {
-            encoding,
-            reason: EncodingReason::Forced {},
-        };
-
+        // encoding is being forced by settings
+        let detected_encoding = DetectedEncoding::new(encoding, EncodingReason::Forced {});
         let decoded = detected_encoding.decode(input)?;
         let version = parse_gedcom_header_only_version(decoded.as_ref())?;
         Ok((*version, decoded))
-    } else if let Some(external_encoding) = external_file_encoding(input)? {
+    } else if let Some(external_encoding) = detect_external_encoding(input)? {
+        tracing::debug!(encoding = ?external_encoding.encoding(), "detected encoding");
         // now we can decode the file to actually look inside it
         let decoded = external_encoding.decode(input)?;
         // get version and double-check encoding with file
-        let ext_enc = external_encoding.encoding;
+        let ext_enc = external_encoding.encoding();
         let (version, f_enc) = parse_gedcom_header(decoded.as_ref(), Some(external_encoding))?;
         // we don’t need the encoding here since we already decoded
         // it will always be the same
-        debug_assert_eq!(f_enc.encoding, ext_enc);
+        debug_assert_eq!(f_enc.encoding(), ext_enc);
         Ok((*version, decoded))
     } else {
         // we need to determine the encoding from the file itself
@@ -121,7 +119,7 @@ pub enum DecodingError {
     SyntaxError(#[from] LineSyntaxError),
 }
 
-pub fn parse_gedcom_header_only_version<S: GEDCOMSource + ?Sized>(
+pub(crate) fn parse_gedcom_header_only_version<S: GEDCOMSource + ?Sized>(
     input: &S,
 ) -> Result<Sourced<GEDCOMVersion>, DecodingError> {
     let first_record = read_first_record::<_, DecodingError>(input)?;
@@ -136,7 +134,7 @@ pub fn parse_gedcom_header_only_version<S: GEDCOMSource + ?Sized>(
     let _supported_version: Sourced<SupportedGEDCOMVersion> =
         version
             .try_into()
-            .map_err(|source| VersionError::UnsupportedVersion {
+            .map_err(|source| VersionError::Unsupported {
                 source,
                 span: version.span,
             })?;
@@ -144,7 +142,7 @@ pub fn parse_gedcom_header_only_version<S: GEDCOMSource + ?Sized>(
     Ok(version)
 }
 
-pub fn parse_gedcom_header<S: GEDCOMSource + ?Sized>(
+pub(crate) fn parse_gedcom_header<S: GEDCOMSource + ?Sized>(
     input: &S,
     external_encoding: Option<DetectedEncoding>,
 ) -> Result<(Sourced<GEDCOMVersion>, DetectedEncoding), DecodingError> {
@@ -160,7 +158,7 @@ pub fn parse_gedcom_header<S: GEDCOMSource + ?Sized>(
     let supported_version: Sourced<SupportedGEDCOMVersion> =
         version
             .try_into()
-            .map_err(|source| VersionError::UnsupportedVersion {
+            .map_err(|source| VersionError::Unsupported {
                 source,
                 span: version.span,
             })?;
@@ -180,7 +178,7 @@ fn detect_version_from_head_record<S: GEDCOMSource + ?Sized>(
             let data = vers.line.data.expect("TODO: error");
             return data
                 .try_map(|d| parse_version_head_gedc_vers(d))
-                .map_err(|source| VersionError::InvalidVersion {
+                .map_err(|source| VersionError::Invalid {
                     source,
                     span: data.span,
                 });
@@ -197,5 +195,5 @@ fn detect_version_from_head_record<S: GEDCOMSource + ?Sized>(
         }
     }
 
-    Err(VersionError::NoVersion {})
+    Err(VersionError::NotFound {})
 }

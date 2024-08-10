@@ -12,13 +12,13 @@ use super::{GEDCOMSource, Sourced};
 pub struct RawLine<'a, S: GEDCOMSource + ?Sized> {
     pub tag: Sourced<&'a AsciiStr>,
     pub xref: Option<Sourced<&'a S>>,
-    pub data: Option<Sourced<&'a S>>,
+    pub data: Option<Sourced<&'a S>>, // TODO this should be pointer|data
 }
 
 /// The types of errors that can occur when parsing lines
 /// from a GEDCOM file.
 #[derive(thiserror::Error, Debug, miette::Diagnostic)]
-pub enum LineSyntaxError {
+pub(crate) enum LineSyntaxError {
     #[error("Invalid non-numeric level '{value}'")]
     #[diagnostic(code(gedcom::parse_error::invalid_level))]
     InvalidLevel {
@@ -72,7 +72,7 @@ pub enum LineSyntaxError {
 /// the encoding of the file before decoding the rest of the file.
 ///
 /// ## Syntax
-pub fn iterate_lines<S: GEDCOMSource + ?Sized>(
+pub(crate) fn iterate_lines<S: GEDCOMSource + ?Sized>(
     source_code: &S,
 ) -> impl Iterator<Item = Result<(Sourced<usize>, Sourced<RawLine<S>>), LineSyntaxError>> {
     // Line syntax is as follows:

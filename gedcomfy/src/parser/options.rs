@@ -7,7 +7,7 @@ use super::{
 };
 
 #[derive(Copy, Clone)]
-pub enum OptionSetting<T> {
+pub(crate) enum OptionSetting<T> {
     Assume(T),      // the value to assume if it is missing
     Require(T),     // the value to require – if mismatched, is an error
     Override(T),    // the value to force, even if invalid
@@ -36,22 +36,16 @@ pub enum OptionSetting<T> {
 ///   and produce an error if it is not found. This may be useful in rare cases.
 
 #[derive(Default)]
+#[non_exhaustive]
 pub struct ParseOptions {
-    pub force_encoding: Option<SupportedEncoding>,
+    pub(super) force_encoding: Option<SupportedEncoding>,
 }
 
 impl ParseOptions {
-    pub fn handle_version(
-        &self,
-        input: Result<Sourced<GEDCOMVersion>, VersionError>,
-    ) -> Result<Sourced<GEDCOMVersion>, VersionError> {
-        input // TODO
-    }
-
-    pub fn handle_encoding(
-        &self,
-        input: Result<DetectedEncoding, EncodingError>,
-    ) -> Result<DetectedEncoding, EncodingError> {
-        input // TODO
+    pub fn force_encoding(self, force_encoding: impl Into<Option<SupportedEncoding>>) -> Self {
+        Self {
+            force_encoding: force_encoding.into(),
+            ..self
+        }
     }
 }

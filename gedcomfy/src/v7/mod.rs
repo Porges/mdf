@@ -1,5 +1,5 @@
 #[derive(Debug)]
-pub enum StandardTag {
+pub(crate) enum StandardTag {
     Abbreviation,         // g7:ABBR
     Address,              // g7:ADDR
     Adoption,             // g7:ADOP
@@ -61,7 +61,7 @@ pub enum StandardTag {
     FirstCommunion,       // g7:FCOM
     FileReference,        // g7:FILE
     Format,               // g7:FORM, PLAC-FORM, HEAD-PLAC-FORM
-    GEDCOM,               // g7:GEDC
+    Gedcom,               // g7:GEDC
     GivenName,            // g7:GIVN
     Graduation,           // g7:GRAD
     Header,               // g7:HEAD
@@ -191,4 +191,4 @@ impl TryFrom<&str> for StandardTag {
     }
 }
 
-pub struct RecordParser {}
+pub(crate) struct RecordParser {}

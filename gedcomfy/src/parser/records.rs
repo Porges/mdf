@@ -23,7 +23,7 @@ impl<'a, S: GEDCOMSource + ?Sized> RawRecord<'a, S> {
 }
 
 impl<'a, S: GEDCOMSource + ?Sized> Sourced<RawRecord<'a, S>> {
-    pub fn ensure_tag(&self, tag: &str) -> Option<&Self> {
+    pub(crate) fn ensure_tag(&self, tag: &str) -> Option<&Self> {
         if self.line.tag.value.eq(tag) {
             Some(self)
         } else {
@@ -33,7 +33,7 @@ impl<'a, S: GEDCOMSource + ?Sized> Sourced<RawRecord<'a, S>> {
 }
 
 #[derive(thiserror::Error, Debug, miette::Diagnostic)]
-pub enum RecordStructureError {
+pub(crate) enum RecordStructureError {
     #[error("Invalid child level {level}, expected {expected_level} or less")]
     #[diagnostic(code(gedcom::record_error::invalid_child_level))]
     InvalidChildLevel {
@@ -51,12 +51,12 @@ pub enum RecordStructureError {
     },
 }
 
-pub struct RecordBuilder<'a, S: GEDCOMSource + ?Sized = str> {
+pub(crate) struct RecordBuilder<'a, S: GEDCOMSource + ?Sized = str> {
     stack: Vec<RawRecord<'a, S>>,
 }
 
 impl<'a, S: GEDCOMSource + ?Sized> RecordBuilder<'a, S> {
-    pub fn new() -> Self {
+    pub(crate) fn new() -> Self {
         Self { stack: Vec::new() }
     }
 
@@ -105,7 +105,7 @@ impl<'a, S: GEDCOMSource + ?Sized> RecordBuilder<'a, S> {
         Ok(None)
     }
 
-    pub fn handle_line(
+    pub(crate) fn handle_line(
         &mut self,
         (level, line): (Sourced<usize>, Sourced<RawLine<'a, S>>),
     ) -> Result<Option<Sourced<RawRecord<'a, S>>>, RecordStructureError> {
@@ -126,7 +126,7 @@ impl<'a, S: GEDCOMSource + ?Sized> RecordBuilder<'a, S> {
     }
 
     /*
-    pub fn handle_syntax_error(
+    pub(crate) fn handle_syntax_error(
         self,
         source: parser::lines::LineSyntaxError,
     ) -> RecordStructureError {
@@ -138,7 +138,7 @@ impl<'a, S: GEDCOMSource + ?Sized> RecordBuilder<'a, S> {
     }
     */
 
-    pub fn complete(mut self) -> Result<Option<Sourced<RawRecord<'a, S>>>, RecordStructureError> {
+    pub(crate) fn complete(mut self) -> Result<Option<Sourced<RawRecord<'a, S>>>, RecordStructureError> {
         self.pop_to_level(0)
     }
 }
@@ -183,7 +183,7 @@ pub fn iterate_records<'a>(
     }
 }
 
-pub fn read_first_record<S, E>(input: &S) -> Result<Option<Sourced<RawRecord<S>>>, E>
+pub(crate) fn read_first_record<S, E>(input: &S) -> Result<Option<Sourced<RawRecord<S>>>, E>
 where
     S: GEDCOMSource + ?Sized,
     E: From<RecordStructureError> + From<LineSyntaxError>,
