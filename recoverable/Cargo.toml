@@ -1,6 +1,0 @@
-[package]
-name = "recoverable"
-version = "0.1.0"
-edition = "2021"
-authors = ["George Pollard <porges@porg.es>"]
-license = "GPL-3.0"
