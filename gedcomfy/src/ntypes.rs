@@ -6,6 +6,15 @@ struct Count<T: ?Sized> {
     _phantom: PhantomData<T>,
 }
 
+impl<T: ?Sized> From<usize> for Count<T> {
+    fn from(count: usize) -> Self {
+        Self {
+            count,
+            _phantom: PhantomData,
+        }
+    }
+}
+
 impl<T: ?Sized> std::ops::Add for Count<T> {
     type Output = Count<T>;
 
@@ -20,6 +29,28 @@ impl<T: ?Sized> std::ops::Add for Count<T> {
 impl<T: ?Sized> std::ops::AddAssign for Count<T> {
     fn add_assign(&mut self, rhs: Self) {
         self.count += rhs.count;
+    }
+}
+
+trait Countable<T> {
+    fn count(&self) -> Count<T>;
+}
+
+impl Countable<u8> for String {
+    fn count(&self) -> Count<u8> {
+        self.len().into()
+    }
+}
+
+impl Countable<char> for String {
+    fn count(&self) -> Count<char> {
+        self.chars().count().into()
+    }
+}
+
+impl<T> Countable<T> for Vec<T> {
+    fn count(&self) -> Count<T> {
+        self.len().into()
     }
 }
 
