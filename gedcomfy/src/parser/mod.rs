@@ -17,7 +17,7 @@ pub(crate) mod versions;
 
 /// Represents the minimal amount of decoding needed to
 /// parse information from GEDCOM files.
-pub(crate) trait GEDCOMSource: ascii::AsAsciiStr + PartialEq<AsciiStr> {
+pub trait GEDCOMSource: ascii::AsAsciiStr + PartialEq<AsciiStr> {
     fn lines(&self) -> impl Iterator<Item = &Self>;
     fn split_once(&self, char: AsciiChar) -> Option<(&Self, &Self)>;
     fn split_once_opt(&self, char: AsciiChar) -> (&Self, Option<&Self>) {
@@ -26,7 +26,6 @@ pub(crate) trait GEDCOMSource: ascii::AsAsciiStr + PartialEq<AsciiStr> {
             None => (self, None),
         }
     }
-    fn splitn(&self, n: usize, char: AsciiChar) -> impl Iterator<Item = &Self>;
     fn span_of(&self, source: &Self) -> SourceSpan;
     fn starts_with(&self, char: AsciiChar) -> bool;
     fn ends_with(&self, char: AsciiChar) -> bool;
@@ -35,10 +34,6 @@ pub(crate) trait GEDCOMSource: ascii::AsAsciiStr + PartialEq<AsciiStr> {
 }
 
 impl GEDCOMSource for str {
-    fn splitn(&self, n: usize, char: AsciiChar) -> impl Iterator<Item = &Self> {
-        (*self).splitn(n, char.as_char())
-    }
-
     fn lines(&self) -> impl Iterator<Item = &Self> {
         // GEDCOM lines are terminated by "any combination of a carriage return and a line feed"
         (*self).split(|c| c == '\r' || c == '\n').map(|mut s| {
@@ -80,10 +75,6 @@ impl GEDCOMSource for str {
 }
 
 impl GEDCOMSource for [u8] {
-    fn splitn(&self, n: usize, char: AsciiChar) -> impl Iterator<Item = &Self> {
-        (*self).splitn(n, move |&x| x == char.as_byte())
-    }
-
     fn lines(&self) -> impl Iterator<Item = &Self> {
         // GEDCOM lines are terminated by "any combination of a carriage return and a line feed"
         (*self).split(|&x| x == b'\r' || x == b'\n').map(|mut s| {

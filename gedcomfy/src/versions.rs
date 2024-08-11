@@ -8,6 +8,7 @@ use crate::{
     encodings::{parse_encoding_raw, GEDCOMEncoding},
     parser::{
         encodings::{DetectedEncoding, EncodingError, EncodingReason, SupportedEncoding},
+        lines::LineValue,
         records::RawRecord,
         GEDCOMSource, Sourced,
     },
@@ -117,7 +118,14 @@ impl Sourced<SupportedGEDCOMVersion> {
             SupportedGEDCOMVersion::V5_5 | // TODO: this is kinda fake
             SupportedGEDCOMVersion::V5_5_1 => {
                 let encoding = head.subrecord_optional("CHAR").expect("TODO better error");
-                let line_data = encoding.line.data.expect("TODO better error");
+                let line_data = match encoding.line.line_value.as_ref().ok_or(EncodingError::InvalidHeader{})? {
+                    Sourced{ value: LineValue::Ptr(_), ..} => return Err(EncodingError::InvalidHeader{}),
+                    &Sourced{ value: LineValue::Str(value), span} => Sourced{
+                        value,
+                        span,
+                    },
+                };
+
                 let file_encoding = parse_encoding_raw(line_data.value).map_err(|source| {
                     EncodingError::InvalidEncoding {
                         span: line_data.span,

@@ -114,6 +114,9 @@ pub enum EncodingReason {
 
 #[derive(thiserror::Error, Debug, miette::Diagnostic)]
 pub enum EncodingError {
+    #[error("Invalid HEADER")]
+    InvalidHeader {}, // TODO
+
     #[error("Input does not appear to be a GEDCOM file")]
     #[diagnostic(
         code(gedcom::encoding::not_gedcom),

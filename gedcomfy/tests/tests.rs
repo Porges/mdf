@@ -1,6 +1,8 @@
 use std::{path::PathBuf, sync::Once};
 
-use gedcomfy::parser::{encodings::detect_external_encoding, parse, records::RawRecord};
+use gedcomfy::parser::{
+    encodings::detect_external_encoding, lines::LineValue, parse, records::RawRecord,
+};
 use kdl::{KdlDocument, KdlEntry, KdlNode};
 use miette::{NamedSource, Report};
 
@@ -124,9 +126,12 @@ fn record_to_kdl(record: RawRecord) -> KdlNode {
             .push(KdlEntry::new_prop("xref", xref.value.to_string()));
     }
 
-    if let Some(data) = &record.line.data {
-        node.entries_mut()
-            .push(KdlEntry::new(data.value.to_string()));
+    if let Some(data) = &record.line.line_value {
+        node.entries_mut().push(match data.value {
+            LineValue::Ptr(None) => KdlEntry::new_prop("see", kdl::KdlValue::Null),
+            LineValue::Ptr(Some(value)) => KdlEntry::new_prop("see", value),
+            LineValue::Str(data) => KdlEntry::new(data.to_string()),
+        })
     }
 
     if record.records.is_empty() {

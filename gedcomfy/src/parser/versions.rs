@@ -4,6 +4,9 @@ use crate::versions::{InvalidGEDCOMVersionError, UnsupportedGEDCOMVersionError};
 
 #[derive(thiserror::Error, Debug, miette::Diagnostic)]
 pub(crate) enum VersionError {
+    #[error("Invalid GEDCOM header")]
+    Header {},
+
     #[error("Unknown version specified in GEDCOM file")]
     Invalid {
         #[label("this is an invalid version")]

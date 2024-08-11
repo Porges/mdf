@@ -69,7 +69,7 @@ impl<'a, S: GEDCOMSource + ?Sized> RecordBuilder<'a, S> {
 
             // this sort of feels like the wrong place to enforce this
             if child.records.is_empty()
-                && child.line.data.is_none()
+                && child.line.line_value.is_none()
                 && !child.line.tag.value.eq("CONT")
                 && !child.line.tag.value.eq("TRLR")
             {
@@ -138,7 +138,9 @@ impl<'a, S: GEDCOMSource + ?Sized> RecordBuilder<'a, S> {
     }
     */
 
-    pub(crate) fn complete(mut self) -> Result<Option<Sourced<RawRecord<'a, S>>>, RecordStructureError> {
+    pub(crate) fn complete(
+        mut self,
+    ) -> Result<Option<Sourced<RawRecord<'a, S>>>, RecordStructureError> {
         self.pop_to_level(0)
     }
 }

@@ -1,6 +1,7 @@
 use std::{path::PathBuf, time::Instant};
 
 use gedcomesque::entities::individual::{ActiveModel as IndividualActive, Entity as Individual};
+use gedcomfy::parser::lines::LineValue;
 use miette::{IntoDiagnostic, NamedSource};
 use sea_orm::{
     sea_query::TableCreateStatement, ActiveValue, ConnectionTrait, Database, DatabaseConnection,
@@ -43,7 +44,10 @@ async fn main() -> miette::Result<()> {
                         .iter()
                         .find_map(|r| {
                             if r.value.line.tag.value == "NAME" {
-                                r.value.line.data.map(|d| d.value)
+                                r.value.line.line_value.as_ref().map(|d| match d.value {
+                                    LineValue::Ptr(_) => todo!("unhandled"),
+                                    LineValue::Str(s) => s,
+                                })
                             } else {
                                 None
                             }

@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 
 use crate::{
-    parser::encodings::detect_external_encoding,
+    parser::{encodings::detect_external_encoding, lines::LineValue},
     versions::{parse_version_head_gedc_vers, GEDCOMVersion, SupportedGEDCOMVersion},
     FileStructureError,
 };
@@ -175,7 +175,22 @@ fn detect_version_from_head_record<S: GEDCOMSource + ?Sized>(
         if let Some(vers) = gedc.subrecord_optional("VERS") {
             tracing::debug!("located VERS record");
             // GEDCOM 4.x or above (including 5.x and 7.x)
-            let data = vers.line.data.expect("TODO: error");
+            let data = match vers
+                .line
+                .line_value
+                .as_ref()
+                .ok_or(VersionError::Header {})?
+            {
+                Sourced {
+                    value: LineValue::Ptr(_),
+                    ..
+                } => return Err(VersionError::Header {}),
+                &Sourced {
+                    value: LineValue::Str(value),
+                    span,
+                } => Sourced { value, span },
+            };
+
             return data
                 .try_map(|d| parse_version_head_gedc_vers(d))
                 .map_err(|source| VersionError::Invalid {

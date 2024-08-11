@@ -1,5 +1,3 @@
-use crate::versions::GEDCOMVersion;
-
 use super::{
     encodings::{DetectedEncoding, EncodingError, SupportedEncoding},
     versions::VersionError,
