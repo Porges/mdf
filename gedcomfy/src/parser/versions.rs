@@ -3,7 +3,7 @@ use miette::SourceSpan;
 use crate::versions::{InvalidGEDCOMVersionError, UnsupportedGEDCOMVersionError};
 
 #[derive(thiserror::Error, Debug, miette::Diagnostic)]
-pub(crate) enum VersionError {
+pub enum VersionError {
     #[error("Invalid GEDCOM header")]
     Header {},
 

@@ -168,7 +168,7 @@ pub enum EncodingError {
 
     #[error("Unknown encoding specified in GEDCOM file")]
     #[diagnostic(code(gedcom::encoding::invalid_encoding))]
-    InvalidEncoding {
+    EncodingUnknown {
         #[diagnostic_source]
         source: InvalidGEDCOMEncoding,
 
@@ -179,7 +179,7 @@ pub enum EncodingError {
     #[error("Detected byte-order mark (BOM) for unsupported encoding {encoding}")]
     #[diagnostic(help("UTF-32 is not permitted as an encoding by any GEDCOM specification"))]
     #[diagnostic(code(gedcom::encoding::invalid_bom))]
-    InvalidBOM { encoding: &'static str },
+    BOMInvalid { encoding: &'static str },
 }
 
 #[derive(thiserror::Error, Debug, miette::Diagnostic)]
@@ -357,12 +357,12 @@ pub fn detect_external_encoding(input: &[u8]) -> Result<Option<DetectedEncoding>
     let result = match input {
         // specifically indicate why UTF-32 is not supported
         [b'\x00', b'\x00', b'\xFE', b'\xFF', ..] => {
-            return Err(EncodingError::InvalidBOM {
+            return Err(EncodingError::BOMInvalid {
                 encoding: "UTF-32 (big-endian)",
             });
         }
         [b'\xFF', b'\xFE', b'\x00', b'\x00', ..] => {
-            return Err(EncodingError::InvalidBOM {
+            return Err(EncodingError::BOMInvalid {
                 encoding: "UTF-32 (little-endian)",
             });
         }

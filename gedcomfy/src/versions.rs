@@ -127,7 +127,7 @@ impl Sourced<SupportedGEDCOMVersion> {
                 };
 
                 let file_encoding = parse_encoding_raw(line_data.value).map_err(|source| {
-                    EncodingError::InvalidEncoding {
+                    EncodingError::EncodingUnknown {
                         span: line_data.span,
                         source,
                     }

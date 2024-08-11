@@ -1,3 +1,5 @@
+use crate::parser::records::RawRecord;
+
 #[derive(Debug)]
 pub(crate) enum StandardTag {
     Abbreviation,         // g7:ABBR
@@ -192,3 +194,17 @@ impl TryFrom<&str> for StandardTag {
 }
 
 pub(crate) struct RecordParser {}
+
+struct Header {}
+
+impl<'a> TryFrom<RawRecord<'a>> for Header {
+    type Error = ();
+
+    fn try_from(value: RawRecord<'a>) -> Result<Self, Self::Error> {
+        if !value.line.tag.value.eq("HEAD") {
+            todo!("err")
+        }
+
+        todo!();
+    }
+}
