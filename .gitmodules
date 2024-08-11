@@ -1,9 +1,6 @@
-[submodule "gedcom7/tests/gpdf"]
-	path = gedcom7/tests/gpdf
-	url = https://github.com/billthefarmer/gpdf
-[submodule "gedcom/tests/example-Gramps-Trees"]
+[submodule "gedcomfy/tests/example-Gramps-Trees"]
 	path = gedcomfy/tests/external/example-Gramps-Trees
 	url = https://github.com/emyoulation/example-Gramps-Trees
-[submodule "gedcom/tests/external/gedcom-samples"]
+[submodule "gedcomfy/tests/external/gedcom-samples"]
 	path = gedcomfy/tests/external/gedcom-samples
 	url = https://github.com/findmypast/gedcom-samples.git
