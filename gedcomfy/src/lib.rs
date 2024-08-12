@@ -1,25 +1,28 @@
 //! This is a library for parsing and validating GEDCOM files.
 
 use core::str;
-use std::borrow::Cow;
+use std::{
+    borrow::{Borrow, Cow},
+    path::Path,
+};
 
 use encodings::{DataError, GEDCOMEncoding, MissingRequiredSubrecord};
-use miette::SourceSpan;
+use miette::{IntoDiagnostic, NamedSource, SourceSpan};
 use parser::{
-    decoding::DecodingError,
+    decoding::{detect_and_decode, DecodingError},
     lines::{iterate_lines, LineSyntaxError},
     options::{OptionSetting, ParseOptions},
-    records::RawRecord,
+    records::{RawRecord, RecordBuilder},
     GEDCOMSource, Sourced,
 };
 use vec1::Vec1;
-use versions::GEDCOMVersion;
+use versions::{GEDCOMVersion, SupportedGEDCOMVersion};
 
 pub mod encodings;
 pub mod highlighting;
 mod ntypes;
 pub mod parser;
-pub(crate) mod v5;
+pub(crate) mod v551;
 pub(crate) mod v7;
 pub(crate) mod versions;
 
@@ -148,4 +151,42 @@ pub(crate) enum FileStructureError {
     #[error(transparent)]
     #[diagnostic(transparent)]
     DataError(#[from] DataError<'static>),
+}
+
+pub fn parse_file(path: &Path, parse_options: ParseOptions) -> Result<AnyGedcom, miette::Report> {
+    use miette::WrapErr;
+
+    let data = std::fs::read(path)
+        .into_diagnostic()
+        .wrap_err_with(|| format!("Failed to read file: {}", path.display()))?;
+
+    let parsed = parse(&data, parse_options)
+        .map_err(|e| e.with_source_code(NamedSource::new(path.to_string_lossy(), data)))?;
+
+    Ok(parsed)
+}
+
+// TODO: fix error type
+pub fn parse(source: &[u8], parse_options: ParseOptions) -> Result<AnyGedcom, miette::Report> {
+    let (version, decoded) = detect_and_decode(source, parse_options)?;
+
+    let lines = parser::lines::iterate_lines(decoded.as_ref());
+
+    let mut records = Vec::new();
+    let mut builder = RecordBuilder::new();
+    for line in lines {
+        if let Some(record) = builder.handle_line(line?)? {
+            records.push(record);
+        }
+    }
+
+    if let Some(record) = builder.complete()? {
+        records.push(record);
+    }
+
+    Ok(version.file_from_records(records)?)
+}
+
+pub enum AnyGedcom {
+    V551(v551::File),
 }

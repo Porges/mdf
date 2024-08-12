@@ -1,7 +1,8 @@
 use std::{path::PathBuf, sync::Once};
 
 use gedcomfy::parser::{
-    encodings::detect_external_encoding, lines::LineValue, parse, records::RawRecord,
+    encodings::detect_external_encoding, lines::LineValue, options::ParseOptions, parse,
+    records::RawRecord,
 };
 use kdl::{KdlDocument, KdlEntry, KdlNode};
 use miette::{NamedSource, Report};
@@ -33,6 +34,15 @@ fn can_parse_allged_lines() {
 
     let line_count = gedcomfy::validate_syntax(&data, &mut buffer).unwrap();
     assert_eq!(line_count, 1159);
+}
+
+#[test]
+fn can_parse_allged_fully() -> miette::Result<()> {
+    let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    path.push("tests/external/others/allged.ged");
+
+    let _parsed_file = gedcomfy::parse_file(&path, ParseOptions::default())?;
+    Ok(())
 }
 
 #[test]

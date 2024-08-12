@@ -65,13 +65,20 @@ use super::{
 pub(crate) fn detect_and_decode(
     input: &[u8],
     parse_options: ParseOptions,
-) -> Result<(GEDCOMVersion, Cow<str>), DecodingError> {
+) -> Result<(SupportedGEDCOMVersion, Cow<str>), DecodingError> {
     if let Some(encoding) = parse_options.force_encoding {
         // encoding is being forced by settings
         let detected_encoding = DetectedEncoding::new(encoding, EncodingReason::Forced {});
         let decoded = detected_encoding.decode(input)?;
         let version = parse_gedcom_header_only_version(decoded.as_ref())?;
-        Ok((*version, decoded))
+        let version = version
+            .value
+            .try_into()
+            .map_err(|source| VersionError::Unsupported {
+                span: version.span,
+                source,
+            })?;
+        Ok((version, decoded))
     } else if let Some(external_encoding) = detect_external_encoding(input)? {
         tracing::debug!(encoding = ?external_encoding.encoding(), "detected encoding");
         // now we can decode the file to actually look inside it
@@ -145,7 +152,7 @@ pub(crate) fn parse_gedcom_header_only_version<S: GEDCOMSource + ?Sized>(
 pub(crate) fn parse_gedcom_header<S: GEDCOMSource + ?Sized>(
     input: &S,
     external_encoding: Option<DetectedEncoding>,
-) -> Result<(Sourced<GEDCOMVersion>, DetectedEncoding), DecodingError> {
+) -> Result<(Sourced<SupportedGEDCOMVersion>, DetectedEncoding), DecodingError> {
     let first_record = read_first_record::<_, DecodingError>(input)?;
     let head = first_record
         .as_ref()
@@ -164,7 +171,7 @@ pub(crate) fn parse_gedcom_header<S: GEDCOMSource + ?Sized>(
             })?;
 
     let encoding = supported_version.detect_encoding_from_head_record(head, external_encoding)?;
-    Ok((version, encoding))
+    Ok((supported_version, encoding))
 }
 
 fn detect_version_from_head_record<S: GEDCOMSource + ?Sized>(

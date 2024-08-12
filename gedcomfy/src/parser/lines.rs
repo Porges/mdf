@@ -23,7 +23,7 @@ pub enum LineValue<'a, S: GEDCOMSource + ?Sized> {
     None,
 }
 
-impl<'a, S:GEDCOMSource + ?Sized> LineValue<'a, S> {
+impl<'a, S: GEDCOMSource + ?Sized> LineValue<'a, S> {
     pub fn is_none(&self) -> bool {
         matches!(self, LineValue::None)
     }
@@ -72,6 +72,13 @@ pub(crate) enum LineSyntaxError {
     )]
     InvalidTagCharacter {
         #[label("this character is not permitted in a tag")]
+        span: SourceSpan,
+    },
+
+    #[error("Incomplete pointer value")]
+    #[diagnostic(code(gedcom::parse_error::incomplete_pointer))]
+    IncompletePointer {
+        #[label("this pointer value should end with '@'")]
         span: SourceSpan,
     },
 }
@@ -235,6 +242,10 @@ fn parse_line<'a, S: GEDCOMSource + ?Sized>(
                     let after_at = val.slice_from(1);
                     if after_at.starts_with(AsciiChar::At) {
                         LineValue::Str(after_at)
+                    } else if after_at.starts_with(AsciiChar::Hash) {
+                        // this is some escaped thing @#xxx@
+                        // TODO: check what specs this is valid in?
+                        LineValue::Str(val)
                     } else if val.ends_with(AsciiChar::At) {
                         if val.eq("@VOID@".as_ascii_str().unwrap()) {
                             LineValue::Ptr(None)
@@ -243,7 +254,9 @@ fn parse_line<'a, S: GEDCOMSource + ?Sized>(
                             LineValue::Ptr(Some(val))
                         }
                     } else {
-                        todo!("un-ended pointer")
+                        return Err(LineSyntaxError::IncompletePointer {
+                            span: source_code.span_of(val),
+                        });
                     }
                 } else {
                     LineValue::Str(val)

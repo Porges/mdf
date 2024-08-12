@@ -12,6 +12,8 @@ use crate::{
         records::RawRecord,
         GEDCOMSource, Sourced,
     },
+    v551::{self, SchemaError},
+    AnyGedcom,
 };
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
@@ -57,6 +59,21 @@ pub(crate) enum SupportedGEDCOMVersion {
     V5_5,
     V5_5_1,
     V7_0,
+}
+
+impl SupportedGEDCOMVersion {
+    pub(crate) fn file_from_records(
+        self,
+        records: Vec<Sourced<RawRecord>>,
+    ) -> Result<AnyGedcom, SchemaError> {
+        Ok(match self {
+            //TODO: 5.5 is not 5.5.1
+            SupportedGEDCOMVersion::V5_5 | SupportedGEDCOMVersion::V5_5_1 => {
+                AnyGedcom::V551(v551::File::from_records(records)?)
+            }
+            SupportedGEDCOMVersion::V7_0 => todo!(),
+        })
+    }
 }
 
 impl From<SupportedGEDCOMVersion> for GEDCOMVersion {
