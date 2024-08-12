@@ -3,6 +3,7 @@ use std::{collections::BTreeMap, path::PathBuf, process::Output};
 use ascii::{AsciiChar, AsciiStr};
 use serde::{
     de::{
+        self,
         value::{
             BorrowedStrDeserializer, MapAccessDeserializer, MapDeserializer, SeqDeserializer,
             StringDeserializer,
@@ -11,14 +12,14 @@ use serde::{
     },
     Deserializer, Serialize,
 };
+use vec1::Vec1;
 
 use crate::{
     encodings::GEDCOMEncoding,
     parser::{lines::LineValue, records::RawRecord, Sourced},
 };
 
-pub(crate) struct RecordParser {}
-
+/*
 pub enum Tag {
     Standard(StandardTag),
     UserDefined(String),
@@ -321,59 +322,333 @@ impl Tag {
         }))
     }
 }
+*/
 
-#[derive(serde::Serialize, serde::Deserialize, Debug)]
-struct Header {
-    #[serde(rename = "DEST")]
-    destination: Option<String>,
+#[derive(Debug, thiserror::Error, miette::Diagnostic, PartialEq, Eq)]
+pub enum SchemaError {
+    #[error("Missing required subrecord {tag}")]
+    MissingRecord { tag: &'static str },
 
-    #[serde(rename = "GEDC")]
-    gedcom: Gedcom,
+    #[error("Unexpected subrecord {tag}")]
+    UnexpectedTag { tag: String },
+
+    #[error("Error reading data for record {tag}")]
+    DataError { tag: String, source: DataError },
+
+    #[error("Too many values for subrecord {tag} (expected {expected}, received {received})")]
+    TooManyRecords {
+        tag: &'static str,
+        expected: usize,
+        received: usize,
+    },
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Debug)]
-struct Gedcom {
-    #[serde(rename = "VERS")]
-    version: String,
+#[derive(Debug, thiserror::Error, PartialEq, Eq)]
+pub enum DataError {
+    #[error("Invalid data")]
+    InvalidData {
+        //        source: Box<dyn std::error::Error + Send + Sync + 'static>,
+    },
 
-    #[serde(rename = "FORM")]
-    form: String,
+    #[error("Unexpected pointer")]
+    UnexpectedPointer,
+
+    #[error("Missing required data")]
+    MissingData,
 }
 
-#[derive(serde::Serialize, serde::Deserialize)]
-struct Individual {
-    #[serde(rename = "RESN")]
-    restriction_notice: Option<RestrictionNotice>,
-
-    #[serde(rename = "NAME", default)]
-    names: Vec<Name>,
+macro_rules! cardinality {
+    ($ty:ty, 0, 1) => {
+        Option<$ty>
+    };
+    ($ty:ty, 1, 1) => {
+        $ty
+    };
+    ($ty:ty, 0, N) => {
+        Vec< $ty >
+    };
+    ($ty:ty, 1, N) => {
+        Vec1< $ty >
+    };
+    ($ty:ty, 0, $max:literal) => {
+        Vec< $ty >
+    };
+    ($ty:ty, 1, $max:literal) => {
+        Vec1< $ty >
+    };
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Debug, Default, PartialEq, Eq)]
-struct Name {
-    value: String,
-
-    #[serde(rename = "TYPE")]
-    name_type: Option<NameType>,
-
-    #[serde(flatten)]
-    pieces: NamePieces,
+fn c_vec2opt<T>(tag: &'static str, v: Vec<T>) -> Result<Option<T>, SchemaError> {
+    match v.len() {
+        0 => Ok(None),
+        1 => Ok(v.into_iter().next()),
+        n => Err(SchemaError::TooManyRecords {
+            tag,
+            expected: 1,
+            received: n,
+        }),
+    }
+}
+fn c_vec2one<T>(tag: &'static str, v: Vec<T>) -> Result<T, SchemaError> {
+    match v.len() {
+        0 => Err(SchemaError::MissingRecord { tag }),
+        1 => Ok(v.into_iter().next().unwrap()),
+        n => Err(SchemaError::TooManyRecords {
+            tag,
+            expected: 1,
+            received: n,
+        }),
+    }
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Debug, Default, PartialEq, Eq)]
-struct NamePieces {
-    #[serde(rename = "NPFX")]
-    prefix: Option<String>,
-
-    #[serde(rename = "GIVN")]
-    given: Option<String>,
-
-    #[serde(rename = "NICK")]
-    nickname: Option<String>,
-
-    #[serde(rename = "SPFX")]
-    surname_prefix: Option<String>,
+macro_rules! from_cardinality {
+    ($tag:ident, $x:expr, 0, 1) => {{
+        c_vec2opt(stringify!($tag), $x)?
+    }};
+    ($tag:ident, $x:expr, 1, 1) => {{
+        c_vec2one(stringify!($tag), $x)?
+    }};
+    ($tag:ident, $x:expr, 1, N) => {{
+        c_vec2vec1(stringify!($tag), $x)?
+    }};
+    ($tag:ident, $x:expr, 0, N) => {{
+        $x
+    }};
+    ($tag:ident, $x:expr, 1, $max:literal) => {{
+        // TODO: enforce max
+        c_vec2vec1(stringify!($tag), $x)?
+    }};
+    ($tag:ident, $x:expr, 0, $max:literal) => {{
+        // TODO: enforce max
+        $x
+    }};
 }
+
+#[macro_export]
+macro_rules! define_record {
+    // Record with no data attached, but it has children:
+    ($self_tag:ident / $name:ident { $($tag:ident / $field:ident: $ty:ty {$min:tt : $max:tt}),+ $(,)? }) => {
+        #[derive(Debug, Eq, PartialEq, Clone)]
+        pub struct $name {
+            $(
+                pub $field: cardinality!($ty, $min, $max),
+            )*
+        }
+
+        impl<'a> TryFrom<Sourced<RawRecord<'a>>> for $name {
+            type Error = SchemaError;
+
+            fn try_from(source: Sourced<RawRecord<'a>>) -> Result<Self, Self::Error> {
+                debug_assert_eq!(source.line.tag.as_str(), stringify!($self_tag));
+
+                #[derive(Default)]
+                struct Builder {
+                    $(
+                        $field: Vec<$ty>,
+                    )*
+                }
+
+                let mut result = Builder::default();
+                for record in source.value.records {
+                    let record: Sourced<RawRecord> = record;
+                    match record.line.tag.as_str() {
+                        $(
+                            stringify!($tag) => {
+                                let $field: $ty = <$ty>::try_from(record)?;
+                                result.$field.push($field);
+                            }
+                        )+
+                        tag => {
+                            if tag.starts_with("_") {
+                                tracing::info!(tag, "Ignoring user-defined tag");
+                            } else {
+                                return Err(SchemaError::UnexpectedTag { tag: tag.to_string() });
+                            }
+                        }
+                    }
+                }
+
+                Ok(Self {
+                    $(
+                        $field: from_cardinality!($tag, result.$field, $min, $max),
+                    )*
+                })
+            }
+        }
+    };
+    // Record with data attached and maybe children:
+    ($self_tag:ident / $name:ident ($value:ty) { $($tag:ident / $field:ident: $ty:ty {$min:tt : $max:tt}),* $(,)? }) => {
+        #[derive(Debug, Eq, PartialEq, Clone)]
+        pub struct $name {
+            pub line_value: $value,
+            $(
+                pub $field: cardinality!($ty, $min, $max),
+            )*
+        }
+
+        impl<'a> TryFrom<Sourced<RawRecord<'a>>> for $name {
+            type Error = SchemaError;
+
+            fn try_from(source: Sourced<RawRecord<'a>>) -> Result<Self, Self::Error> {
+                debug_assert_eq!(source.line.tag.as_str(), stringify!($self_tag));
+
+                let (line, records) = (source.value.line, source.value.records);
+
+                let line_value = <$value>::try_from(line.value.line_value).map_err(|source| SchemaError::DataError{
+                    tag: stringify!($self_tag).to_string(),
+                    source,
+                })?;
+
+                #[derive(Default)]
+                struct Builder {
+                    $(
+                        $field: Vec<$ty>,
+                    )*
+                }
+
+                let mut result = Builder::default();
+                for record in records {
+                    let record: Sourced<RawRecord> = record;
+                    match record.line.tag.as_str() {
+                        $(
+                            stringify!($tag) => {
+                                let $field: $ty = <$ty>::try_from(record)?;
+                                result.$field.push($field);
+                            }
+                        )+
+                        tag => {
+                            if tag.starts_with("_") {
+                                tracing::info!(tag, "Ignoring user-defined tag");
+                            } else {
+                                return Err(SchemaError::UnexpectedTag { tag: tag.to_string() });
+                            }
+                        }
+                    }
+                }
+
+                Ok(Self {
+                    line_value,
+                    $(
+                        $field: from_cardinality!($tag, result.$field, $min, $max),
+                    )*
+                })
+            }
+        }
+    };
+}
+
+impl<'a> TryFrom<Sourced<RawRecord<'a>>> for Option<String> {
+    type Error = SchemaError;
+
+    fn try_from(source: Sourced<RawRecord<'a>>) -> Result<Self, Self::Error> {
+        assert!(source.records.is_empty()); // todo: proper error
+
+        match source.line.line_value.value {
+            LineValue::Ptr(_) => Err(SchemaError::DataError {
+                tag: source.line.tag.to_string(),
+                source: DataError::UnexpectedPointer,
+            }),
+            LineValue::Str(s) => Ok(Some(s.to_string())),
+            LineValue::None => Ok(None),
+        }
+    }
+}
+
+impl<'a> TryFrom<Sourced<LineValue<'a, str>>> for Option<String> {
+    type Error = DataError;
+
+    fn try_from(source: Sourced<LineValue<'a, str>>) -> Result<Self, Self::Error> {
+        match source.value {
+            LineValue::Ptr(_) => Err(DataError::UnexpectedPointer),
+            LineValue::Str(s) => Ok(Some(s.to_string())),
+            LineValue::None => Ok(None),
+        }
+    }
+}
+
+impl TryFrom<Sourced<RawRecord<'_>>> for String {
+    type Error = SchemaError;
+
+    fn try_from(source: Sourced<RawRecord<'_>>) -> Result<Self, Self::Error> {
+        assert!(source.records.is_empty()); // todo: proper error
+
+        match source.line.line_value.value {
+            LineValue::Ptr(_) => todo!("proper error"),
+            LineValue::Str(s) => Ok(s.to_string()),
+            LineValue::None => todo!("proper error"),
+        }
+    }
+}
+
+impl<'a> TryFrom<Sourced<LineValue<'a, str>>> for String {
+    type Error = DataError;
+
+    fn try_from(source: Sourced<LineValue<'a, str>>) -> Result<Self, Self::Error> {
+        match source.value {
+            LineValue::Ptr(_) => Err(DataError::UnexpectedPointer),
+            LineValue::Str(s) => Ok(s.to_string()),
+            LineValue::None => Err(DataError::MissingData),
+        }
+    }
+}
+
+define_record!(
+    HEAD / Header {
+        GEDC / gedcom: Gedcom {1:1},
+        DEST / destination: String {0:1},
+        SOUR / source: Source {1:1},
+    }
+);
+
+define_record!(
+    SOUR / Source (String) {
+        VERS / version_number: String {0:1},
+        NAME / name_of_product: String {0:1},
+        CORP / corporate: Corporate {0:1},
+    }
+);
+
+define_record!(
+    CORP / Corporate (String) {
+        ADDR / address: Address {1:1},
+        PHON / phone_number: String {0:3},
+        EMAIL / email: String {0:3},
+        FAX / fax: String {0:3},
+        WWW / web_page: String {0:3},
+    }
+);
+
+define_record!(
+    GEDC / Gedcom {
+        VERS / version: String {1:1},
+        FORM / form: String {1:1},
+    }
+);
+
+define_record!(
+    ADDR / Address (String) {
+        ADR1 / line1: String {0:1},
+        ADR2 / line2: String {0:1},
+        ADR3 / line3: String {0:1},
+        CITY / city: String {0:1},
+        STAE / state: String {0:1},
+        POST / postal_code: String {0:1},
+        CTRY / country: String {0:1},
+    }
+);
+
+define_record!(
+    INDI / Individual {
+        // RESN / restriction_notice: RestrictionNotice {0:1},
+        NAME / names: Name {0:N},
+    }
+);
+
+define_record!(
+    NAME / Name (String) {
+        TYPE / name_type: String {0:1},
+    }
+);
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Eq, PartialEq)]
 #[serde(rename_all = "snake_case")]
@@ -429,219 +704,6 @@ impl<'a> TryFrom<RawRecord<'a>> for Header {
     }
 }
 */
-
-#[derive(Debug, thiserror::Error, PartialEq, Eq)]
-pub enum DeError {
-    #[error("Missing value")]
-    MissingValue {},
-
-    #[error("Error while parsing record {tag} ({name})")]
-    ErrorInRecord {
-        source: Box<DeError>,
-        tag: String,
-        name: &'static str,
-    },
-
-    #[error("Unknown tag {tag}")]
-    UnknownTag { tag: String },
-
-    #[error("Serde error: {0}")]
-    Custom(String),
-}
-
-impl serde::de::Error for DeError {
-    fn custom<T: std::fmt::Display>(msg: T) -> Self {
-        Self::Custom(format!("{}", msg))
-    }
-}
-
-impl<'a: 'de, 'de> IntoDeserializer<'de, DeError> for &'a Sourced<RawRecord<'de>> {
-    type Deserializer = RecordDeserializer<'a, 'de>;
-
-    fn into_deserializer(self) -> Self::Deserializer {
-        RecordDeserializer { record: self }
-    }
-}
-
-pub struct RecordDeserializer<'a, 'de> {
-    record: &'a Sourced<RawRecord<'de>>,
-}
-
-impl<'a: 'de, 'de> serde::de::Deserializer<'de> for RecordDeserializer<'a, 'de> {
-    type Error = DeError;
-
-    serde::forward_to_deserialize_any! {
-        bool i8 i16 i32 i64 u8 u16
-        u32 u64 f32 f64 char
-        bytes byte_buf unit unit_struct
-        newtype_struct seq tuple tuple_struct
-        enum
-    }
-
-    fn deserialize_ignored_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-    where
-        V: serde::de::Visitor<'de>,
-    {
-        if self.record.line.tag.as_str().starts_with('_') {
-            // it’s a user-defined tag, so we ignore it
-            visitor.visit_unit()
-        } else {
-            Err(DeError::UnknownTag {
-                tag: self.record.line.tag.as_str().to_string(),
-            })
-        }
-    }
-
-    fn deserialize_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-    where
-        V: serde::de::Visitor<'de>,
-    {
-        unimplemented!("does not support deserializing this")
-    }
-
-    fn deserialize_str<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-    where
-        V: serde::de::Visitor<'de>,
-    {
-        println!("deserializing str");
-        match &self.record.line.line_value {
-            Some(v) => match v.value {
-                LineValue::Ptr(_) => todo!(),
-                LineValue::Str(s) => visitor.visit_str(s),
-            },
-            None => Err(DeError::MissingValue {}),
-        }
-    }
-
-    fn deserialize_string<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-    where
-        V: serde::de::Visitor<'de>,
-    {
-        println!("deserializing string");
-        match &self.record.line.line_value {
-            Some(v) => match v.value {
-                LineValue::Ptr(_) => todo!(),
-                LineValue::Str(s) => visitor.visit_str(s),
-            },
-            None => Err(DeError::MissingValue {}),
-        }
-    }
-
-    fn deserialize_option<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-    where
-        V: serde::de::Visitor<'de>,
-    {
-        eprintln!("deserializing option");
-        match &self.record.line.line_value {
-            Some(v) => match v.value {
-                LineValue::Ptr(_) => todo!(),
-                LineValue::Str(s) => visitor.visit_some(BorrowedStrDeserializer::new(s)),
-            },
-            None => visitor.visit_none(),
-        }
-    }
-
-    fn deserialize_struct<V>(
-        self,
-        name: &'static str,
-        fields: &'static [&'static str],
-        visitor: V,
-    ) -> Result<V::Value, Self::Error>
-    where
-        V: serde::de::Visitor<'de>,
-    {
-        println!("deserializing struct {name}");
-        let tag = self.record.line.tag.as_str();
-        self.deserialize_map(visitor)
-            .map_err(|source| DeError::ErrorInRecord {
-                source: Box::new(source),
-                tag: tag.to_string(),
-                name,
-            })
-    }
-
-    fn deserialize_identifier<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-    where
-        V: serde::de::Visitor<'de>,
-    {
-        unimplemented!("should not be called")
-    }
-
-    fn deserialize_map<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-    where
-        V: serde::de::Visitor<'de>,
-    {
-        println!("deserializing map");
-        let mut grouped = BTreeMap::new();
-        for record in self.record.records.iter() {
-            let tag = record.line.tag.as_str();
-            let g = grouped.entry(tag).or_insert_with_key(|t| OneOrMore::new(t));
-            g.records.push(record);
-        }
-
-        visitor.visit_map(RecordConsumer::new(grouped.into_values()))
-    }
-}
-struct OneOrMore<'a, 'de> {
-    tag: &'a str,
-    records: Vec<&'a Sourced<RawRecord<'de>>>,
-}
-
-impl<'a, 'de> OneOrMore<'a, 'de> {
-    fn new(tag: &'a str) -> Self {
-        Self {
-            tag,
-            records: Vec::new(),
-        }
-    }
-}
-
-struct RecordConsumer<'a, 'de> {
-    iter: std::collections::btree_map::IntoValues<&'a str, OneOrMore<'a, 'de>>,
-    current: Option<OneOrMore<'a, 'de>>,
-}
-
-impl<'a, 'de> RecordConsumer<'a, 'de> {
-    fn new(iter: std::collections::btree_map::IntoValues<&'a str, OneOrMore<'a, 'de>>) -> Self {
-        Self {
-            iter,
-            current: None,
-        }
-    }
-}
-
-impl<'a: 'de, 'de> serde::de::MapAccess<'de> for RecordConsumer<'a, 'de> {
-    type Error = DeError;
-
-    fn next_key_seed<K>(&mut self, seed: K) -> Result<Option<K::Value>, Self::Error>
-    where
-        K: serde::de::DeserializeSeed<'de>,
-    {
-        self.current = self.iter.next();
-
-        match &self.current {
-            Some(o) => Ok(Some(seed.deserialize(BorrowedStrDeserializer::new(o.tag))?)),
-            None => Ok(None),
-        }
-    }
-
-    fn next_value_seed<V>(&mut self, seed: V) -> Result<V::Value, Self::Error>
-    where
-        V: serde::de::DeserializeSeed<'de>,
-    {
-        let current = self.current.take().unwrap();
-        if current.records.is_empty() {
-            println!("children!");
-            seed.deserialize(RecordDeserializer {
-                record: current.records[0],
-            })
-        } else {
-            println!("children!");
-            seed.deserialize(SeqDeserializer::new(current.records.iter().copied()))
-        }
-    }
-}
-
 #[cfg(test)]
 mod test {
     use miette::IntoDiagnostic;
@@ -649,13 +711,13 @@ mod test {
 
     use crate::{
         parser::{decoding::DecodingError, records::read_first_record},
-        v5::{DeError, RecordDeserializer, RestrictionNotice},
+        v5::{Individual, Name, RestrictionNotice, SchemaError},
     };
 
-    use super::{Header, Individual};
+    use super::Header;
 
     #[test]
-    fn basic_serde_test() -> miette::Result<()> {
+    fn basic_header() -> miette::Result<()> {
         let lines = "\
         0 HEAD\n\
         1 DEST FamilySearch\n\
@@ -665,8 +727,7 @@ mod test {
 
         let record = read_first_record::<_, DecodingError>(lines)?.unwrap();
 
-        let header =
-            Header::deserialize(RecordDeserializer { record: &record }).into_diagnostic()?;
+        let header = Header::try_from(record)?;
         assert_eq!(header.destination, Some("FamilySearch".to_string()));
         assert_eq!(header.gedcom.version, "5.5.1");
         assert_eq!(header.gedcom.form, "LINEAGE-LINKED");
@@ -686,14 +747,10 @@ mod test {
 
         let record = read_first_record::<_, DecodingError>(lines)?.unwrap();
 
-        let err = Header::deserialize(RecordDeserializer { record: &record }).unwrap_err();
+        let err = Header::try_from(record).unwrap_err();
         assert_eq!(
-            DeError::ErrorInRecord {
-                source: Box::new(DeError::UnknownTag {
-                    tag: "GARBAGE".to_string()
-                }),
-                name: "Header",
-                tag: "HEAD".to_string()
+            SchemaError::UnexpectedTag {
+                tag: "GARBAGE".to_string()
             },
             err,
         );
@@ -713,41 +770,25 @@ mod test {
 
         let record = read_first_record::<_, DecodingError>(lines)?.unwrap();
 
-        let _header = Header::deserialize(RecordDeserializer { record: &record }).unwrap();
+        let _header: Header = Header::try_from(record)?;
 
         Ok(())
     }
 
     #[test]
-    fn serde_individual() -> miette::Result<()> {
+    fn basic_individual() -> miette::Result<()> {
         let lines = "\
         0 INDI\n\
-        1 RESN locked\n";
+        1 NAME John /Smith/\n";
 
         let record = read_first_record::<_, DecodingError>(lines)?.unwrap();
 
-        let indi = Individual::deserialize(RecordDeserializer { record: &record }).unwrap();
-        assert_eq!(indi.restriction_notice, Some(RestrictionNotice::Locked));
-
-        Ok(())
-    }
-
-    #[test]
-    fn serde_individual_one_name() -> miette::Result<()> {
-        let lines = "\
-        0 INDI\n\
-        1 NAME John /Smith/\n\
-        2 GIVN John\n\
-        2 SURN Smith\n";
-
-        let record = read_first_record::<_, DecodingError>(lines)?.unwrap();
-
-        let indi = Individual::deserialize(RecordDeserializer { record: &record }).unwrap();
+        let indi = Individual::try_from(record)?;
         assert_eq!(
             indi.names,
-            vec![super::Name {
-                value: "John /Smith/".to_string(),
-                ..Default::default()
+            vec![Name {
+                line_value: "John /Smith/".to_string(),
+                name_type: None,
             }]
         );
 
@@ -755,7 +796,7 @@ mod test {
     }
 
     #[test]
-    fn serde_individual_two_names() -> miette::Result<()> {
+    fn individual_two_names() -> miette::Result<()> {
         let lines = "\
         0 INDI\n\
         1 NAME John /Smith/\n\
@@ -763,13 +804,19 @@ mod test {
 
         let record = read_first_record::<_, DecodingError>(lines)?.unwrap();
 
-        let indi = Individual::deserialize(RecordDeserializer { record: &record }).unwrap();
+        let indi = Individual::try_from(record)?;
         assert_eq!(
             indi.names,
-            vec![super::Name {
-                value: "John /Smith/".to_string(),
-                ..Default::default()
-            }]
+            vec![
+                Name {
+                    line_value: "John /Smith/".to_string(),
+                    name_type: None,
+                },
+                Name {
+                    line_value: "Jim /Smarth/".to_string(),
+                    name_type: None,
+                }
+            ]
         );
 
         Ok(())

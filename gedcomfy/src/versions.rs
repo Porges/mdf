@@ -118,9 +118,9 @@ impl Sourced<SupportedGEDCOMVersion> {
             SupportedGEDCOMVersion::V5_5 | // TODO: this is kinda fake
             SupportedGEDCOMVersion::V5_5_1 => {
                 let encoding = head.subrecord_optional("CHAR").expect("TODO better error");
-                let line_data = match encoding.line.line_value.as_ref().ok_or(EncodingError::InvalidHeader{})? {
-                    Sourced{ value: LineValue::Ptr(_), ..} => return Err(EncodingError::InvalidHeader{}),
-                    &Sourced{ value: LineValue::Str(value), span} => Sourced{
+                let line_data = match encoding.line.line_value {
+                    Sourced{ value: LineValue::None | LineValue::Ptr(_), ..} => return Err(EncodingError::InvalidHeader{}),
+                    Sourced{ value: LineValue::Str(value), span} => Sourced{
                         value,
                         span,
                     },

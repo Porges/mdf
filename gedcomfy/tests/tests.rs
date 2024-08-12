@@ -126,12 +126,13 @@ fn record_to_kdl(record: RawRecord) -> KdlNode {
             .push(KdlEntry::new_prop("xref", xref.value.to_string()));
     }
 
-    if let Some(data) = &record.line.line_value {
-        node.entries_mut().push(match data.value {
-            LineValue::Ptr(None) => KdlEntry::new_prop("see", kdl::KdlValue::Null),
-            LineValue::Ptr(Some(value)) => KdlEntry::new_prop("see", value),
-            LineValue::Str(data) => KdlEntry::new(data.to_string()),
-        })
+    if let Some(mapped) = match record.line.line_value.value {
+        LineValue::Ptr(None) => Some(KdlEntry::new_prop("see", kdl::KdlValue::Null)),
+        LineValue::Ptr(Some(value)) => Some(KdlEntry::new_prop("see", value)),
+        LineValue::Str(data) => Some(KdlEntry::new(data.to_string())),
+        LineValue::None => None,
+    } {
+        node.entries_mut().push(mapped);
     }
 
     if record.records.is_empty() {

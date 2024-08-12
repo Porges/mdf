@@ -1,7 +1,7 @@
 use miette::SourceSpan;
 
 use super::{
-    lines::{LineSyntaxError, RawLine},
+    lines::{LineSyntaxError, LineValue, RawLine},
     GEDCOMSource, Sourced,
 };
 use crate::parser;

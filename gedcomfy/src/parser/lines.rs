@@ -13,13 +13,20 @@ use super::{GEDCOMSource, Sourced};
 pub struct RawLine<'a, S: GEDCOMSource + ?Sized> {
     pub tag: Sourced<&'a AsciiStr>,
     pub xref: Option<Sourced<&'a S>>,
-    pub line_value: Option<Sourced<LineValue<'a, S>>>,
+    pub line_value: Sourced<LineValue<'a, S>>,
 }
 
 #[derive(PartialEq, Eq, Debug)]
 pub enum LineValue<'a, S: GEDCOMSource + ?Sized> {
     Ptr(Option<&'a S>),
     Str(&'a S),
+    None,
+}
+
+impl<'a, S:GEDCOMSource + ?Sized> LineValue<'a, S> {
+    pub fn is_none(&self) -> bool {
+        matches!(self, LineValue::None)
+    }
 }
 
 /// The types of errors that can occur when parsing lines
@@ -221,28 +228,35 @@ fn parse_line<'a, S: GEDCOMSource + ?Sized>(
         span: source_code.span_of(tag_part),
     };
 
-    let line_value = rest_part.map(|val| {
-        Sourced {
-            value: if val.starts_with(AsciiChar::At) {
-                let after_at = val.slice_from(1);
-                if after_at.starts_with(AsciiChar::At) {
-                    LineValue::Str(after_at)
-                } else if val.ends_with(AsciiChar::At) {
-                    if val.eq("@VOID@".as_ascii_str().unwrap()) {
-                        LineValue::Ptr(None)
+    let line_value = match rest_part {
+        Some(val) => {
+            Sourced {
+                value: if val.starts_with(AsciiChar::At) {
+                    let after_at = val.slice_from(1);
+                    if after_at.starts_with(AsciiChar::At) {
+                        LineValue::Str(after_at)
+                    } else if val.ends_with(AsciiChar::At) {
+                        if val.eq("@VOID@".as_ascii_str().unwrap()) {
+                            LineValue::Ptr(None)
+                        } else {
+                            // TODO: exclude @s
+                            LineValue::Ptr(Some(val))
+                        }
                     } else {
-                        // TODO: exclude @s
-                        LineValue::Ptr(Some(val))
+                        todo!("un-ended pointer")
                     }
                 } else {
-                    todo!("un-ended pointer")
-                }
-            } else {
-                LineValue::Str(val)
-            },
-            span: source_code.span_of(val),
+                    LineValue::Str(val)
+                },
+                span: source_code.span_of(val),
+            }
         }
-    });
+        None => Sourced {
+            value: LineValue::None,
+            // TODO: think about what to do here
+            span: source_code.span_of(line),
+        },
+    };
 
     Ok((
         level,
@@ -289,10 +303,7 @@ mod test {
         assert_eq!(3, result.0.value);
         assert_eq!("TAG", result.1.tag.value);
         assert_eq!(None, result.1.xref);
-        assert_eq!(
-            LineValue::Str("SOME DATA HERE"),
-            result.1.line_value.as_ref().unwrap().value
-        );
+        assert_eq!(LineValue::Str("SOME DATA HERE"), result.1.line_value.value);
         Ok(())
     }
 
@@ -305,7 +316,7 @@ mod test {
         assert_eq!("XREF", result.1.xref.unwrap().value);
         assert_eq!(
             LineValue::Str("SOME DATA HERE TOO"),
-            result.1.line_value.as_ref().unwrap().value
+            result.1.line_value.value
         );
         Ok(())
     }
@@ -338,7 +349,7 @@ mod test {
         assert_eq!(None, result.1.xref);
         assert_eq!(
             LineValue::Str(b"SOME DATA HERE" as &[u8]),
-            result.1.line_value.as_ref().unwrap().value
+            result.1.line_value.value
         );
         Ok(())
     }
@@ -352,7 +363,7 @@ mod test {
         assert_eq!(b"XREF", result.1.xref.unwrap().value);
         assert_eq!(
             LineValue::Str(b"SOME DATA HERE TOO" as &[u8]),
-            result.1.line_value.as_ref().unwrap().value
+            result.1.line_value.value
         );
         Ok(())
     }

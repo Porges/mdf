@@ -175,17 +175,12 @@ fn detect_version_from_head_record<S: GEDCOMSource + ?Sized>(
         if let Some(vers) = gedc.subrecord_optional("VERS") {
             tracing::debug!("located VERS record");
             // GEDCOM 4.x or above (including 5.x and 7.x)
-            let data = match vers
-                .line
-                .line_value
-                .as_ref()
-                .ok_or(VersionError::Header {})?
-            {
+            let data = match vers.line.line_value {
                 Sourced {
-                    value: LineValue::Ptr(_),
+                    value: LineValue::None | LineValue::Ptr(_),
                     ..
                 } => return Err(VersionError::Header {}),
-                &Sourced {
+                Sourced {
                     value: LineValue::Str(value),
                     span,
                 } => Sourced { value, span },

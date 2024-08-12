@@ -44,10 +44,10 @@ async fn main() -> miette::Result<()> {
                         .iter()
                         .find_map(|r| {
                             if r.value.line.tag.value == "NAME" {
-                                r.value.line.line_value.as_ref().map(|d| match d.value {
-                                    LineValue::Ptr(_) => todo!("unhandled"),
-                                    LineValue::Str(s) => s,
-                                })
+                                match r.value.line.line_value.value {
+                                    LineValue::None | LineValue::Ptr(_) => todo!("unhandled"),
+                                    LineValue::Str(s) => Some(s),
+                                }
                             } else {
                                 None
                             }
