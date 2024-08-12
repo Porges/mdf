@@ -1,8 +1,21 @@
-use std::path::PathBuf;
+use std::{collections::BTreeMap, path::PathBuf, process::Output};
 
 use ascii::{AsciiChar, AsciiStr};
+use serde::{
+    de::{
+        value::{
+            BorrowedStrDeserializer, MapAccessDeserializer, MapDeserializer, SeqDeserializer,
+            StringDeserializer,
+        },
+        IntoDeserializer,
+    },
+    Deserializer, Serialize,
+};
 
-use crate::parser::{records::RawRecord, Sourced};
+use crate::{
+    encodings::GEDCOMEncoding,
+    parser::{lines::LineValue, records::RawRecord, Sourced},
+};
 
 pub(crate) struct RecordParser {}
 
@@ -309,9 +322,76 @@ impl Tag {
     }
 }
 
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
 struct Header {
+    #[serde(rename = "DEST")]
     destination: Option<String>,
+
+    #[serde(rename = "GEDC")]
+    gedcom: Gedcom,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
+struct Gedcom {
+    #[serde(rename = "VERS")]
+    version: String,
+
+    #[serde(rename = "FORM")]
+    form: String,
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+struct Individual {
+    #[serde(rename = "RESN")]
+    restriction_notice: Option<RestrictionNotice>,
+
+    #[serde(rename = "NAME", default)]
+    names: Vec<Name>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Debug, Default, PartialEq, Eq)]
+struct Name {
+    value: String,
+
+    #[serde(rename = "TYPE")]
+    name_type: Option<NameType>,
+
+    #[serde(flatten)]
+    pieces: NamePieces,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Debug, Default, PartialEq, Eq)]
+struct NamePieces {
+    #[serde(rename = "NPFX")]
+    prefix: Option<String>,
+
+    #[serde(rename = "GIVN")]
+    given: Option<String>,
+
+    #[serde(rename = "NICK")]
+    nickname: Option<String>,
+
+    #[serde(rename = "SPFX")]
+    surname_prefix: Option<String>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Debug, Eq, PartialEq)]
+#[serde(rename_all = "snake_case")]
+enum NameType {
+    Aka,
+    Birth,
+    Immigrant,
+    Maiden,
+    Married,
+    UserDefined,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Debug, Eq, PartialEq)]
+#[serde(rename_all = "lowercase")]
+enum RestrictionNotice {
+    Confidential,
+    Locked,
+    Privacy,
 }
 
 /*
@@ -350,205 +430,115 @@ impl<'a> TryFrom<RawRecord<'a>> for Header {
 }
 */
 
-#[derive(Debug, thiserror::Error)]
-#[error("Deserialization error")]
-pub struct DeError {}
+#[derive(Debug, thiserror::Error, PartialEq, Eq)]
+pub enum DeError {
+    #[error("Missing value")]
+    MissingValue {},
+
+    #[error("Error while parsing record {tag} ({name})")]
+    ErrorInRecord {
+        source: Box<DeError>,
+        tag: String,
+        name: &'static str,
+    },
+
+    #[error("Unknown tag {tag}")]
+    UnknownTag { tag: String },
+
+    #[error("Serde error: {0}")]
+    Custom(String),
+}
 
 impl serde::de::Error for DeError {
     fn custom<T: std::fmt::Display>(msg: T) -> Self {
-        todo!()
+        Self::Custom(format!("{}", msg))
     }
 }
 
-impl<'a, 'de> serde::de::Deserializer<'de> for &'a mut RawRecord<'de> {
+impl<'a: 'de, 'de> IntoDeserializer<'de, DeError> for &'a Sourced<RawRecord<'de>> {
+    type Deserializer = RecordDeserializer<'a, 'de>;
+
+    fn into_deserializer(self) -> Self::Deserializer {
+        RecordDeserializer { record: self }
+    }
+}
+
+pub struct RecordDeserializer<'a, 'de> {
+    record: &'a Sourced<RawRecord<'de>>,
+}
+
+impl<'a: 'de, 'de> serde::de::Deserializer<'de> for RecordDeserializer<'a, 'de> {
     type Error = DeError;
+
+    serde::forward_to_deserialize_any! {
+        bool i8 i16 i32 i64 u8 u16
+        u32 u64 f32 f64 char
+        bytes byte_buf unit unit_struct
+        newtype_struct seq tuple tuple_struct
+        enum
+    }
+
+    fn deserialize_ignored_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    where
+        V: serde::de::Visitor<'de>,
+    {
+        if self.record.line.tag.as_str().starts_with('_') {
+            // it’s a user-defined tag, so we ignore it
+            visitor.visit_unit()
+        } else {
+            Err(DeError::UnknownTag {
+                tag: self.record.line.tag.as_str().to_string(),
+            })
+        }
+    }
 
     fn deserialize_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
     where
         V: serde::de::Visitor<'de>,
     {
-        todo!()
-    }
-
-    fn deserialize_bool<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-    where
-        V: serde::de::Visitor<'de>,
-    {
-        todo!()
-    }
-
-    fn deserialize_i8<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-    where
-        V: serde::de::Visitor<'de>,
-    {
-        todo!()
-    }
-
-    fn deserialize_i16<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-    where
-        V: serde::de::Visitor<'de>,
-    {
-        todo!()
-    }
-
-    fn deserialize_i32<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-    where
-        V: serde::de::Visitor<'de>,
-    {
-        todo!()
-    }
-
-    fn deserialize_i64<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-    where
-        V: serde::de::Visitor<'de>,
-    {
-        todo!()
-    }
-
-    fn deserialize_u8<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-    where
-        V: serde::de::Visitor<'de>,
-    {
-        todo!()
-    }
-
-    fn deserialize_u16<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-    where
-        V: serde::de::Visitor<'de>,
-    {
-        todo!()
-    }
-
-    fn deserialize_u32<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-    where
-        V: serde::de::Visitor<'de>,
-    {
-        todo!()
-    }
-
-    fn deserialize_u64<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-    where
-        V: serde::de::Visitor<'de>,
-    {
-        todo!()
-    }
-
-    fn deserialize_f32<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-    where
-        V: serde::de::Visitor<'de>,
-    {
-        todo!()
-    }
-
-    fn deserialize_f64<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-    where
-        V: serde::de::Visitor<'de>,
-    {
-        todo!()
-    }
-
-    fn deserialize_char<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-    where
-        V: serde::de::Visitor<'de>,
-    {
-        todo!()
+        unimplemented!("does not support deserializing this")
     }
 
     fn deserialize_str<V>(self, visitor: V) -> Result<V::Value, Self::Error>
     where
         V: serde::de::Visitor<'de>,
     {
-        todo!()
+        println!("deserializing str");
+        match &self.record.line.line_value {
+            Some(v) => match v.value {
+                LineValue::Ptr(_) => todo!(),
+                LineValue::Str(s) => visitor.visit_str(s),
+            },
+            None => Err(DeError::MissingValue {}),
+        }
     }
 
     fn deserialize_string<V>(self, visitor: V) -> Result<V::Value, Self::Error>
     where
         V: serde::de::Visitor<'de>,
     {
-        todo!()
-    }
-
-    fn deserialize_bytes<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-    where
-        V: serde::de::Visitor<'de>,
-    {
-        todo!()
-    }
-
-    fn deserialize_byte_buf<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-    where
-        V: serde::de::Visitor<'de>,
-    {
-        todo!()
+        println!("deserializing string");
+        match &self.record.line.line_value {
+            Some(v) => match v.value {
+                LineValue::Ptr(_) => todo!(),
+                LineValue::Str(s) => visitor.visit_str(s),
+            },
+            None => Err(DeError::MissingValue {}),
+        }
     }
 
     fn deserialize_option<V>(self, visitor: V) -> Result<V::Value, Self::Error>
     where
         V: serde::de::Visitor<'de>,
     {
-        todo!()
-    }
-
-    fn deserialize_unit<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-    where
-        V: serde::de::Visitor<'de>,
-    {
-        todo!()
-    }
-
-    fn deserialize_unit_struct<V>(
-        self,
-        name: &'static str,
-        visitor: V,
-    ) -> Result<V::Value, Self::Error>
-    where
-        V: serde::de::Visitor<'de>,
-    {
-        todo!()
-    }
-
-    fn deserialize_newtype_struct<V>(
-        self,
-        name: &'static str,
-        visitor: V,
-    ) -> Result<V::Value, Self::Error>
-    where
-        V: serde::de::Visitor<'de>,
-    {
-        todo!()
-    }
-
-    fn deserialize_seq<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-    where
-        V: serde::de::Visitor<'de>,
-    {
-        todo!()
-    }
-
-    fn deserialize_tuple<V>(self, len: usize, visitor: V) -> Result<V::Value, Self::Error>
-    where
-        V: serde::de::Visitor<'de>,
-    {
-        todo!()
-    }
-
-    fn deserialize_tuple_struct<V>(
-        self,
-        name: &'static str,
-        len: usize,
-        visitor: V,
-    ) -> Result<V::Value, Self::Error>
-    where
-        V: serde::de::Visitor<'de>,
-    {
-        todo!()
-    }
-
-    fn deserialize_map<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-    where
-        V: serde::de::Visitor<'de>,
-    {
-        todo!()
+        eprintln!("deserializing option");
+        match &self.record.line.line_value {
+            Some(v) => match v.value {
+                LineValue::Ptr(_) => todo!(),
+                LineValue::Str(s) => visitor.visit_some(BorrowedStrDeserializer::new(s)),
+            },
+            None => visitor.visit_none(),
+        }
     }
 
     fn deserialize_struct<V>(
@@ -560,49 +550,77 @@ impl<'a, 'de> serde::de::Deserializer<'de> for &'a mut RawRecord<'de> {
     where
         V: serde::de::Visitor<'de>,
     {
-        visitor.visit_map(self)
-    }
-
-    fn deserialize_enum<V>(
-        self,
-        name: &'static str,
-        variants: &'static [&'static str],
-        visitor: V,
-    ) -> Result<V::Value, Self::Error>
-    where
-        V: serde::de::Visitor<'de>,
-    {
-        todo!()
+        println!("deserializing struct {name}");
+        let tag = self.record.line.tag.as_str();
+        self.deserialize_map(visitor)
+            .map_err(|source| DeError::ErrorInRecord {
+                source: Box::new(source),
+                tag: tag.to_string(),
+                name,
+            })
     }
 
     fn deserialize_identifier<V>(self, visitor: V) -> Result<V::Value, Self::Error>
     where
         V: serde::de::Visitor<'de>,
     {
-        todo!()
+        unimplemented!("should not be called")
     }
 
-    fn deserialize_ignored_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    fn deserialize_map<V>(self, visitor: V) -> Result<V::Value, Self::Error>
     where
         V: serde::de::Visitor<'de>,
     {
-        todo!()
+        println!("deserializing map");
+        let mut grouped = BTreeMap::new();
+        for record in self.record.records.iter() {
+            let tag = record.line.tag.as_str();
+            let g = grouped.entry(tag).or_insert_with_key(|t| OneOrMore::new(t));
+            g.records.push(record);
+        }
+
+        visitor.visit_map(RecordConsumer::new(grouped.into_values()))
+    }
+}
+struct OneOrMore<'a, 'de> {
+    tag: &'a str,
+    records: Vec<&'a Sourced<RawRecord<'de>>>,
+}
+
+impl<'a, 'de> OneOrMore<'a, 'de> {
+    fn new(tag: &'a str) -> Self {
+        Self {
+            tag,
+            records: Vec::new(),
+        }
     }
 }
 
-struct RecordConsumer<'de> {
-    iter: std::vec::IntoIter<RawRecord<'de>>,
+struct RecordConsumer<'a, 'de> {
+    iter: std::collections::btree_map::IntoValues<&'a str, OneOrMore<'a, 'de>>,
+    current: Option<OneOrMore<'a, 'de>>,
 }
 
-impl<'a, 'de> serde::de::MapAccess<'de> for RecordConsumer<'de> {
+impl<'a, 'de> RecordConsumer<'a, 'de> {
+    fn new(iter: std::collections::btree_map::IntoValues<&'a str, OneOrMore<'a, 'de>>) -> Self {
+        Self {
+            iter,
+            current: None,
+        }
+    }
+}
+
+impl<'a: 'de, 'de> serde::de::MapAccess<'de> for RecordConsumer<'a, 'de> {
     type Error = DeError;
 
     fn next_key_seed<K>(&mut self, seed: K) -> Result<Option<K::Value>, Self::Error>
     where
         K: serde::de::DeserializeSeed<'de>,
     {
-        match self.iter.next() {
-            Some(mut record) => Ok(Some(seed.deserialize(&mut record)?)),
+        self.current = self.iter.next();
+
+        match &self.current {
+            Some(o) => Ok(Some(seed.deserialize(BorrowedStrDeserializer::new(o.tag))?)),
             None => Ok(None),
         }
     }
@@ -611,7 +629,16 @@ impl<'a, 'de> serde::de::MapAccess<'de> for RecordConsumer<'de> {
     where
         V: serde::de::DeserializeSeed<'de>,
     {
-        todo!()
+        let current = self.current.take().unwrap();
+        if current.records.is_empty() {
+            println!("children!");
+            seed.deserialize(RecordDeserializer {
+                record: current.records[0],
+            })
+        } else {
+            println!("children!");
+            seed.deserialize(SeqDeserializer::new(current.records.iter().copied()))
+        }
     }
 }
 
@@ -620,19 +647,131 @@ mod test {
     use miette::IntoDiagnostic;
     use serde::Deserialize;
 
-    use crate::parser::{decoding::DecodingError, records::read_first_record};
+    use crate::{
+        parser::{decoding::DecodingError, records::read_first_record},
+        v5::{DeError, RecordDeserializer, RestrictionNotice},
+    };
 
-    use super::Header;
+    use super::{Header, Individual};
 
     #[test]
-    fn serde_test() -> miette::Result<()> {
+    fn basic_serde_test() -> miette::Result<()> {
         let lines = "\
         0 HEAD\n\
-        1 DEST FamilySearch";
+        1 DEST FamilySearch\n\
+        1 GEDC\n\
+        2 VERS 5.5.1\n\
+        2 FORM LINEAGE-LINKED";
 
-        let rec = read_first_record::<_, DecodingError>(lines)?.unwrap();
+        let record = read_first_record::<_, DecodingError>(lines)?.unwrap();
 
-        let header = Header::deserialize(&rec.value).into_diagnostic()?;
+        let header =
+            Header::deserialize(RecordDeserializer { record: &record }).into_diagnostic()?;
+        assert_eq!(header.destination, Some("FamilySearch".to_string()));
+        assert_eq!(header.gedcom.version, "5.5.1");
+        assert_eq!(header.gedcom.form, "LINEAGE-LINKED");
+
+        Ok(())
+    }
+
+    #[test]
+    fn serde_unknown_tag_test() -> miette::Result<()> {
+        let lines = "\
+        0 HEAD\n\
+        1 DEST FamilySearch\n\
+        1 GARBAGE GARBAGE\n\
+        1 GEDC\n\
+        2 VERS 5.5.1\n\
+        2 FORM LINEAGE-LINKED";
+
+        let record = read_first_record::<_, DecodingError>(lines)?.unwrap();
+
+        let err = Header::deserialize(RecordDeserializer { record: &record }).unwrap_err();
+        assert_eq!(
+            DeError::ErrorInRecord {
+                source: Box::new(DeError::UnknownTag {
+                    tag: "GARBAGE".to_string()
+                }),
+                name: "Header",
+                tag: "HEAD".to_string()
+            },
+            err,
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn serde_user_defined_tag_test() -> miette::Result<()> {
+        let lines = "\
+        0 HEAD\n\
+        1 DEST FamilySearch\n\
+        1 _USER USER STUFF\n\
+        1 GEDC\n\
+        2 VERS 5.5.1\n\
+        2 FORM LINEAGE-LINKED";
+
+        let record = read_first_record::<_, DecodingError>(lines)?.unwrap();
+
+        let _header = Header::deserialize(RecordDeserializer { record: &record }).unwrap();
+
+        Ok(())
+    }
+
+    #[test]
+    fn serde_individual() -> miette::Result<()> {
+        let lines = "\
+        0 INDI\n\
+        1 RESN locked\n";
+
+        let record = read_first_record::<_, DecodingError>(lines)?.unwrap();
+
+        let indi = Individual::deserialize(RecordDeserializer { record: &record }).unwrap();
+        assert_eq!(indi.restriction_notice, Some(RestrictionNotice::Locked));
+
+        Ok(())
+    }
+
+    #[test]
+    fn serde_individual_one_name() -> miette::Result<()> {
+        let lines = "\
+        0 INDI\n\
+        1 NAME John /Smith/\n\
+        2 GIVN John\n\
+        2 SURN Smith\n";
+
+        let record = read_first_record::<_, DecodingError>(lines)?.unwrap();
+
+        let indi = Individual::deserialize(RecordDeserializer { record: &record }).unwrap();
+        assert_eq!(
+            indi.names,
+            vec![super::Name {
+                value: "John /Smith/".to_string(),
+                ..Default::default()
+            }]
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn serde_individual_two_names() -> miette::Result<()> {
+        let lines = "\
+        0 INDI\n\
+        1 NAME John /Smith/\n\
+        1 NAME Jim /Smarth/\n";
+
+        let record = read_first_record::<_, DecodingError>(lines)?.unwrap();
+
+        let indi = Individual::deserialize(RecordDeserializer { record: &record }).unwrap();
+        assert_eq!(
+            indi.names,
+            vec![super::Name {
+                value: "John /Smith/".to_string(),
+                ..Default::default()
+            }]
+        );
+
         Ok(())
     }
 }

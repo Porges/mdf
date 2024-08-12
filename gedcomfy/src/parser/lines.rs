@@ -9,6 +9,7 @@ use super::{GEDCOMSource, Sourced};
 /// requirements here to make tags less generic,
 /// since they must only be part of the ASCII subset.
 /// This makes them easier to deal with in code.
+#[derive(Debug)]
 pub struct RawLine<'a, S: GEDCOMSource + ?Sized> {
     pub tag: Sourced<&'a AsciiStr>,
     pub xref: Option<Sourced<&'a S>>,

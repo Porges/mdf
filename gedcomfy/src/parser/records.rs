@@ -8,6 +8,7 @@ use crate::parser;
 
 /// Represents an assembled GEDCOM record, or sub-record,
 /// with its children.
+#[derive(Debug)]
 pub struct RawRecord<'a, S: GEDCOMSource + ?Sized = str> {
     pub line: Sourced<RawLine<'a, S>>,
     pub records: Vec<Sourced<RawRecord<'a, S>>>,
