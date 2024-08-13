@@ -202,8 +202,8 @@ V551(
             Individual(
                 Individual {
                     events: [
-                        BirthEvent(
-                            BirthEvent {
+                        Birth(
+                            Birth {
                                 detail: Some(
                                     IndividualEventDetail {
                                         detail: EventDetail {
@@ -267,8 +267,8 @@ V551(
                                 ),
                             },
                         ),
-                        ChristeningEvent(
-                            ChristeningEvent {
+                        Christening(
+                            Christening {
                                 detail: Some(
                                     IndividualEventDetail {
                                         detail: EventDetail {
@@ -326,8 +326,8 @@ V551(
                                 family: None,
                             },
                         ),
-                        ChristeningEvent(
-                            ChristeningEvent {
+                        Christening(
+                            Christening {
                                 detail: Some(
                                     IndividualEventDetail {
                                         detail: EventDetail {
@@ -385,8 +385,8 @@ V551(
                                 family: None,
                             },
                         ),
-                        DeathEvent(
-                            DeathEvent {
+                        Death(
+                            Death {
                                 detail: Some(
                                     IndividualEventDetail {
                                         detail: EventDetail {
@@ -443,8 +443,8 @@ V551(
                                 ),
                             },
                         ),
-                        BurialEvent(
-                            BurialEvent {
+                        Burial(
+                            Burial {
                                 detail: Some(
                                     IndividualEventDetail {
                                         detail: EventDetail {
@@ -501,8 +501,8 @@ V551(
                                 ),
                             },
                         ),
-                        CremationEvent(
-                            CremationEvent {
+                        Cremation(
+                            Cremation {
                                 detail: Some(
                                     IndividualEventDetail {
                                         detail: EventDetail {
@@ -552,8 +552,8 @@ V551(
                                 ),
                             },
                         ),
-                        AdoptionEvent(
-                            AdoptionEvent {
+                        Adoption(
+                            Adoption {
                                 detail: Some(
                                     IndividualEventDetail {
                                         detail: EventDetail {
@@ -622,8 +622,8 @@ V551(
                                 ),
                             },
                         ),
-                        BaptismEvent(
-                            BaptismEvent {
+                        Baptism(
+                            Baptism {
                                 detail: Some(
                                     IndividualEventDetail {
                                         detail: EventDetail {
@@ -680,8 +680,8 @@ V551(
                                 ),
                             },
                         ),
-                        BarMitzvahEvent(
-                            BarMitzvahEvent {
+                        BarMitzvah(
+                            BarMitzvah {
                                 detail: Some(
                                     IndividualEventDetail {
                                         detail: EventDetail {
@@ -738,8 +738,8 @@ V551(
                                 ),
                             },
                         ),
-                        BasMitzvahEvent(
-                            BasMitzvahEvent {
+                        BasMitzvah(
+                            BasMitzvah {
                                 detail: Some(
                                     IndividualEventDetail {
                                         detail: EventDetail {
@@ -796,8 +796,8 @@ V551(
                                 ),
                             },
                         ),
-                        BlessingEvent(
-                            BlessingEvent {
+                        Blessing(
+                            Blessing {
                                 detail: Some(
                                     IndividualEventDetail {
                                         detail: EventDetail {
@@ -854,8 +854,8 @@ V551(
                                 ),
                             },
                         ),
-                        AdultChristeningEvent(
-                            AdultChristeningEvent {
+                        AdultChristening(
+                            AdultChristening {
                                 detail: Some(
                                     IndividualEventDetail {
                                         detail: EventDetail {
@@ -912,8 +912,8 @@ V551(
                                 ),
                             },
                         ),
-                        ConfirmationEvent(
-                            ConfirmationEvent {
+                        Confirmation(
+                            Confirmation {
                                 detail: Some(
                                     IndividualEventDetail {
                                         detail: EventDetail {
@@ -970,8 +970,8 @@ V551(
                                 ),
                             },
                         ),
-                        FirstCommunionEvent(
-                            FirstCommunionEvent {
+                        FirstCommunion(
+                            FirstCommunion {
                                 detail: Some(
                                     IndividualEventDetail {
                                         detail: EventDetail {
@@ -1028,8 +1028,8 @@ V551(
                                 ),
                             },
                         ),
-                        OrdinationEvent(
-                            OrdinationEvent {
+                        Ordination(
+                            Ordination {
                                 detail: Some(
                                     IndividualEventDetail {
                                         detail: EventDetail {
@@ -1086,8 +1086,8 @@ V551(
                                 ),
                             },
                         ),
-                        NaturalizationEvent(
-                            NaturalizationEvent {
+                        Naturalization(
+                            Naturalization {
                                 detail: Some(
                                     IndividualEventDetail {
                                         detail: EventDetail {
@@ -1144,8 +1144,8 @@ V551(
                                 ),
                             },
                         ),
-                        EmmigrationEvent(
-                            EmmigrationEvent {
+                        Emmigration(
+                            Emmigration {
                                 detail: Some(
                                     IndividualEventDetail {
                                         detail: EventDetail {
@@ -1202,8 +1202,8 @@ V551(
                                 ),
                             },
                         ),
-                        ImmigrationEvent(
-                            ImmigrationEvent {
+                        Immigration(
+                            Immigration {
                                 detail: Some(
                                     IndividualEventDetail {
                                         detail: EventDetail {
@@ -1260,8 +1260,8 @@ V551(
                                 ),
                             },
                         ),
-                        CensusEvent(
-                            CensusEvent {
+                        Census(
+                            Census {
                                 detail: Some(
                                     IndividualEventDetail {
                                         detail: EventDetail {
@@ -1318,8 +1318,8 @@ V551(
                                 ),
                             },
                         ),
-                        ProbateEvent(
-                            ProbateEvent {
+                        Probate(
+                            Probate {
                                 detail: Some(
                                     IndividualEventDetail {
                                         detail: EventDetail {
@@ -1376,8 +1376,8 @@ V551(
                                 ),
                             },
                         ),
-                        WillEvent(
-                            WillEvent {
+                        Will(
+                            Will {
                                 detail: Some(
                                     IndividualEventDetail {
                                         detail: EventDetail {
@@ -1434,8 +1434,8 @@ V551(
                                 ),
                             },
                         ),
-                        GraduationEvent(
-                            GraduationEvent {
+                        Graduation(
+                            Graduation {
                                 detail: Some(
                                     IndividualEventDetail {
                                         detail: EventDetail {
@@ -1492,8 +1492,8 @@ V551(
                                 ),
                             },
                         ),
-                        RetirementEvent(
-                            RetirementEvent {
+                        Retirement(
+                            Retirement {
                                 detail: Some(
                                     IndividualEventDetail {
                                         detail: EventDetail {
@@ -1550,8 +1550,8 @@ V551(
                                 ),
                             },
                         ),
-                        EventEvent(
-                            EventEvent {
+                        Event(
+                            Event {
                                 event_type: None,
                                 detail: Some(
                                     IndividualEventDetail {
@@ -2649,7 +2649,7 @@ V551(
                         },
                     ],
                     multimedia_links: [
-                        MultimediaLink_55 {
+                        MultimediaLink55 {
                             file_reference: "\\\\network\\drive\\path\\file name.gif",
                             format: MultimediaFormat {
                                 format: "gif",
