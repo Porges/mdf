@@ -185,7 +185,7 @@ pub enum EncodingError {
 #[derive(thiserror::Error, Debug, miette::Diagnostic)]
 #[error("Invalid data for encoding {encoding}")]
 #[diagnostic(code(gedcom::encoding::invalid_data))]
-pub(crate) struct InvalidDataForEncodingError {
+pub struct InvalidDataForEncodingError {
     encoding: SupportedEncoding,
 
     #[source]

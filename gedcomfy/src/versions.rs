@@ -25,7 +25,7 @@ pub(crate) struct GEDCOMVersion {
 
 #[derive(thiserror::Error, Debug, miette::Diagnostic)]
 #[error("GEDCOM version {version} is unsupported")]
-pub(crate) struct UnsupportedGEDCOMVersionError {
+pub struct UnsupportedGEDCOMVersionError {
     version: GEDCOMVersion,
 }
 
@@ -55,7 +55,7 @@ impl TryInto<SupportedGEDCOMVersion> for GEDCOMVersion {
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub(crate) enum SupportedGEDCOMVersion {
+pub enum SupportedGEDCOMVersion {
     V5_5,
     V5_5_1,
     V7_0,
@@ -221,7 +221,7 @@ impl Sourced<SupportedGEDCOMVersion> {
 
 #[derive(thiserror::Error, Debug)]
 #[error("invalid GEDCOM version")]
-pub(crate) struct InvalidGEDCOMVersionError {}
+pub struct InvalidGEDCOMVersionError {}
 
 pub(crate) fn parse_version_head_gedc_vers<S: GEDCOMSource + ?Sized>(
     value: &S,

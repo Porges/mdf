@@ -1,12 +1,12 @@
-use std::{borrow::Cow, fmt::Display};
+use std::fmt::Display;
 
-use miette::{Diagnostic, SourceSpan};
+use miette::Diagnostic;
 use thiserror::Error;
 
 use crate::parser::{encodings::SupportedEncoding, GEDCOMSource};
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub(crate) enum GEDCOMEncoding {
+pub enum GEDCOMEncoding {
     Ascii,
     Ansel,
     Utf8,
@@ -30,7 +30,7 @@ impl Display for GEDCOMEncoding {
 #[error("GEDCOM encoding {encoding} is ambiguous")]
 #[diagnostic(help("This value could imply the following encodings: {}",
     .possibilities.iter().map(|e| format!("{}", e)).collect::<Vec<_>>().join(", ")))]
-pub(crate) struct AmbiguousEncoding {
+pub struct AmbiguousEncoding {
     encoding: GEDCOMEncoding,
     possibilities: &'static [SupportedEncoding],
 }
@@ -67,74 +67,9 @@ impl From<SupportedEncoding> for GEDCOMEncoding {
         }
     }
 }
-
-#[derive(Error, Diagnostic, Debug)]
-#[error("Required subrecord {tag} ({description}) was not found")]
-pub(crate) struct MissingRequiredSubrecord {
-    pub(crate) tag: &'static str,
-    pub(crate) description: &'static str,
-}
-
-#[derive(Error, Diagnostic, Debug)]
-pub(crate) enum DataError<'a> {
-    #[error("malformed data: expected {tag} to contain {expected}, found `{malformed_value}`")]
-    #[diagnostic(code(gedcom::data_error::malformed_data))]
-    MalformedData {
-        tag: Cow<'a, str>,
-        expected: &'static str,
-
-        malformed_value: Cow<'a, str>,
-
-        #[label("expected this to be {expected}")]
-        data_span: SourceSpan,
-
-        #[source]
-        source: Option<Box<dyn std::error::Error + Send + Sync + 'static>>,
-    },
-
-    #[error("missing data: expected {tag} to contain {expected}")]
-    #[diagnostic(code(gedcom::data_error::missing_data))]
-    MissingData {
-        tag: Cow<'a, str>,
-        expected: &'static str,
-
-        #[label("this tag requires data")]
-        tag_span: SourceSpan,
-    },
-}
-
-impl<'a> DataError<'a> {
-    pub(crate) fn into_static(self) -> DataError<'static> {
-        match self {
-            DataError::MalformedData {
-                tag,
-                expected,
-                malformed_value,
-                data_span,
-                source,
-            } => DataError::MalformedData {
-                tag: Cow::Owned(tag.into_owned()),
-                malformed_value: Cow::Owned(malformed_value.into_owned()),
-                expected,
-                data_span,
-                source,
-            },
-            DataError::MissingData {
-                tag,
-                expected,
-                tag_span,
-            } => DataError::MissingData {
-                tag: Cow::Owned(tag.into_owned()),
-                expected,
-                tag_span,
-            },
-        }
-    }
-}
-
 #[derive(Error, Diagnostic, Debug)]
 #[error("invalid GEDCOM encoding")]
-pub(crate) struct InvalidGEDCOMEncoding {}
+pub struct InvalidGEDCOMEncoding {}
 
 pub(crate) fn parse_encoding_raw<S: GEDCOMSource + ?Sized>(
     value: &S,

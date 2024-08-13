@@ -1,7 +1,7 @@
 use miette::SourceSpan;
 
 use super::{
-    lines::{LineSyntaxError, LineValue, RawLine},
+    lines::{LineSyntaxError, RawLine},
     GEDCOMSource, Sourced,
 };
 use crate::parser;
@@ -34,7 +34,7 @@ impl<'a, S: GEDCOMSource + ?Sized> Sourced<RawRecord<'a, S>> {
 }
 
 #[derive(thiserror::Error, Debug, miette::Diagnostic)]
-pub(crate) enum RecordStructureError {
+pub enum RecordStructureError {
     #[error("Invalid child level {level}, expected {expected_level} or less")]
     #[diagnostic(code(gedcom::record_error::invalid_child_level))]
     InvalidChildLevel {

@@ -1,6 +1,3 @@
-use std::{collections::BTreeMap, path::PathBuf, process::Output};
-
-use ascii::{AsciiChar, AsciiStr};
 use miette::SourceSpan;
 use vec1::Vec1;
 
@@ -246,6 +243,7 @@ macro_rules! define_structure {
                     Ok(())
                 }
 
+                #[allow(unused)]
                 fn complete(self, parent_span: SourceSpan) -> Result<$name, SchemaError> {
                     Ok($name {
                         $(
@@ -261,6 +259,7 @@ macro_rules! define_structure {
 
         impl $name {
             #[inline]
+            #[allow(unused)]
             pub fn matches_tag(tag: &str) -> bool {
                 match tag {
                     $($tag => true,)*
@@ -321,9 +320,6 @@ macro_rules! define_record {
                 #[derive(Default)]
                 struct Builder {
                     $(
-                        $struct_field: Option<$struct_ty>,
-                    )*
-                    $(
                         $enum_field: Vec<$enum_ty>,
                     )*
                     $(
@@ -334,6 +330,7 @@ macro_rules! define_record {
                 // TODO: need to read structures
 
                 let mut unused_records = Vec::new();
+                #[allow(unused)]
                 let mut result = Builder::default();
                 paste::paste! {
                     $(
@@ -531,7 +528,7 @@ impl TryFrom<Sourced<RawRecord<'_>>> for TopLevelRecord {
 }
 
 #[derive(Debug)]
-pub(crate) struct File {
+pub struct File {
     header: Header,
     records: Vec<TopLevelRecord>,
 }
@@ -590,7 +587,7 @@ define_record!(
 );
 
 #[derive(Debug, Eq, PartialEq, Clone)]
-struct XRef {
+pub struct XRef {
     xref: Option<String>,
 }
 
@@ -698,7 +695,7 @@ define_record!(
         "CHAN" change_date: ChangeDate {0:1},
         "NOTE" notes: String {0:N},
         "SOUR" source_citations: SourceCitation {0:N},
-        "OBJE" multimedia_links: MultimediaLink_55 {0:N},
+        "OBJE" multimedia_links: MultimediaLink55 {0:N},
     }
 );
 
@@ -724,29 +721,29 @@ define_record!(
 
 define_enum!(
     enum IndividualEvent {
-        BirthEvent,
-        ChristeningEvent,
-        DeathEvent,
-        BurialEvent,
-        CremationEvent,
-        AdoptionEvent,
-        BaptismEvent,
-        BarMitzvahEvent,
-        BasMitzvahEvent,
-        BlessingEvent,
-        AdultChristeningEvent,
-        ConfirmationEvent,
-        FirstCommunionEvent,
-        OrdinationEvent,
-        NaturalizationEvent,
-        EmmigrationEvent,
-        ImmigrationEvent,
-        CensusEvent,
-        ProbateEvent,
-        WillEvent,
-        GraduationEvent,
-        RetirementEvent,
-        EventEvent,
+        Birth,
+        Christening,
+        Death,
+        Burial,
+        Cremation,
+        Adoption,
+        Baptism,
+        BarMitzvah,
+        BasMitzvah,
+        Blessing,
+        AdultChristening,
+        Confirmation,
+        FirstCommunion,
+        Ordination,
+        Naturalization,
+        Emmigration,
+        Immigration,
+        Census,
+        Probate,
+        Will,
+        Graduation,
+        Retirement,
+        Event,
     }
 );
 
@@ -775,14 +772,14 @@ define_enum!(
 // - 5.5.1
 // - 5.5 back-compat
 define_record!(
-    "OBJE" MultimediaLink_551 {
+    "OBJE" MultimediaLink551 {
         "FILE" file_reference: MultimediaFile {1:N},
         "TITL" descriptive_title: String {0:1},
     }
 );
 
 define_record!(
-    "OBJE" MultimediaLink_55 {
+    "OBJE" MultimediaLink55 {
         "FILE" file_reference: String {1:1},
         "FORM" format: MultimediaFormat {1:1},
         "TITL" descriptive_title: String {0:1},
@@ -834,27 +831,27 @@ define_record!(
 // Note that the standard omits the line value here
 // https://genealogytools.com/the-event-structure-in-gedcom-files/
 define_record!(
-    "EVEN" EventEvent (event_type: Option<String>) {
+    "EVEN" Event (event_type: Option<String>) {
         .. detail: IndividualEventDetail {0:1},
     }
 );
 
 define_record!(
-    "BIRT" BirthEvent {
-        .. detail: IndividualEventDetail {0:1},
-        "FAMC" family: XRef {0:1},
-    }
-);
-
-define_record!(
-    "CHR" ChristeningEvent {
+    "BIRT" Birth {
         .. detail: IndividualEventDetail {0:1},
         "FAMC" family: XRef {0:1},
     }
 );
 
 define_record!(
-    "ADOP" AdoptionEvent {
+    "CHR" Christening {
+        .. detail: IndividualEventDetail {0:1},
+        "FAMC" family: XRef {0:1},
+    }
+);
+
+define_record!(
+    "ADOP" Adoption {
         .. detail: IndividualEventDetail {0:1},
         "FAMC" family: AdoptionFamily {0:1},
     }
@@ -876,25 +873,25 @@ macro_rules! indi_event {
     }
 }
 
-indi_event!("DEAT" DeathEvent);
-indi_event!("BURI" BurialEvent);
-indi_event!("CREM" CremationEvent);
-indi_event!("BAPM" BaptismEvent);
-indi_event!("BARM" BarMitzvahEvent);
-indi_event!("BASM" BasMitzvahEvent);
-indi_event!("BLES" BlessingEvent);
-indi_event!("CONF" ConfirmationEvent);
-indi_event!("CHRA" AdultChristeningEvent);
-indi_event!("FCOM" FirstCommunionEvent);
-indi_event!("ORDN" OrdinationEvent);
-indi_event!("NATU" NaturalizationEvent);
-indi_event!("EMIG" EmmigrationEvent);
-indi_event!("IMMI" ImmigrationEvent);
-indi_event!("CENS" CensusEvent);
-indi_event!("PROB" ProbateEvent);
-indi_event!("WILL" WillEvent);
-indi_event!("GRAD" GraduationEvent);
-indi_event!("RETI" RetirementEvent);
+indi_event!("DEAT" Death);
+indi_event!("BURI" Burial);
+indi_event!("CREM" Cremation);
+indi_event!("BAPM" Baptism);
+indi_event!("BARM" BarMitzvah);
+indi_event!("BASM" BasMitzvah);
+indi_event!("BLES" Blessing);
+indi_event!("CONF" Confirmation);
+indi_event!("CHRA" AdultChristening);
+indi_event!("FCOM" FirstCommunion);
+indi_event!("ORDN" Ordination);
+indi_event!("NATU" Naturalization);
+indi_event!("EMIG" Emmigration);
+indi_event!("IMMI" Immigration);
+indi_event!("CENS" Census);
+indi_event!("PROB" Probate);
+indi_event!("WILL" Will);
+indi_event!("GRAD" Graduation);
+indi_event!("RETI" Retirement);
 
 define_structure!(
     EventDetail {
@@ -978,7 +975,7 @@ define_record!(
 define_record!(
     "SOUR" SourceCitation (source: XRef) {
         "PAGE" page: String {0:1},
-        "EVEN" event: Event {0:1},
+        "EVEN" event: SourceEvent {0:1},
         "DATA" data: CitationData {0:1},
         "NOTE" note: String {0:N},
         "QUAY" certainty_assessment: String {0:1},
@@ -993,7 +990,7 @@ define_record!(
 );
 
 define_record!(
-    "EVEN" Event (event_type_cited_from: String) {
+    "EVEN" SourceEvent (event_type_cited_from: String) {
         "ROLE" role_in_event: String {0:1},
     }
 );
@@ -1024,8 +1021,7 @@ impl Name {
     }
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Debug, Eq, PartialEq)]
-#[serde(rename_all = "snake_case")]
+#[derive(Debug, Eq, PartialEq)]
 enum NameType {
     Aka,
     Birth,
@@ -1035,8 +1031,7 @@ enum NameType {
     UserDefined,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Debug, Eq, PartialEq)]
-#[serde(rename_all = "lowercase")]
+#[derive(Debug, Eq, PartialEq)]
 enum RestrictionNotice {
     Confidential,
     Locked,
@@ -1080,12 +1075,9 @@ impl<'a> TryFrom<RawRecord<'a>> for Header {
 */
 #[cfg(test)]
 mod test {
-    use miette::{IntoDiagnostic, SourceSpan};
-    use serde::Deserialize;
+    use miette::SourceSpan;
 
-    use crate::parser::{
-        decoding::DecodingError, encodings::SupportedEncoding, records::read_first_record,
-    };
+    use crate::parser::{decoding::DecodingError, records::read_first_record};
 
     use super::*;
 

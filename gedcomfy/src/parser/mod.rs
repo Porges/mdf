@@ -129,20 +129,6 @@ pub struct Sourced<T> {
 }
 
 impl<T> Sourced<T> {
-    pub(crate) fn as_ref(&self) -> Sourced<&T> {
-        Sourced {
-            value: &self.value,
-            span: self.span,
-        }
-    }
-
-    pub(crate) fn map<U>(self, f: impl FnOnce(T) -> U) -> Sourced<U> {
-        Sourced {
-            value: f(self.value),
-            span: self.span,
-        }
-    }
-
     pub(crate) fn try_map<U, E>(self, f: impl FnOnce(T) -> Result<U, E>) -> Result<Sourced<U>, E> {
         Ok(Sourced {
             value: f(self.value)?,
@@ -155,18 +141,6 @@ impl<T> Sourced<T> {
         T: TryInto<U>,
     {
         match self.value.try_into() {
-            Ok(value) => Ok(Sourced {
-                value,
-                span: self.span,
-            }),
-            Err(err) => Err(err),
-        }
-    }
-}
-
-impl<T, E> Sourced<Result<T, E>> {
-    pub(crate) fn transpose(self) -> Result<Sourced<T>, E> {
-        match self.value {
             Ok(value) => Ok(Sourced {
                 value,
                 span: self.span,

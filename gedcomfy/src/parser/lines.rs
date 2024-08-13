@@ -32,7 +32,7 @@ impl<'a, S: GEDCOMSource + ?Sized> LineValue<'a, S> {
 /// The types of errors that can occur when parsing lines
 /// from a GEDCOM file.
 #[derive(thiserror::Error, Debug, miette::Diagnostic)]
-pub(crate) enum LineSyntaxError {
+pub enum LineSyntaxError {
     #[error("Invalid non-numeric level '{value}'")]
     #[diagnostic(code(gedcom::parse_error::invalid_level))]
     InvalidLevel {

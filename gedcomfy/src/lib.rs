@@ -1,22 +1,17 @@
 //! This is a library for parsing and validating GEDCOM files.
 
 use core::str;
-use std::{
-    borrow::{Borrow, Cow},
-    path::Path,
-};
+use std::{borrow::Cow, path::Path};
 
-use encodings::{DataError, GEDCOMEncoding, MissingRequiredSubrecord};
 use miette::{IntoDiagnostic, NamedSource, SourceSpan};
 use parser::{
     decoding::{detect_and_decode, DecodingError},
     lines::{iterate_lines, LineSyntaxError},
-    options::{OptionSetting, ParseOptions},
+    options::ParseOptions,
     records::{RawRecord, RecordBuilder},
     GEDCOMSource, Sourced,
 };
 use vec1::Vec1;
-use versions::{GEDCOMVersion, SupportedGEDCOMVersion};
 
 pub mod encodings;
 pub mod highlighting;
@@ -46,36 +41,6 @@ impl<'a, S: GEDCOMSource + ?Sized> RawRecord<'a, S> {
         self.records
             .iter()
             .find(|r| r.value.line.tag.value == subrecord_tag)
-    }
-
-    pub(crate) fn subrecord(
-        &self,
-        subrecord_tag: &'static str,
-        subrecord_description: &'static str,
-    ) -> Result<&Sourced<RawRecord<S>>, MissingRequiredSubrecord> {
-        self.subrecord_optional(subrecord_tag)
-            .ok_or(MissingRequiredSubrecord {
-                tag: subrecord_tag,
-                description: subrecord_description,
-            })
-    }
-
-    pub(crate) fn subrecords_optional(
-        &self,
-        tag: &'static str,
-    ) -> impl Iterator<Item = &Sourced<RawRecord<S>>> {
-        self.records
-            .iter()
-            .filter(move |r| r.value.line.tag.value == tag)
-    }
-
-    pub(crate) fn subrecords_required(
-        &self,
-        tag: &'static str,
-        description: &'static str,
-    ) -> Result<Vec1<&Sourced<RawRecord<S>>>, MissingRequiredSubrecord> {
-        let v = Vec::from_iter(self.subrecords_optional(tag));
-        Vec1::try_from(v).map_err(|_| MissingRequiredSubrecord { tag, description })
     }
 }
 
@@ -115,13 +80,8 @@ pub fn validate_syntax_opt(
     }
 }
 
-pub(crate) struct FileFormatOptions {
-    pub(crate) version_option: OptionSetting<GEDCOMVersion>,
-    pub(crate) encoding_option: OptionSetting<GEDCOMEncoding>,
-}
-
 #[derive(thiserror::Error, Debug, miette::Diagnostic)]
-pub(crate) enum FileStructureError {
+pub enum FileStructureError {
     #[error("Missing HEAD record")]
     #[diagnostic(code(gedcom::schema_error::missing_head_record))]
     MissingHeadRecord {
@@ -147,10 +107,6 @@ pub(crate) enum FileStructureError {
         #[label("this record appears after the TRLR record")]
         span: SourceSpan,
     },
-
-    #[error(transparent)]
-    #[diagnostic(transparent)]
-    DataError(#[from] DataError<'static>),
 }
 
 pub fn parse_file(path: &Path, parse_options: ParseOptions) -> Result<AnyGedcom, miette::Report> {
