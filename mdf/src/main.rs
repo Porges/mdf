@@ -6,7 +6,10 @@ use std::{
 
 use clap::{Parser, Subcommand};
 use fancy_duration::FancyDuration;
-use gedcomfy::parser::{encodings::SupportedEncoding, options::ParseOptions};
+use gedcomfy::{
+    parse_file,
+    parser::{encodings::SupportedEncoding, options::ParseOptions},
+};
 use miette::{Context, IntoDiagnostic, NamedSource};
 
 #[derive(Parser)]
@@ -22,6 +25,11 @@ struct GedcomArgs {
 
 #[derive(Debug, Subcommand)]
 enum GedcomCommands {
+    Parse {
+        path: PathBuf,
+        #[arg(long, rename_all = "kebab-case")]
+        force_encoding: Option<Encoding>,
+    },
     Validate {
         path: PathBuf,
         #[arg(long, rename_all = "kebab-case")]
@@ -65,6 +73,16 @@ fn main() -> miette::Result<()> {
 
     match args {
         MdfArgs::Gedcom(args) => match args.command {
+            GedcomCommands::Parse {
+                path,
+                force_encoding,
+            } => {
+                let parse_options =
+                    ParseOptions::default().force_encoding(force_encoding.map(Into::into));
+
+                let result = parse_file(&path, parse_options)?;
+                println!("{:#?}", result);
+            }
             GedcomCommands::Validate {
                 path,
                 force_encoding,
