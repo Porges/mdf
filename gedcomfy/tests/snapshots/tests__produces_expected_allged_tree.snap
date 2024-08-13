@@ -34,8 +34,8 @@ HEAD {
     DATE "1 JAN 1998" {
         TIME "13:57:24.80"
     }
-    SUBM "@SUBMITTER@"
-    SUBN "@SUBMISSION@"
+    SUBM see="@SUBMITTER@"
+    SUBN see="@SUBMISSION@"
     FILE "allged.ged"
     COPR "(C) 1997-2000 by H. Eichmann. You can use and distribute this file freely as long as you do not charge for it"
     GEDC {
@@ -93,7 +93,7 @@ SUBM xref="SUBMITTER" {
 }
 SUBN xref="SUBMISSION" {
     _MYOWNTAG "SUBN does not allow NOTE tags :-(( so, here is my not: SUBN seems to be LDS internal data. The sample data I put in here are probably nonsence."
-    SUBM "@SUBMITTER@"
+    SUBM see="@SUBMITTER@"
     FAMF "NameOfFamilyFile"
     TEMP "Abreviated temple code"
     ANCE "1"
@@ -102,7 +102,7 @@ SUBN xref="SUBMISSION" {
 }
 INDI xref="PERSON1" {
     NAME "given name /surname/jr." {
-        SOUR "@SOURCE1@" {
+        SOUR see="@SOURCE1@" {
             PAGE "42"
             DATA {
                 DATE "BEF 1 JAN 1900"
@@ -123,7 +123,7 @@ INDI xref="PERSON1" {
         }
     }
     NAME "another name /surname/" {
-        SOUR "@SOURCE1@" {
+        SOUR see="@SOURCE1@" {
             PAGE "42"
             DATA {
                 DATE "AFT 1 JAN 1900"
@@ -147,7 +147,7 @@ INDI xref="PERSON1" {
     BIRT {
         DATE "31 DEC 1997"
         PLAC "The place"
-        SOUR "@SOURCE1@" {
+        SOUR see="@SOURCE1@" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -166,12 +166,12 @@ INDI xref="PERSON1" {
             CONT "Note continued here. The word TE"
             CONC "ST should not be broken!"
         }
-        FAMC "@PARENTS@"
+        FAMC see="@PARENTS@"
     }
     CHR {
         DATE "BEF 31 DEC 1997"
         PLAC "The place"
-        SOUR "@SOURCE1@" {
+        SOUR see="@SOURCE1@" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -194,7 +194,7 @@ INDI xref="PERSON1" {
     CHR {
         DATE "AFT 30 DEC 1997"
         PLAC "The place"
-        SOUR "@SOURCE1@" {
+        SOUR see="@SOURCE1@" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -217,7 +217,7 @@ INDI xref="PERSON1" {
     DEAT {
         DATE "BET 31 DEC 1997 AND 1 JAN 1998"
         PLAC "The place"
-        SOUR "@SOURCE1@" {
+        SOUR see="@SOURCE1@" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -240,7 +240,7 @@ INDI xref="PERSON1" {
     BURI {
         DATE "ABT 31 DEC 1997"
         PLAC "The place"
-        SOUR "@SOURCE1@" {
+        SOUR see="@SOURCE1@" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -261,7 +261,7 @@ INDI xref="PERSON1" {
         }
     }
     CREM "Y" {
-        SOUR "@SOURCE1@" {
+        SOUR see="@SOURCE1@" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -284,7 +284,7 @@ INDI xref="PERSON1" {
     ADOP {
         DATE "CAL 31 DEC 1997"
         PLAC "The place"
-        SOUR "@SOURCE1@" {
+        SOUR see="@SOURCE1@" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -303,14 +303,14 @@ INDI xref="PERSON1" {
             CONT "Note continued here. The word TE"
             CONC "ST should not be broken!"
         }
-        FAMC "@ADOPTIVE_PARENTS@" {
+        FAMC see="@ADOPTIVE_PARENTS@" {
             ADOP "BOTH"
         }
     }
     BAPM {
         DATE "EST 31 DEC 1997"
         PLAC "The place"
-        SOUR "@SOURCE1@" {
+        SOUR see="@SOURCE1@" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -333,7 +333,7 @@ INDI xref="PERSON1" {
     BARM {
         DATE "INT 31 DEC 1997 (12/31/97)"
         PLAC "The place"
-        SOUR "@SOURCE1@" {
+        SOUR see="@SOURCE1@" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -356,7 +356,7 @@ INDI xref="PERSON1" {
     BASM {
         DATE "FROM 31 DEC 1997"
         PLAC "The place"
-        SOUR "@SOURCE1@" {
+        SOUR see="@SOURCE1@" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -379,7 +379,7 @@ INDI xref="PERSON1" {
     BLES {
         DATE "TO 31 DEC 1997"
         PLAC "The place"
-        SOUR "@SOURCE1@" {
+        SOUR see="@SOURCE1@" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -402,7 +402,7 @@ INDI xref="PERSON1" {
     CHRA {
         DATE "FROM 31 DEC 1997 TO 1 FEB 1998"
         PLAC "The place"
-        SOUR "@SOURCE1@" {
+        SOUR see="@SOURCE1@" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -425,7 +425,7 @@ INDI xref="PERSON1" {
     CONF {
         DATE "@#DGREGORIAN@ 31 DEC 1997"
         PLAC "The place"
-        SOUR "@SOURCE1@" {
+        SOUR see="@SOURCE1@" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -448,7 +448,7 @@ INDI xref="PERSON1" {
     FCOM {
         DATE "31 DEC 1997"
         PLAC "The place"
-        SOUR "@SOURCE1@" {
+        SOUR see="@SOURCE1@" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -471,7 +471,7 @@ INDI xref="PERSON1" {
     ORDN {
         DATE "31 DEC 1997"
         PLAC "The place"
-        SOUR "@SOURCE1@" {
+        SOUR see="@SOURCE1@" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -494,7 +494,7 @@ INDI xref="PERSON1" {
     NATU {
         DATE "31 DEC 1997"
         PLAC "The place"
-        SOUR "@SOURCE1@" {
+        SOUR see="@SOURCE1@" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -517,7 +517,7 @@ INDI xref="PERSON1" {
     EMIG {
         DATE "31 DEC 1997"
         PLAC "The place"
-        SOUR "@SOURCE1@" {
+        SOUR see="@SOURCE1@" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -540,7 +540,7 @@ INDI xref="PERSON1" {
     IMMI {
         DATE "31 DEC 1997"
         PLAC "The place"
-        SOUR "@SOURCE1@" {
+        SOUR see="@SOURCE1@" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -563,7 +563,7 @@ INDI xref="PERSON1" {
     CENS {
         DATE "31 DEC 1997"
         PLAC "The place"
-        SOUR "@SOURCE1@" {
+        SOUR see="@SOURCE1@" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -586,7 +586,7 @@ INDI xref="PERSON1" {
     PROB {
         DATE "31 DEC 1997"
         PLAC "The place"
-        SOUR "@SOURCE1@" {
+        SOUR see="@SOURCE1@" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -609,7 +609,7 @@ INDI xref="PERSON1" {
     WILL {
         DATE "31 DEC 1997"
         PLAC "The place"
-        SOUR "@SOURCE1@" {
+        SOUR see="@SOURCE1@" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -632,7 +632,7 @@ INDI xref="PERSON1" {
     GRAD {
         DATE "31 DEC 1997"
         PLAC "The place"
-        SOUR "@SOURCE1@" {
+        SOUR see="@SOURCE1@" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -655,7 +655,7 @@ INDI xref="PERSON1" {
     RETI {
         DATE "31 DEC 1997"
         PLAC "The place"
-        SOUR "@SOURCE1@" {
+        SOUR see="@SOURCE1@" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -679,7 +679,7 @@ INDI xref="PERSON1" {
         TYPE "Event type"
         DATE "31 DEC 1997"
         PLAC "The place"
-        SOUR "@SOURCE1@" {
+        SOUR see="@SOURCE1@" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -702,7 +702,7 @@ INDI xref="PERSON1" {
     CAST "Cast name" {
         DATE "31 DEC 1997"
         PLAC "The place"
-        SOUR "@SOURCE1@" {
+        SOUR see="@SOURCE1@" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -725,7 +725,7 @@ INDI xref="PERSON1" {
     DSCR "Physical description" {
         DATE "31 DEC 1997"
         PLAC "The place"
-        SOUR "@SOURCE1@" {
+        SOUR see="@SOURCE1@" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -748,7 +748,7 @@ INDI xref="PERSON1" {
     EDUC "Education" {
         DATE "31 DEC 1997"
         PLAC "The place"
-        SOUR "@SOURCE1@" {
+        SOUR see="@SOURCE1@" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -772,7 +772,7 @@ INDI xref="PERSON1" {
         TYPE "type of ID number"
         DATE "31 DEC 1997"
         PLAC "The place"
-        SOUR "@SOURCE1@" {
+        SOUR see="@SOURCE1@" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -795,7 +795,7 @@ INDI xref="PERSON1" {
     NATI "National or tribe origin" {
         DATE "31 DEC 1997"
         PLAC "The place"
-        SOUR "@SOURCE1@" {
+        SOUR see="@SOURCE1@" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -818,7 +818,7 @@ INDI xref="PERSON1" {
     NCHI "42" {
         DATE "31 DEC 1997"
         PLAC "The place"
-        SOUR "@SOURCE1@" {
+        SOUR see="@SOURCE1@" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -841,7 +841,7 @@ INDI xref="PERSON1" {
     NMR "42" {
         DATE "31 DEC 1997"
         PLAC "The place"
-        SOUR "@SOURCE1@" {
+        SOUR see="@SOURCE1@" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -864,7 +864,7 @@ INDI xref="PERSON1" {
     OCCU "Occupation" {
         DATE "31 DEC 1997"
         PLAC "The place"
-        SOUR "@SOURCE1@" {
+        SOUR see="@SOURCE1@" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -887,7 +887,7 @@ INDI xref="PERSON1" {
     OCCU "Another occupation" {
         DATE "31 DEC 1998"
         PLAC "The place"
-        SOUR "@SOURCE1@" {
+        SOUR see="@SOURCE1@" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -910,7 +910,7 @@ INDI xref="PERSON1" {
     PROP "Possessions" {
         DATE "31 DEC 1997"
         PLAC "The place"
-        SOUR "@SOURCE1@" {
+        SOUR see="@SOURCE1@" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -933,7 +933,7 @@ INDI xref="PERSON1" {
     RELI "Religion" {
         DATE "31 DEC 1997"
         PLAC "The place"
-        SOUR "@SOURCE1@" {
+        SOUR see="@SOURCE1@" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -956,7 +956,7 @@ INDI xref="PERSON1" {
     RESI {
         DATE "31 DEC 1997"
         PLAC "The place"
-        SOUR "@SOURCE1@" {
+        SOUR see="@SOURCE1@" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -979,7 +979,7 @@ INDI xref="PERSON1" {
     SSN "6942" {
         DATE "31 DEC 1997"
         PLAC "The place"
-        SOUR "@SOURCE1@" {
+        SOUR see="@SOURCE1@" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -1002,7 +1002,7 @@ INDI xref="PERSON1" {
     TITL "Nobility title" {
         DATE "31 DEC 1997"
         PLAC "The place"
-        SOUR "@SOURCE1@" {
+        SOUR see="@SOURCE1@" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -1023,7 +1023,7 @@ INDI xref="PERSON1" {
             CONC "ST should not be broken!"
         }
     }
-    FAMC "@PARENTS@" {
+    FAMC see="@PARENTS@" {
         PEDI "birth"
         NOTE "Note about the link to parents" {
             CONT "Note continued here. The word TE"
@@ -1034,14 +1034,14 @@ INDI xref="PERSON1" {
             CONC "ST should not be broken!"
         }
     }
-    FAMC "@ADOPTIVE_PARENTS@" {
+    FAMC see="@ADOPTIVE_PARENTS@" {
         PEDI "adopted"
         NOTE "Note about the link to adoptive parents" {
             CONT "Note continued here. The word TE"
             CONC "ST should not be broken!"
         }
     }
-    FAMS "@FAMILY1@" {
+    FAMS see="@FAMILY1@" {
         NOTE "Note about the link to spouse" {
             CONT "Note continued here. The word TE"
             CONC "ST should not be broken!"
@@ -1051,8 +1051,8 @@ INDI xref="PERSON1" {
             CONC "ST should not be broken!"
         }
     }
-    FAMS "@FAMILY2@"
-    SOUR "@SOURCE1@" {
+    FAMS see="@FAMILY2@"
+    SOUR see="@SOURCE1@" {
         PAGE "42"
         DATA {
             DATE "31 DEC 1900"
@@ -1094,40 +1094,40 @@ INDI xref="PERSON1" {
 INDI xref="PERSON2" {
     NAME "/Wife/"
     SEX "F"
-    FAMS "@FAMILY1@"
+    FAMS see="@FAMILY1@"
 }
 INDI xref="PERSON3" {
     NAME "/Child 1/"
-    FAMC "@FAMILY1@"
+    FAMC see="@FAMILY1@"
 }
 INDI xref="PERSON4" {
     NAME "/Child 2/"
-    FAMC "@FAMILY1@"
+    FAMC see="@FAMILY1@"
 }
 INDI xref="PERSON5" {
     NAME "/Father/"
     SEX "M"
-    FAMS "@PARENTS@"
+    FAMS see="@PARENTS@"
 }
 INDI xref="PERSON6" {
     NAME "/Adoptive mother/"
     SEX "F"
-    FAMS "@ADOPTIVE_PARENTS@"
+    FAMS see="@ADOPTIVE_PARENTS@"
 }
 INDI xref="PERSON7" {
     NAME "/Child 3/"
-    FAMC "@FAMILY2@"
+    FAMC see="@FAMILY2@"
 }
 INDI xref="PERSON8" {
     NAME "/2nd Wife/"
     SEX "F"
-    FAMS "@FAMILY2@"
+    FAMS see="@FAMILY2@"
 }
 FAM xref="FAMILY1" {
     ANUL {
         DATE "31 DEC 1997"
         PLAC "The place"
-        SOUR "@SOURCE1@" {
+        SOUR see="@SOURCE1@" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -1156,7 +1156,7 @@ FAM xref="FAMILY1" {
     CENS {
         DATE "31 DEC 1997"
         PLAC "The place"
-        SOUR "@SOURCE1@" {
+        SOUR see="@SOURCE1@" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -1185,7 +1185,7 @@ FAM xref="FAMILY1" {
     DIV {
         DATE "31 DEC 1997"
         PLAC "The place"
-        SOUR "@SOURCE1@" {
+        SOUR see="@SOURCE1@" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -1214,7 +1214,7 @@ FAM xref="FAMILY1" {
     DIVF {
         DATE "31 DEC 1997"
         PLAC "The place"
-        SOUR "@SOURCE1@" {
+        SOUR see="@SOURCE1@" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -1243,7 +1243,7 @@ FAM xref="FAMILY1" {
     ENGA {
         DATE "31 DEC 1997"
         PLAC "The place"
-        SOUR "@SOURCE1@" {
+        SOUR see="@SOURCE1@" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -1272,7 +1272,7 @@ FAM xref="FAMILY1" {
     MARR {
         DATE "31 DEC 1997"
         PLAC "The place"
-        SOUR "@SOURCE1@" {
+        SOUR see="@SOURCE1@" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -1301,7 +1301,7 @@ FAM xref="FAMILY1" {
     MARB {
         DATE "31 DEC 1997"
         PLAC "The place"
-        SOUR "@SOURCE1@" {
+        SOUR see="@SOURCE1@" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -1330,7 +1330,7 @@ FAM xref="FAMILY1" {
     MARC {
         DATE "31 DEC 1997"
         PLAC "The place"
-        SOUR "@SOURCE1@" {
+        SOUR see="@SOURCE1@" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -1359,7 +1359,7 @@ FAM xref="FAMILY1" {
     MARL {
         DATE "31 DEC 1997"
         PLAC "The place"
-        SOUR "@SOURCE1@" {
+        SOUR see="@SOURCE1@" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -1388,7 +1388,7 @@ FAM xref="FAMILY1" {
     MARS {
         DATE "31 DEC 1997"
         PLAC "The place"
-        SOUR "@SOURCE1@" {
+        SOUR see="@SOURCE1@" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -1418,7 +1418,7 @@ FAM xref="FAMILY1" {
         TYPE "Other event type"
         DATE "31 DEC 1997"
         PLAC "The place"
-        SOUR "@SOURCE1@" {
+        SOUR see="@SOURCE1@" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -1444,12 +1444,12 @@ FAM xref="FAMILY1" {
             AGE "42y 6m"
         }
     }
-    HUSB "@PERSON1@"
-    WIFE "@PERSON2@"
-    CHIL "@PERSON3@"
-    CHIL "@PERSON4@"
+    HUSB see="@PERSON1@"
+    WIFE see="@PERSON2@"
+    CHIL see="@PERSON3@"
+    CHIL see="@PERSON4@"
     NCHI "42"
-    SOUR "@SOURCE1@" {
+    SOUR see="@SOURCE1@" {
         PAGE "42"
         DATA {
             DATE "31 DEC 1900"
@@ -1489,17 +1489,17 @@ FAM xref="FAMILY1" {
     _MYOWNTAG "This is a non-standard tag. Not recommended but allowed"
 }
 FAM xref="PARENTS" {
-    HUSB "@PERSON5@"
-    CHIL "@PERSON1@"
+    HUSB see="@PERSON5@"
+    CHIL see="@PERSON1@"
 }
 FAM xref="ADOPTIVE_PARENTS" {
-    WIFE "@PERSON6@"
-    CHIL "@PERSON1@"
+    WIFE see="@PERSON6@"
+    CHIL see="@PERSON1@"
 }
 FAM xref="FAMILY2" {
-    HUSB "@PERSON1@"
-    WIFE "@PERSON8@"
-    CHIL "@PERSON7@"
+    HUSB see="@PERSON1@"
+    WIFE see="@PERSON8@"
+    CHIL see="@PERSON7@"
 }
 SOUR xref="SOURCE1" {
     DATA {

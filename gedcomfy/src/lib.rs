@@ -187,6 +187,7 @@ pub fn parse(source: &[u8], parse_options: ParseOptions) -> Result<AnyGedcom, mi
     Ok(version.file_from_records(records)?)
 }
 
+#[derive(Debug)]
 pub enum AnyGedcom {
     V551(v551::File),
 }

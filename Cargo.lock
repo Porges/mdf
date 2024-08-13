@@ -769,6 +769,7 @@ dependencies = [
  "miette 7.2.0",
  "oem_cp",
  "owo-colors",
+ "paste",
  "serde",
  "thiserror",
  "tracing",

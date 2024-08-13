@@ -9,7 +9,20 @@ use crate::parser::{lines::LineValue, records::RawRecord, Sourced};
 #[derive(Debug, thiserror::Error, miette::Diagnostic, PartialEq, Eq)]
 pub enum SchemaError {
     #[error("Missing required subrecord {tag}")]
-    MissingRecord { tag: &'static str },
+    MissingRecord {
+        tag: &'static str,
+
+        #[label("this is the parent record")]
+        parent_span: SourceSpan,
+    },
+
+    #[error("Unknown top-level record {tag}")]
+    UnknownTopLevelRecord {
+        tag: String,
+
+        #[label("record was found here")]
+        span: SourceSpan,
+    },
 
     #[error("Unexpected subrecord {tag}")]
     UnexpectedTag {
@@ -17,6 +30,9 @@ pub enum SchemaError {
 
         #[label("this record type is not expected here")]
         span: SourceSpan,
+
+        #[label("this is the parent record")]
+        parent_span: SourceSpan,
     },
 
     #[error("Error reading data for record {tag}")]
@@ -42,6 +58,30 @@ pub enum DataError {
 
     #[error("Missing required data")]
     MissingData,
+}
+
+// embedded structures can only have 0:1 or 1:1 cardinality
+macro_rules! structure_cardinality {
+    ($ty:ty, 0, 1) => {
+        Option<$ty>
+    };
+    ($ty:ty, 1, 1) => {
+        $ty
+    };
+}
+macro_rules! from_struct_cardinality {
+    ($parent_span:expr, $value:expr, 0, 1) => {
+        match $value {
+            Some(x) => Some(x.complete($parent_span)?),
+            None => None,
+        }
+    };
+    ($parent_span:expr, $value:expr, 1, 1) => {
+        match $value {
+            Some(x) => x.complete($parent_span)?,
+            None => todo!("required but not found"),
+        }
+    };
 }
 
 macro_rules! cardinality {
@@ -76,9 +116,9 @@ fn c_vec2opt<T>(tag: &'static str, v: Vec<T>) -> Result<Option<T>, SchemaError> 
         }),
     }
 }
-fn c_vec2one<T>(tag: &'static str, v: Vec<T>) -> Result<T, SchemaError> {
+fn c_vec2one<T>(parent_span: SourceSpan, tag: &'static str, v: Vec<T>) -> Result<T, SchemaError> {
     match v.len() {
-        0 => Err(SchemaError::MissingRecord { tag }),
+        0 => Err(SchemaError::MissingRecord { parent_span, tag }),
         1 => Ok(v.into_iter().next().unwrap()),
         n => Err(SchemaError::TooManyRecords {
             tag,
@@ -87,77 +127,167 @@ fn c_vec2one<T>(tag: &'static str, v: Vec<T>) -> Result<T, SchemaError> {
         }),
     }
 }
-
-macro_rules! from_cardinality {
-    ($tag:ident, $x:expr, 0, 1) => {{
-        c_vec2opt(stringify!($tag), $x)?
-    }};
-    ($tag:ident, $x:expr, 1, 1) => {{
-        c_vec2one(stringify!($tag), $x)?
-    }};
-    ($tag:ident, $x:expr, 1, N) => {{
-        c_vec2vec1(stringify!($tag), $x)?
-    }};
-    ($tag:ident, $x:expr, 0, N) => {{
-        $x
-    }};
-    ($tag:ident, $x:expr, 1, $max:literal) => {{
-        // TODO: enforce max
-        c_vec2vec1(stringify!($tag), $x)?
-    }};
-    ($tag:ident, $x:expr, 0, $max:literal) => {{
-        // TODO: enforce max
-        $x
-    }};
+fn c_vec2vec1<T>(
+    parent_span: SourceSpan,
+    tag: &'static str,
+    v: Vec<T>,
+) -> Result<Vec1<T>, SchemaError> {
+    Vec1::try_from_vec(v).map_err(|_| SchemaError::MissingRecord { parent_span, tag })
 }
 
-#[macro_export]
-macro_rules! define_structure {
-    (struct $name:ident { $($tag:ident / $field:ident: $ty:ty {$min:tt:$max:tt}),+ $(,)? } ) => {
-        #[derive(Debug, Eq, PartialEq, Clone)]
-        pub struct $name {
-            $(
-                pub $field: cardinality!($ty, $min, $max),
-            )+
-        }
-
-        impl<'a> TryFrom<Sourced<RawRecord<'a>>> for $name {
-            type Error = SchemaError;
-            fn try_from(source: Sourced<RawRecord<'a>>) -> Result<Self, Self::Error> {
-                todo!()
-            }
-        }
-    };
+macro_rules! from_cardinality {
+    ($parent_span:expr, $tag:literal, $x:expr, 0, 1) => {{
+        c_vec2opt($tag, $x)?
+    }};
+    ($parent_span:expr, $tag:literal, $x:expr, 1, 1) => {{
+        c_vec2one($parent_span, $tag, $x)?
+    }};
+    ($parent_span:expr, $tag:literal, $x:expr, 1, N) => {{
+        c_vec2vec1($parent_span, $tag, $x)?
+    }};
+    ($parent_span:expr, $tag:literal, $x:expr, 0, N) => {{
+        $x
+    }};
+    ($parent_span:expr, $tag:literal, $x:expr, 1, $max:literal) => {{
+        // TODO: enforce max
+        c_vec2vec1($parent_span, $tag, $x)?
+    }};
+    ($parent_span:expr, $tag:literal, $x:expr, 0, $max:literal) => {{
+        // TODO: enforce max
+        $x
+    }};
 }
 
 #[macro_export]
 macro_rules! define_enum {
-    (enum $name:ident { $($entry:ident),+ $(,)? }) => {
+    (enum $name:ident { $($struct_ty:ident),+ $(,)? }) => {
+        #[derive(Debug, Eq, PartialEq, Clone)]
         pub enum $name {
             $(
-                $entry($entry),
+                /// $tag
+                $struct_ty($struct_ty),
             )+
         }
 
+        impl $name {
+            #[inline]
+            pub fn matches_tag(tag: &str) -> bool {
+                $(
+                    $struct_ty::matches_tag(tag) ||
+                )+ false
+            }
+
+            fn build_from(record: Sourced<RawRecord>) -> Result<$name, SchemaError> {
+                debug_assert!($name::matches_tag(record.line.tag.as_str()));
+                match record.line.tag.as_str() {
+                    $(tag if $struct_ty::matches_tag(tag) => {
+                        Ok($struct_ty::try_from(record)?.into())
+                    })*
+                    _ => unreachable!(),
+                }
+            }
+        }
+
         $(
-            impl From<$entry> for $name {
-                fn from(e: $entry) -> Self {
-                    Self::$entry(e)
+            impl From<$struct_ty> for $name {
+                fn from(e: $struct_ty) -> Self {
+                    Self::$struct_ty(e)
                 }
             }
         )+
     };
 }
 
+macro_rules! define_structure {
+    ($name:ident {
+        $(.. $struct_field:ident: $struct_ty:ty {$struct_min:tt : $struct_max:tt},)*
+        $($tag:literal $field:ident: $ty:ty {$min:tt : $max:tt},)*
+    }) => {
+        #[derive(Debug, Eq, PartialEq, Clone)]
+        pub struct $name {
+            $(
+                $struct_field: structure_cardinality!($struct_ty, $struct_min, $struct_max),
+            )*
+            $(
+                $field: cardinality!($ty, $min, $max),
+            )*
+        }
+
+        paste::paste! {
+            #[derive(Default)]
+            struct [< $name Builder >] {
+                $(
+                    $struct_field: Option< [< $struct_ty Builder >] >,
+                )*
+                $(
+                    $field: Vec<$ty>,
+                )*
+            }
+
+            impl [< $name Builder >] {
+                fn build_from(&mut self, record: Sourced<RawRecord>) -> Result<(), SchemaError> {
+                    debug_assert!($name::matches_tag(record.line.tag.as_str()));
+                    match record.line.tag.as_str() {
+                        $($tag => {
+                            let $field: $ty = <$ty>::try_from(record)?;
+                            self.$field.push($field);
+                        })*
+                        tag => {
+                            $(
+                                if $struct_ty::matches_tag(tag) {
+                                    self.$struct_field.get_or_insert_with(Default::default).build_from(record)?;
+                                } else
+                            )*
+                            {
+                                unreachable!("{tag} should have been handled")
+                            }
+                        }
+                    }
+                    Ok(())
+                }
+
+                fn complete(self, parent_span: SourceSpan) -> Result<$name, SchemaError> {
+                    Ok($name {
+                        $(
+                            $struct_field: from_struct_cardinality!(parent_span, self.$struct_field, $struct_min, $struct_max),
+                        )*
+                        $(
+                            $field: from_cardinality!(parent_span, $tag, self.$field, $min, $max),
+                        )*
+                    })
+                }
+            }
+        }
+
+        impl $name {
+            #[inline]
+            pub fn matches_tag(tag: &str) -> bool {
+                match tag {
+                    $($tag => true,)*
+                    t => {
+                        $( <$struct_ty>::matches_tag(t) || )* false
+                    }
+                }
+            }
+        }
+    };
+}
+
+macro_rules! if_not_provided {
+    (() $code:block) => {
+        $code
+    };
+    (($($target:tt)+) $code:block) => {};
+}
+
 #[macro_export]
 macro_rules! define_record {
     // Record with data attached and maybe children:
     // TODO it doesn't make sense for structure to have cardinality other than 0:1 or 1:1
-    ($self_tag:ident / $name:ident $(($value_name:ident : $value:ty))? {
-        $(.. $structure_field:ident : $structure:ident {$smin:tt : $smax:tt}),*
-        $(,)?
-        $($tag:ident / $field:ident: $ty:ty {$min:tt : $max:tt}),*
-        $(,)?
+    ($self_tag:literal $name:ident $(($value_name:ident : $value:ty))? {
+        $(.. $struct_field:ident: $struct_ty:ident {$struct_min:tt : $struct_max:tt} ,)*
+        $(enum $enum_field:ident: $enum_ty:ident {$enum_min:tt : $enum_max:tt} ,)*
+        $($tag:literal $field:ident: $ty:ty {$min:tt : $max:tt} ,)*
     }) => {
         #[derive(Debug, Eq, PartialEq, Clone)]
         pub struct $name {
@@ -165,23 +295,36 @@ macro_rules! define_record {
                 pub $value_name: $value,
             )?
             $(
-                pub $structure_field: cardinality!($structure, $smin, $smax),
+                pub $struct_field: structure_cardinality!($struct_ty, $struct_min, $struct_max),
+            )*
+            $(
+                pub $enum_field: cardinality!($enum_ty, $enum_min, $enum_max),
             )*
             $(
                 pub $field: cardinality!($ty, $min, $max),
             )*
         }
 
+        impl $name {
+            #[inline]
+            pub fn matches_tag(tag: &str) -> bool {
+                tag == $self_tag
+            }
+        }
+
         impl<'a> TryFrom<Sourced<RawRecord<'a>>> for $name {
             type Error = SchemaError;
 
             fn try_from(mut source: Sourced<RawRecord<'a>>) -> Result<Self, Self::Error> {
-                debug_assert_eq!(source.line.tag.as_str(), stringify!($self_tag));
+                debug_assert_eq!(source.line.tag.as_str(), $self_tag);
 
                 #[derive(Default)]
                 struct Builder {
                     $(
-                        $structure_field: Vec<$structure>,
+                        $struct_field: Option<$struct_ty>,
+                    )*
+                    $(
+                        $enum_field: Vec<$enum_ty>,
                     )*
                     $(
                         $field: Vec<$ty>,
@@ -192,23 +335,46 @@ macro_rules! define_record {
 
                 let mut unused_records = Vec::new();
                 let mut result = Builder::default();
+                paste::paste! {
+                    $(
+                        let mut $struct_field : Option< [< $struct_ty Builder >] > = None;
+                    )*
+                }
+
+                let parent_span = source.span;
+
                 for record in source.value.records {
                     match record.line.tag.as_str() {
                         $(
-                            stringify!($tag) => {
+                            $tag => {
                                 let $field: $ty = <$ty>::try_from(record)?;
                                 result.$field.push($field);
                             }
-                        )+
-                        "CONT" => {
+                        )*
+                        "CONC" | "CONT" => {
                             // will be handled by line_value
+                            // TODO: is CONC valid in other versions?
                             unused_records.push(record);
                         }
                         tag => {
+                            $(
+                                if $struct_ty::matches_tag(tag) {
+                                    $struct_field.get_or_insert_with(Default::default).build_from(record)?;
+                                } else
+                            )*
+                            $(
+                                if $enum_ty::matches_tag(tag) {
+                                    let $enum_field: $enum_ty = <$enum_ty>::build_from(record)?;
+                                    result.$enum_field.push($enum_field);
+                                } else
+                            )*
                             if tag.starts_with("_") {
                                 tracing::info!(tag, "Ignoring user-defined tag");
                             } else {
-                                return Err(SchemaError::UnexpectedTag { tag: tag.to_string(), span: record.line.tag.span });
+                                return Err(SchemaError::UnexpectedTag {
+                                    parent_span,
+                                    tag: tag.to_string(),
+                                    span: record.line.tag.span });
                             }
                         }
                     }
@@ -216,22 +382,24 @@ macro_rules! define_record {
 
                 source.value.records = unused_records;
 
-                $(
-                let line_value = <$value>::try_from(source)?;
-                )?
-
-                // MACRO TODO: assert unused_records is empty if
-                // line_value was not used
+                if_not_provided!(($($value_name)?) {
+                    if !source.value.records.is_empty() {
+                        todo!("CONT not permitted here - no value expected")
+                    }
+                });
 
                 Ok(Self {
                     $(
-                        $value_name: line_value,
+                        $value_name: <$value>::try_from(source)?,
                     )?
                     $(
-                        $structure_field: from_cardinality!($structure, result.$structure_field, $smin, $smax),
+                        $struct_field: from_struct_cardinality!(parent_span, $struct_field, 0, 1),
                     )*
                     $(
-                        $field: from_cardinality!($tag, result.$field, $min, $max),
+                        $enum_field: from_cardinality!(parent_span, "TODO", result.$enum_field, $enum_min, $enum_max),
+                    )*
+                    $(
+                        $field: from_cardinality!(parent_span, $tag, result.$field, $min, $max),
                     )*
                 })
             }
@@ -317,6 +485,7 @@ impl<'a> TryFrom<Sourced<LineValue<'a, str>>> for String {
     }
 }
 
+#[derive(Debug)]
 enum TopLevelRecord {
     Individual(Individual),
     Submitter(Submitter),
@@ -349,13 +518,19 @@ impl TryFrom<Sourced<RawRecord<'_>>> for TopLevelRecord {
             "INDI" => Individual::try_from(source)?.into(),
             "SUBM" => Submitter::try_from(source)?.into(),
             "SUBN" => Submission::try_from(source)?.into(),
-            tag => unimplemented!("top-level record {tag}"),
+            tag => {
+                return Err(SchemaError::UnknownTopLevelRecord {
+                    tag: tag.to_string(),
+                    span: source.line.tag.span,
+                })
+            }
         };
 
         Ok(rec)
     }
 }
 
+#[derive(Debug)]
 pub(crate) struct File {
     header: Header,
     records: Vec<TopLevelRecord>,
@@ -374,7 +549,10 @@ impl File {
         for record in iter {
             match record.line.tag.as_str() {
                 "TRLR" => break,
-                _ => records.push(TopLevelRecord::try_from(record)?),
+                _ => match TopLevelRecord::try_from(record) {
+                    Ok(r) => records.push(r),
+                    Err(error) => tracing::warn!(?error, "skipping record error"),
+                },
             }
         }
 
@@ -383,31 +561,31 @@ impl File {
 }
 
 define_record!(
-    HEAD / Header {
-        GEDC / gedcom: Gedcom {1:1},
-        SOUR / source: GedcomSource {1:1},
-        DEST / destination: String {0:1},
-        DATE / date: DateTime {0:1},
-        SUBM / submitter: XRef {1:1},
-        SUBN / submission: XRef {0:1},
-        FILE / file_name: String {0:1},
-        COPR / copyright: String {0:1},
-        CHAR / character_set: CharacterSet {1:1},
-        LANG / language: String {0:1},
-        PLAC / place: Place {0:1},
-        NOTE / note: String {0:1},
+    "HEAD" Header {
+        "GEDC" gedcom: Gedcom {1:1},
+        "SOUR" source: GedcomSource {1:1},
+        "DEST" destination: String {0:1},
+        "DATE" date: DateTime {0:1},
+        "SUBM" submitter: XRef {1:1},
+        "SUBN" submission: XRef {0:1},
+        "FILE" file_name: String {0:1},
+        "COPR" copyright: String {0:1},
+        "CHAR" character_set: CharacterSet {1:1},
+        "LANG" language: String {0:1},
+        "PLAC" place: Place {0:1},
+        "NOTE" note: String {0:1},
     }
 );
 
 define_record!(
-    PLAC / Place (place: String) {
-        FORM / format: String {1:1},
+    "PLAC" Place (place: String) {
+        "FORM" format: String {0:1},
     }
 );
 
 define_record!(
-    CHAR / CharacterSet (encoding: String) {
-        VERS / version: String {0:1},
+    "CHAR" CharacterSet (encoding: String) {
+        "VERS" version: String {0:1},
     }
 );
 
@@ -444,169 +622,393 @@ impl<'a> TryFrom<Sourced<LineValue<'a, str>>> for XRef {
 }
 
 define_record!(
-    DATE / DateTime (date: String) {
-        TIME / time: String {0:1},
+    "DATE" DateTime (date: String) {
+        "TIME" time: String {0:1},
     }
 );
 
 define_record!(
-    SOUR / GedcomSource (approved_system_id: String) {
-        VERS / version_number: String {0:1},
-        NAME / name_of_product: String {0:1},
-        CORP / corporate: Corporate {0:1},
-        DATA / data: Data {0:1},
+    "SOUR" GedcomSource (approved_system_id: String) {
+        "VERS" version_number: String {0:1},
+        "NAME" name_of_product: String {0:1},
+        "CORP" corporate: Corporate {0:1},
+        "DATA" data: Data {0:1},
     }
 );
 
 define_record!(
-    CORP / Corporate (name_of_business: String) {
-        ADDR / address: Address {1:1},
-        PHON / phone_number: String {0:3},
-        EMAIL / email: String {0:3},
-        FAX / fax: String {0:3},
-        WWW / web_page: String {0:3},
+    "CORP" Corporate (name_of_business: String) {
+        .. address_info: AddressStructure {0:1},
     }
 );
 
 define_record!(
-    DATA / Data (name_of_source_data: String) {
-        DATE / publication_date: String {0:1},
-        COPR / copyright: String {0:1},
+    "DATA" Data (name_of_source_data: String) {
+        "DATE" publication_date: String {0:1},
+        "COPR" copyright: String {0:1},
     }
 );
 
 define_record!(
-    GEDC / Gedcom {
-        VERS / version: String {1:1},
-        FORM / form: String {1:1},
+    "GEDC" Gedcom {
+        "VERS" version: String {1:1},
+        "FORM" form: String {1:1},
+    }
+);
+
+define_structure! {
+    AddressStructure {
+        "ADDR" address: Address {1:1},
+        "PHON" phone_number: String {0:3},
+        "EMAIL" email: String {0:3},
+        "FAX" fax: String {0:3},
+        "WWW" web_page: String {0:3},
+    }
+}
+
+define_record!(
+    "ADDR" Address (address_line: String) {
+        "ADR1" line1: String {0:1},
+        "ADR2" line2: String {0:1},
+        "ADR3" line3: String {0:1},
+        "CITY" city: String {0:1},
+        "STAE" state: String {0:1},
+        "POST" postal_code: String {0:1},
+        "CTRY" country: String {0:1},
     }
 );
 
 define_record!(
-    ADDR / Address (line: String) {
-        ADR1 / line1: String {0:1},
-        ADR2 / line2: String {0:1},
-        ADR3 / line3: String {0:1},
-        CITY / city: String {0:1},
-        STAE / state: String {0:1},
-        POST / postal_code: String {0:1},
-        CTRY / country: String {0:1},
+    "INDI" Individual {
+        enum events: IndividualEvent {0:N},
+        enum attributes: IndividualAttribute {0:N},
+        "RESN" restriction_notice: String {0:1},
+        "NAME" names: Name {0:N},
+        "SEX" sex: String {0:1},
+        "FAMC" child_family_link: ChildFamilyLink {0:N},
+        "FAMS" spouse_family_link: SpouseFamilyLink {0:N},
+        "SUBM" submitter: XRef {0:1},
+        "ALIA" alias: XRef {0:N},
+        "ANCI" ancestor_interest: XRef {0:N},
+        "DESI" descendant_interest: XRef {0:N},
+        "RFN" record_file_number: String {0:1},
+        "AFN" ancestral_file_number: String {0:1},
+        "REFN" user_reference_number: UserReferenceNumber {0:N},
+        "RIN" automated_record_id: String {0:1},
+        "CHAN" change_date: ChangeDate {0:1},
+        "NOTE" notes: String {0:N},
+        "SOUR" source_citations: SourceCitation {0:N},
+        "OBJE" multimedia_links: MultimediaLink_55 {0:N},
     }
 );
 
 define_record!(
-    INDI / Individual {
-        RESN / restriction_notice: String {0:1},
-        NAME / names: Name {0:N},
-        SEX / sex: String {0:1},
+    "REFN" UserReferenceNumber (user_reference_number: String) {
+        "TYPE" user_reference_type: String {0:1},
+    }
+);
 
-        //enum events: IndividualEvent {0:N},
+define_record!(
+    "FAMC" ChildFamilyLink (family: XRef) {
+        "PEDI" pedigree_linkage_type: String {0:1},
+        "STAT" status: String {0:1},
+        "NOTE" notes: String {0:N},
+    }
+);
+
+define_record!(
+    "FAMS" SpouseFamilyLink (family: XRef) {
+        "NOTE" notes: String {0:N},
     }
 );
 
 define_enum!(
     enum IndividualEvent {
         BirthEvent,
+        ChristeningEvent,
+        DeathEvent,
+        BurialEvent,
+        CremationEvent,
+        AdoptionEvent,
+        BaptismEvent,
+        BarMitzvahEvent,
+        BasMitzvahEvent,
+        BlessingEvent,
+        AdultChristeningEvent,
+        ConfirmationEvent,
+        FirstCommunionEvent,
+        OrdinationEvent,
+        NaturalizationEvent,
+        EmmigrationEvent,
+        ImmigrationEvent,
+        CensusEvent,
+        ProbateEvent,
+        WillEvent,
+        GraduationEvent,
+        RetirementEvent,
+        EventEvent,
+    }
+);
+
+define_enum!(
+    enum IndividualAttribute {
+        CasteName,
+        PhysicalDescription,
+        ScholasticAchievement,
+        NationalIdNumber,
+        NationalOrTribalOrigin,
+        CountOfChildren,
+        CountOfMarriages,
+        Occupation,
+        Possessions,
+        ReligiousAffiliation,
+        Residence,
+        SocialSecurityNumber,
+        NobilityTypeTitle,
+        Fact,
+    }
+);
+
+// TODO:
+// there should be 3 options here
+// - xref only
+// - 5.5.1
+// - 5.5 back-compat
+define_record!(
+    "OBJE" MultimediaLink_551 {
+        "FILE" file_reference: MultimediaFile {1:N},
+        "TITL" descriptive_title: String {0:1},
     }
 );
 
 define_record!(
-    BIRT / BirthEvent {
-        FAMC / family: XRef {0:1},
+    "OBJE" MultimediaLink_55 {
+        "FILE" file_reference: String {1:1},
+        "FORM" format: MultimediaFormat {1:1},
+        "TITL" descriptive_title: String {0:1},
+        "NOTE" notes: String {0:N},
     }
 );
 
 define_record!(
-    IndividualEventDetail {
-        .. detail: EventDetail {1:1},
-        AGE / age_at_event: String {0:1},
+    "FILE" MultimediaFile (file_reference: String) {
+        "FORM" format: MultimediaFormat {1:1},
+    }
+);
+
+define_record!(
+    "FORM" MultimediaFormat (format: String) {
+        "MEDI" source_media_type: String {0:1},
+    }
+);
+
+macro_rules! indi_attribute {
+    ($tag:literal $name:ident $value:ident) => {
+        define_record!(
+            $tag $name ($value: String) {
+                .. detail: IndividualEventDetail {0:1},
+            }
+        );
+    }
+}
+
+indi_attribute!("CAST" CasteName caste_name);
+indi_attribute!("DSCR" PhysicalDescription physical_description);
+indi_attribute!("EDUC" ScholasticAchievement scholastic_achievement);
+indi_attribute!("IDNO" NationalIdNumber national_id_number);
+indi_attribute!("NATI" NationalOrTribalOrigin national_or_tribal_origin);
+indi_attribute!("NCHI" CountOfChildren count_of_children);
+indi_attribute!("NMR" CountOfMarriages count_of_marriages);
+indi_attribute!("OCCU" Occupation occupation);
+indi_attribute!("PROP" Possessions possessions);
+indi_attribute!("RELI" ReligiousAffiliation religious_affiliation);
+indi_attribute!("SSN" SocialSecurityNumber social_security_number);
+indi_attribute!("TITL" NobilityTypeTitle nobility_type_title);
+indi_attribute!("FACT" Fact attribute_descriptor);
+define_record!(
+    "RESI" Residence {
+        .. detail: IndividualEventDetail {0:1},
+    }
+);
+
+// Note that the standard omits the line value here
+// https://genealogytools.com/the-event-structure-in-gedcom-files/
+define_record!(
+    "EVEN" EventEvent (event_type: Option<String>) {
+        .. detail: IndividualEventDetail {0:1},
+    }
+);
+
+define_record!(
+    "BIRT" BirthEvent {
+        .. detail: IndividualEventDetail {0:1},
+        "FAMC" family: XRef {0:1},
+    }
+);
+
+define_record!(
+    "CHR" ChristeningEvent {
+        .. detail: IndividualEventDetail {0:1},
+        "FAMC" family: XRef {0:1},
+    }
+);
+
+define_record!(
+    "ADOP" AdoptionEvent {
+        .. detail: IndividualEventDetail {0:1},
+        "FAMC" family: AdoptionFamily {0:1},
+    }
+);
+
+define_record!(
+    "FAMC" AdoptionFamily (family: XRef) {
+        "ADOP" adoption_parent: String {0:1},
+    }
+);
+
+macro_rules! indi_event {
+    ($tag:literal $name:ident) => {
+        define_record!(
+            $tag $name {
+                .. detail: IndividualEventDetail {0:1},
+            }
+        );
+    }
+}
+
+indi_event!("DEAT" DeathEvent);
+indi_event!("BURI" BurialEvent);
+indi_event!("CREM" CremationEvent);
+indi_event!("BAPM" BaptismEvent);
+indi_event!("BARM" BarMitzvahEvent);
+indi_event!("BASM" BasMitzvahEvent);
+indi_event!("BLES" BlessingEvent);
+indi_event!("CONF" ConfirmationEvent);
+indi_event!("CHRA" AdultChristeningEvent);
+indi_event!("FCOM" FirstCommunionEvent);
+indi_event!("ORDN" OrdinationEvent);
+indi_event!("NATU" NaturalizationEvent);
+indi_event!("EMIG" EmmigrationEvent);
+indi_event!("IMMI" ImmigrationEvent);
+indi_event!("CENS" CensusEvent);
+indi_event!("PROB" ProbateEvent);
+indi_event!("WILL" WillEvent);
+indi_event!("GRAD" GraduationEvent);
+indi_event!("RETI" RetirementEvent);
+
+define_structure!(
+    EventDetail {
+        .. address: AddressStructure {0:1},
+
+        "TYPE" event_type: String {0:1},
+        "DATE" date: String {0:1},
+        "AGNC" responsible_agency: String {0:1},
+        "RELI" religious_affiliation: String {0:1},
+        "CAUS" cause_of_event: String {0:1},
+        "RESN" restriction_notice: String {0:1},
+        "NOTE" notes: String {0:N},
+        "SOUR" sources: SourceCitation {0:N},
+        "PLAC" place: Place {0:1},
     }
 );
 
 define_structure!(
-    struct EventDetail {
-        TYPE / event_type: String {0:1},
-        DATE / date: String {0:1}
+    IndividualEventDetail {
+        .. detail: EventDetail {1:1},
+        "AGE" age_at_event: String {0:1},
     }
 );
 
 define_record!(
-    SUBM / Submitter {
-        NAME / name: String {1:1},
-
-        // address_structure
-        ADDR / address: Address {0:1},
-        PHON / phone_number: String {0:3},
-        EMAIL / email: String {0:3},
-        FAX / fax: String {0:3},
-        WWW / web_page: String {0:3},
-
-        // todo: multimedia_link
-
-        LANG / language: String {0:3},
-        RFN / record_file_number: String {0:1},
-        RIN / record_id_number: String {0:1},
-        NOTE / note: String {0:N},
-        CHAN / change_date: ChangeDate {0:1},
+    "SUBM" Submitter {
+        .. address: AddressStructure {0:1},
+        "NAME" name: String {1:1},
+        "LANG" language: String {0:3},
+        "RFN" record_file_number: String {0:1},
+        "RIN" record_id_number: String {0:1},
+        "NOTE" note: String {0:N},
+        "CHAN" change_date: ChangeDate {0:1},
     }
 );
 
 define_record!(
-    CHAN / ChangeDate {
-        DATE / date: DateTime {1:1},
-        NOTE / note: String {0:N},
+    "CHAN" ChangeDate {
+        "DATE" date: DateTime {1:1},
+        "NOTE" note: String {0:N},
+    }
+);
+
+define_structure!(
+    NamePieces {
+        "NPFX" prefix: String {0:1},
+        "GIVN" given: String {0:1},
+        "NICK" nickname: String {0:1},
+        "SPFX" surname_prefix: String {0:1},
+        "SURN" surname: String {0:1},
+        "NSFX" suffix: String {0:1},
+        "NOTE" notes: String {0:N},
+        "SOUR" sources: SourceCitation {0:N},
     }
 );
 
 define_record!(
-    NAME / Name (personal_name: String) {
-        TYPE / name_type: String {0:1},
-        NPFX / prefix: String {0:1},
-        GIVN / given: String {0:1},
-        NICK / nickname: String {0:1},
-        SPFX / surname_prefix: String {0:1},
-        SURN / surname: String {0:1},
-        NSFX / suffix: String {0:1},
-        NOTE / notes: String {0:N},
-        SOUR / sources: SourceCitation {0:N},
+    "NAME" Name (personal_name: String) {
+        .. pieces: NamePieces {0:1},
+        "TYPE" name_type: String {0:1},
+        "FONE" phonetic: Phonetic {0:N},
+        "ROMN" romanized: Romanized {0:N},
+    }
+);
+
+define_record!(
+    "FONE" Phonetic (name: String) {
+        .. pieces: NamePieces {0:1},
+        "TYPE" phonetic_type: String {1:1},
+    }
+);
+
+define_record!(
+    "ROMN" Romanized (name: String) {
+        .. pieces: NamePieces {0:1},
+        "TYPE" romanized_type: String {1:1},
     }
 );
 
 // TODO: multimedia link
 define_record!(
-    SOUR  / SourceCitation (source: XRef) {
-        PAGE / page: String {0:1},
-        EVEN / event: Event {0:1},
-        DATA / data: CitationData {0:1},
-        NOTE / note: String {0:N},
-        QUAY / certainty_assessment: String {0:1},
+    "SOUR" SourceCitation (source: XRef) {
+        "PAGE" page: String {0:1},
+        "EVEN" event: Event {0:1},
+        "DATA" data: CitationData {0:1},
+        "NOTE" note: String {0:N},
+        "QUAY" certainty_assessment: String {0:1},
     }
 );
 
 define_record!(
-    DATA / CitationData {
-        DATE / entry_recording_date: String {0:1},
-        TEXT / text_from_source: String {0:N},
+    "DATA" CitationData {
+        "DATE" entry_recording_date: String {0:1},
+        "TEXT" text_from_source: String {0:N},
     }
 );
 
 define_record!(
-    EVEN / Event (event_type_cited_from: String) {
-        ROLE / role_in_event: String {0:1},
+    "EVEN" Event (event_type_cited_from: String) {
+        "ROLE" role_in_event: String {0:1},
     }
 );
 
 define_record!(
-    SUBN / Submission {
-        SUBM / submitter: XRef {0:1},
-        FAMF / family_file_name: String {0:1},
-        TEMP / temple_code: String {0:1},
-        ANCE / generations_of_ancestors: String {0:1},
-        DESC / generations_of_descendants: String {0:1},
-        ORDI / ordinance_process_flag: String {0:1},
-        RIN / record_id_number: String {0:1},
-        NOTE / note: String {0:N},
-        CHAN / change_date: ChangeDate {0:1},
+    "SUBN" Submission {
+        "SUBM" submitter: XRef {0:1},
+        "FAMF" family_file_name: String {0:1},
+        "TEMP" temple_code: String {0:1},
+        "ANCE" generations_of_ancestors: String {0:1},
+        "DESC" generations_of_descendants: String {0:1},
+        "ORDI" ordinance_process_flag: String {0:1},
+        "RIN" record_id_number: String {0:1},
+        "NOTE" note: String {0:N},
+        "CHAN" change_date: ChangeDate {0:1},
     }
 );
 
@@ -615,14 +1017,9 @@ impl Name {
         Self {
             personal_name,
             name_type: None,
-            prefix: None,
-            given: None,
-            nickname: None,
-            surname_prefix: None,
-            surname: None,
-            suffix: None,
-            notes: Vec::new(),
-            sources: Vec::new(),
+            pieces: None,
+            phonetic: Vec::new(),
+            romanized: Vec::new(),
         }
     }
 }
@@ -686,20 +1083,20 @@ mod test {
     use miette::{IntoDiagnostic, SourceSpan};
     use serde::Deserialize;
 
-    use crate::{
-        parser::{
-            decoding::DecodingError, encodings::SupportedEncoding, records::read_first_record,
-        },
-        v551::{Individual, Name, RestrictionNotice, SchemaError},
+    use crate::parser::{
+        decoding::DecodingError, encodings::SupportedEncoding, records::read_first_record,
     };
 
-    use super::Header;
+    use super::*;
 
     #[test]
     fn basic_header() -> miette::Result<()> {
         let lines = "\
         0 HEAD\n\
+        1 SOUR Test\n\
         1 DEST FamilySearch\n\
+        1 SUBM @submitter@\n\
+        1 CHAR ANSEL\n\
         1 GEDC\n\
         2 VERS 5.5.1\n\
         2 FORM LINEAGE-LINKED";
@@ -707,6 +1104,7 @@ mod test {
         let record = read_first_record::<_, DecodingError>(lines)?.unwrap();
 
         let header = Header::try_from(record)?;
+        assert_eq!(header.source.approved_system_id, "Test".to_string());
         assert_eq!(header.destination, Some("FamilySearch".to_string()));
         assert_eq!(header.gedcom.version, "5.5.1");
         assert_eq!(header.gedcom.form, "LINEAGE-LINKED");
@@ -715,11 +1113,14 @@ mod test {
     }
 
     #[test]
-    fn serde_unknown_tag_test() -> miette::Result<()> {
+    fn unknown_tag_test() -> miette::Result<()> {
         let lines = "\
         0 HEAD\n\
+        1 SOUR Test\n\
         1 DEST FamilySearch\n\
+        1 SUBM @submitter@\n\
         1 GARBAGE GARBAGE\n\
+        1 CHAR ANSEL\n\
         1 GEDC\n\
         2 VERS 5.5.1\n\
         2 FORM LINEAGE-LINKED";
@@ -730,7 +1131,8 @@ mod test {
         assert_eq!(
             SchemaError::UnexpectedTag {
                 tag: "GARBAGE".to_string(),
-                span: SourceSpan::from((20, 15))
+                span: SourceSpan::from((60, 7)),
+                parent_span: SourceSpan::from((0, 130)),
             },
             err,
         );
@@ -739,11 +1141,14 @@ mod test {
     }
 
     #[test]
-    fn serde_user_defined_tag_test() -> miette::Result<()> {
+    fn user_defined_tag_test() -> miette::Result<()> {
         let lines = "\
         0 HEAD\n\
+        1 SOUR Test\n\
         1 DEST FamilySearch\n\
         1 _USER USER STUFF\n\
+        1 SUBM @submitter@\n\
+        1 CHAR ANSEL\n\
         1 GEDC\n\
         2 VERS 5.5.1\n\
         2 FORM LINEAGE-LINKED";
@@ -785,6 +1190,29 @@ mod test {
                 Name::new("John /Smith/".to_string()),
                 Name::new("Jim /Smarth/".to_string())
             ]
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn corporate() -> miette::Result<()> {
+        let lines = "\
+        0 CORP Some name\n\
+        1 CONT which continues\n\
+        1 ADDR it has an address...\n\
+        2 CONC which is continued";
+
+        let record = read_first_record::<_, DecodingError>(lines)?.unwrap();
+
+        let corp = Corporate::try_from(record)?;
+        assert_eq!(
+            corp.name_of_business,
+            "Some name\nwhich continues".to_string()
+        );
+        assert_eq!(
+            corp.address_info.unwrap().address.address_line,
+            "it has an address...which is continued".to_string()
         );
 
         Ok(())

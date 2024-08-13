@@ -41,7 +41,8 @@ fn can_parse_allged_fully() -> miette::Result<()> {
     let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     path.push("tests/external/others/allged.ged");
 
-    let _parsed_file = gedcomfy::parse_file(&path, ParseOptions::default())?;
+    let parsed_file = gedcomfy::parse_file(&path, ParseOptions::default())?;
+    insta::assert_debug_snapshot!(parsed_file);
     Ok(())
 }
 

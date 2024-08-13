@@ -1,0 +1,2964 @@
+---
+source: gedcomfy/tests/tests.rs
+expression: parsed_file
+---
+V551(
+    File {
+        header: Header {
+            gedcom: Gedcom {
+                version: "5.5",
+                form: "LINEAGE-LINKED",
+            },
+            source: GedcomSource {
+                approved_system_id: "APPROVED_SOURCE_NAME",
+                version_number: Some(
+                    "Version number of source-program",
+                ),
+                name_of_product: Some(
+                    "Name of source-program",
+                ),
+                corporate: Some(
+                    Corporate {
+                        name_of_business: "Corporation name",
+                        address_info: Some(
+                            AddressStructure {
+                                address: Address {
+                                    address_line: "Corporation address line 1\nCorporation address line 2\nCorporation address line 3\nCorporation address line 4",
+                                    line1: Some(
+                                        "Corporation address line 1",
+                                    ),
+                                    line2: Some(
+                                        "Corporation address line 2",
+                                    ),
+                                    line3: None,
+                                    city: Some(
+                                        "Corporation address city",
+                                    ),
+                                    state: Some(
+                                        "Corporation address state",
+                                    ),
+                                    postal_code: Some(
+                                        "Corporation address ZIP code",
+                                    ),
+                                    country: Some(
+                                        "Corporation address country",
+                                    ),
+                                },
+                                phone_number: [
+                                    "Corporation phone number 1",
+                                    "Corporation phone number 2",
+                                    "Corporation phone number 3 (last one!)",
+                                ],
+                                email: [],
+                                fax: [],
+                                web_page: [],
+                            },
+                        ),
+                    },
+                ),
+                data: Some(
+                    Data {
+                        name_of_source_data: "Name of source data",
+                        publication_date: Some(
+                            "1 JAN 1998",
+                        ),
+                        copyright: Some(
+                            "Copyright of source data",
+                        ),
+                    },
+                ),
+            },
+            destination: Some(
+                "Destination of transmission",
+            ),
+            date: Some(
+                DateTime {
+                    date: "1 JAN 1998",
+                    time: Some(
+                        "13:57:24.80",
+                    ),
+                },
+            ),
+            submitter: XRef {
+                xref: Some(
+                    "@SUBMITTER@",
+                ),
+            },
+            submission: Some(
+                XRef {
+                    xref: Some(
+                        "@SUBMISSION@",
+                    ),
+                },
+            ),
+            file_name: Some(
+                "allged.ged",
+            ),
+            copyright: Some(
+                "(C) 1997-2000 by H. Eichmann. You can use and distribute this file freely as long as you do not charge for it",
+            ),
+            character_set: CharacterSet {
+                encoding: "ASCII",
+                version: Some(
+                    "Version number of ASCII (whatever it means) ",
+                ),
+            },
+            language: Some(
+                "language",
+            ),
+            place: None,
+            note: Some(
+                "A general note about this file:\nIt demonstrates most of the data which can be submitted using GEDCOM5.5. It shows the relatives of PERSON1:\nHis 2 wifes (PERSON2, PERSON8), his parents (father: PERSON5, mother not given), \nadoptive parents (mother: PERSON6, father not given) and his 3 children (PERSON3, PERSON4 and PERSON7).\nIn PERSON1, FAMILY1, SUBMITTER, SUBMISSION and SOURCE1 as many datafields as possible are used.\nAll other individuals/families contain no data. Note, that many data tags can appear more than once\n(in this transmission this is demonstrated with tags: NAME, OCCU, PLACE and NOTE. Seek the word 'another'.\nThe data transmitted here do not make sence. Just the HEAD.DATE tag contains the date of the creation\nof this file and will change in future Versions!\nThis file is created by H. Eichmann: h.eichmann@@gmx.de. Feel free to copy and use it for any \nnon-commercial purpose. For the creation the GEDCOM standard Release 5.5 (2 JAN 1996) has been used.\nCopyright: The church of Jesus Christ of latter-day saints, gedcom@@gedcom.org\nDownload it (the GEDCOM 5.5 specs) from: ftp.gedcom.com/pub/genealogy/gedcom.\nSome Specials: This line is very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very long but not too long (255 caharcters is the limit). \nThis @@ (commercial at) character may only appear ONCE!\nNote continued here. The word TEST should not be broken!",
+            ),
+        },
+        records: [
+            Submitter(
+                Submitter {
+                    address: Some(
+                        AddressStructure {
+                            address: Address {
+                                address_line: "Submitter address line 1\nSubmitter address line 2\nSubmitter address line 3\nSubmitter address line 4",
+                                line1: Some(
+                                    "Submitter address line 1",
+                                ),
+                                line2: Some(
+                                    "Submitter address line 2",
+                                ),
+                                line3: None,
+                                city: Some(
+                                    "Submitter address city",
+                                ),
+                                state: Some(
+                                    "Submitter address state",
+                                ),
+                                postal_code: Some(
+                                    "Submitter address ZIP code",
+                                ),
+                                country: Some(
+                                    "Submitter address country",
+                                ),
+                            },
+                            phone_number: [
+                                "Submitter phone number 1",
+                                "Submitter phone number 2",
+                                "Submitter phone number 3 (last one!)",
+                            ],
+                            email: [],
+                            fax: [],
+                            web_page: [],
+                        },
+                    ),
+                    name: "/Submitter-Name/",
+                    language: [
+                        "English",
+                    ],
+                    record_file_number: None,
+                    record_id_number: None,
+                    note: [],
+                    change_date: Some(
+                        ChangeDate {
+                            date: DateTime {
+                                date: "19 JUN 2000",
+                                time: Some(
+                                    "12:34:56.789",
+                                ),
+                            },
+                            note: [
+                                "A note\nNote continued here. The word TEST should not be broken!",
+                            ],
+                        },
+                    ),
+                },
+            ),
+            Submission(
+                Submission {
+                    submitter: Some(
+                        XRef {
+                            xref: Some(
+                                "@SUBMITTER@",
+                            ),
+                        },
+                    ),
+                    family_file_name: Some(
+                        "NameOfFamilyFile",
+                    ),
+                    temple_code: Some(
+                        "Abreviated temple code",
+                    ),
+                    generations_of_ancestors: Some(
+                        "1",
+                    ),
+                    generations_of_descendants: Some(
+                        "1",
+                    ),
+                    ordinance_process_flag: Some(
+                        "yes",
+                    ),
+                    record_id_number: None,
+                    note: [],
+                    change_date: None,
+                },
+            ),
+            Individual(
+                Individual {
+                    events: [
+                        BirthEvent(
+                            BirthEvent {
+                                detail: Some(
+                                    IndividualEventDetail {
+                                        detail: EventDetail {
+                                            address: None,
+                                            event_type: None,
+                                            date: Some(
+                                                "31 DEC 1997",
+                                            ),
+                                            responsible_agency: None,
+                                            religious_affiliation: None,
+                                            cause_of_event: None,
+                                            restriction_notice: None,
+                                            notes: [
+                                                "BIRTH event note (the event of entering into life)\nNote continued here. The word TEST should not be broken!",
+                                            ],
+                                            sources: [
+                                                SourceCitation {
+                                                    source: XRef {
+                                                        xref: Some(
+                                                            "@SOURCE1@",
+                                                        ),
+                                                    },
+                                                    page: Some(
+                                                        "42",
+                                                    ),
+                                                    event: None,
+                                                    data: Some(
+                                                        CitationData {
+                                                            entry_recording_date: Some(
+                                                                "31 DEC 1900",
+                                                            ),
+                                                            text_from_source: [
+                                                                "a sample text\nSample text continued here. The word TEST should not be broken!",
+                                                            ],
+                                                        },
+                                                    ),
+                                                    note: [
+                                                        "A note\nNote continued here. The word TEST should not be broken!",
+                                                    ],
+                                                    certainty_assessment: Some(
+                                                        "2",
+                                                    ),
+                                                },
+                                            ],
+                                            place: Some(
+                                                Place {
+                                                    place: "The place",
+                                                    format: None,
+                                                },
+                                            ),
+                                        },
+                                        age_at_event: None,
+                                    },
+                                ),
+                                family: Some(
+                                    XRef {
+                                        xref: Some(
+                                            "@PARENTS@",
+                                        ),
+                                    },
+                                ),
+                            },
+                        ),
+                        ChristeningEvent(
+                            ChristeningEvent {
+                                detail: Some(
+                                    IndividualEventDetail {
+                                        detail: EventDetail {
+                                            address: None,
+                                            event_type: None,
+                                            date: Some(
+                                                "BEF 31 DEC 1997",
+                                            ),
+                                            responsible_agency: None,
+                                            religious_affiliation: None,
+                                            cause_of_event: None,
+                                            restriction_notice: None,
+                                            notes: [
+                                                "CHRISTENING event note (the religious event (not LDS) of baptizing and/or naming a child)\nNote continued here. The word TEST should not be broken!",
+                                            ],
+                                            sources: [
+                                                SourceCitation {
+                                                    source: XRef {
+                                                        xref: Some(
+                                                            "@SOURCE1@",
+                                                        ),
+                                                    },
+                                                    page: Some(
+                                                        "42",
+                                                    ),
+                                                    event: None,
+                                                    data: Some(
+                                                        CitationData {
+                                                            entry_recording_date: Some(
+                                                                "31 DEC 1900",
+                                                            ),
+                                                            text_from_source: [
+                                                                "a sample text\nSample text continued here. The word TEST should not be broken!",
+                                                            ],
+                                                        },
+                                                    ),
+                                                    note: [
+                                                        "A note\nNote continued here. The word TEST should not be broken!",
+                                                    ],
+                                                    certainty_assessment: Some(
+                                                        "3",
+                                                    ),
+                                                },
+                                            ],
+                                            place: Some(
+                                                Place {
+                                                    place: "The place",
+                                                    format: None,
+                                                },
+                                            ),
+                                        },
+                                        age_at_event: None,
+                                    },
+                                ),
+                                family: None,
+                            },
+                        ),
+                        ChristeningEvent(
+                            ChristeningEvent {
+                                detail: Some(
+                                    IndividualEventDetail {
+                                        detail: EventDetail {
+                                            address: None,
+                                            event_type: None,
+                                            date: Some(
+                                                "AFT 30 DEC 1997",
+                                            ),
+                                            responsible_agency: None,
+                                            religious_affiliation: None,
+                                            cause_of_event: None,
+                                            restriction_notice: None,
+                                            notes: [
+                                                "Alternative CHRISTENING event note\nNote continued here. The word TEST should not be broken!",
+                                            ],
+                                            sources: [
+                                                SourceCitation {
+                                                    source: XRef {
+                                                        xref: Some(
+                                                            "@SOURCE1@",
+                                                        ),
+                                                    },
+                                                    page: Some(
+                                                        "42",
+                                                    ),
+                                                    event: None,
+                                                    data: Some(
+                                                        CitationData {
+                                                            entry_recording_date: Some(
+                                                                "31 DEC 1900",
+                                                            ),
+                                                            text_from_source: [
+                                                                "a sample text\nSample text continued here. The word TEST should not be broken!",
+                                                            ],
+                                                        },
+                                                    ),
+                                                    note: [
+                                                        "A note\nNote continued here. The word TEST should not be broken!",
+                                                    ],
+                                                    certainty_assessment: Some(
+                                                        "3",
+                                                    ),
+                                                },
+                                            ],
+                                            place: Some(
+                                                Place {
+                                                    place: "The place",
+                                                    format: None,
+                                                },
+                                            ),
+                                        },
+                                        age_at_event: None,
+                                    },
+                                ),
+                                family: None,
+                            },
+                        ),
+                        DeathEvent(
+                            DeathEvent {
+                                detail: Some(
+                                    IndividualEventDetail {
+                                        detail: EventDetail {
+                                            address: None,
+                                            event_type: None,
+                                            date: Some(
+                                                "BET 31 DEC 1997 AND 1 JAN 1998",
+                                            ),
+                                            responsible_agency: None,
+                                            religious_affiliation: None,
+                                            cause_of_event: None,
+                                            restriction_notice: None,
+                                            notes: [
+                                                "DEATH event note (the event when mortal life terminates)\nNote continued here. The word TEST should not be broken!",
+                                            ],
+                                            sources: [
+                                                SourceCitation {
+                                                    source: XRef {
+                                                        xref: Some(
+                                                            "@SOURCE1@",
+                                                        ),
+                                                    },
+                                                    page: Some(
+                                                        "42",
+                                                    ),
+                                                    event: None,
+                                                    data: Some(
+                                                        CitationData {
+                                                            entry_recording_date: Some(
+                                                                "31 DEC 1900",
+                                                            ),
+                                                            text_from_source: [
+                                                                "a sample text\nSample text continued here. The word TEST should not be broken!",
+                                                            ],
+                                                        },
+                                                    ),
+                                                    note: [
+                                                        "A note\nNote continued here. The word TEST should not be broken!",
+                                                    ],
+                                                    certainty_assessment: Some(
+                                                        "3",
+                                                    ),
+                                                },
+                                            ],
+                                            place: Some(
+                                                Place {
+                                                    place: "The place",
+                                                    format: None,
+                                                },
+                                            ),
+                                        },
+                                        age_at_event: None,
+                                    },
+                                ),
+                            },
+                        ),
+                        BurialEvent(
+                            BurialEvent {
+                                detail: Some(
+                                    IndividualEventDetail {
+                                        detail: EventDetail {
+                                            address: None,
+                                            event_type: None,
+                                            date: Some(
+                                                "ABT 31 DEC 1997",
+                                            ),
+                                            responsible_agency: None,
+                                            religious_affiliation: None,
+                                            cause_of_event: None,
+                                            restriction_notice: None,
+                                            notes: [
+                                                "BURIAL event note (the event of the proper disposing of the mortal remains of a deceased person)\nNote continued here. The word TEST should not be broken!",
+                                            ],
+                                            sources: [
+                                                SourceCitation {
+                                                    source: XRef {
+                                                        xref: Some(
+                                                            "@SOURCE1@",
+                                                        ),
+                                                    },
+                                                    page: Some(
+                                                        "42",
+                                                    ),
+                                                    event: None,
+                                                    data: Some(
+                                                        CitationData {
+                                                            entry_recording_date: Some(
+                                                                "31 DEC 1900",
+                                                            ),
+                                                            text_from_source: [
+                                                                "a sample text\nSample text continued here. The word TEST should not be broken!",
+                                                            ],
+                                                        },
+                                                    ),
+                                                    note: [
+                                                        "A note\nNote continued here. The word TEST should not be broken!",
+                                                    ],
+                                                    certainty_assessment: Some(
+                                                        "3",
+                                                    ),
+                                                },
+                                            ],
+                                            place: Some(
+                                                Place {
+                                                    place: "The place",
+                                                    format: None,
+                                                },
+                                            ),
+                                        },
+                                        age_at_event: None,
+                                    },
+                                ),
+                            },
+                        ),
+                        CremationEvent(
+                            CremationEvent {
+                                detail: Some(
+                                    IndividualEventDetail {
+                                        detail: EventDetail {
+                                            address: None,
+                                            event_type: None,
+                                            date: None,
+                                            responsible_agency: None,
+                                            religious_affiliation: None,
+                                            cause_of_event: None,
+                                            restriction_notice: None,
+                                            notes: [
+                                                "Cremation event note\nNote continued here. The word TEST should not be broken!",
+                                            ],
+                                            sources: [
+                                                SourceCitation {
+                                                    source: XRef {
+                                                        xref: Some(
+                                                            "@SOURCE1@",
+                                                        ),
+                                                    },
+                                                    page: Some(
+                                                        "42",
+                                                    ),
+                                                    event: None,
+                                                    data: Some(
+                                                        CitationData {
+                                                            entry_recording_date: Some(
+                                                                "31 DEC 1900",
+                                                            ),
+                                                            text_from_source: [
+                                                                "a sample text\nSample text continued here. The word TEST should not be broken!",
+                                                            ],
+                                                        },
+                                                    ),
+                                                    note: [
+                                                        "A note\nNote continued here. The word TEST should not be broken!",
+                                                    ],
+                                                    certainty_assessment: Some(
+                                                        "3",
+                                                    ),
+                                                },
+                                            ],
+                                            place: None,
+                                        },
+                                        age_at_event: None,
+                                    },
+                                ),
+                            },
+                        ),
+                        AdoptionEvent(
+                            AdoptionEvent {
+                                detail: Some(
+                                    IndividualEventDetail {
+                                        detail: EventDetail {
+                                            address: None,
+                                            event_type: None,
+                                            date: Some(
+                                                "CAL 31 DEC 1997",
+                                            ),
+                                            responsible_agency: None,
+                                            religious_affiliation: None,
+                                            cause_of_event: None,
+                                            restriction_notice: None,
+                                            notes: [
+                                                "ADOPTION event note (pertaining to creation of a child-parent relationship that does not exist biologically)\nNote continued here. The word TEST should not be broken!",
+                                            ],
+                                            sources: [
+                                                SourceCitation {
+                                                    source: XRef {
+                                                        xref: Some(
+                                                            "@SOURCE1@",
+                                                        ),
+                                                    },
+                                                    page: Some(
+                                                        "42",
+                                                    ),
+                                                    event: None,
+                                                    data: Some(
+                                                        CitationData {
+                                                            entry_recording_date: Some(
+                                                                "31 DEC 1900",
+                                                            ),
+                                                            text_from_source: [
+                                                                "a sample text\nSample text continued here. The word TEST should not be broken!",
+                                                            ],
+                                                        },
+                                                    ),
+                                                    note: [
+                                                        "A note\nNote continued here. The word TEST should not be broken!",
+                                                    ],
+                                                    certainty_assessment: Some(
+                                                        "3",
+                                                    ),
+                                                },
+                                            ],
+                                            place: Some(
+                                                Place {
+                                                    place: "The place",
+                                                    format: None,
+                                                },
+                                            ),
+                                        },
+                                        age_at_event: None,
+                                    },
+                                ),
+                                family: Some(
+                                    AdoptionFamily {
+                                        family: XRef {
+                                            xref: Some(
+                                                "@ADOPTIVE_PARENTS@",
+                                            ),
+                                        },
+                                        adoption_parent: Some(
+                                            "BOTH",
+                                        ),
+                                    },
+                                ),
+                            },
+                        ),
+                        BaptismEvent(
+                            BaptismEvent {
+                                detail: Some(
+                                    IndividualEventDetail {
+                                        detail: EventDetail {
+                                            address: None,
+                                            event_type: None,
+                                            date: Some(
+                                                "EST 31 DEC 1997",
+                                            ),
+                                            responsible_agency: None,
+                                            religious_affiliation: None,
+                                            cause_of_event: None,
+                                            restriction_notice: None,
+                                            notes: [
+                                                "BAPTISM event note (the event of baptism (not LDS), performed in infancy or later. See also BAPL, above, and CHR)\nNote continued here. The word TEST should not be broken!",
+                                            ],
+                                            sources: [
+                                                SourceCitation {
+                                                    source: XRef {
+                                                        xref: Some(
+                                                            "@SOURCE1@",
+                                                        ),
+                                                    },
+                                                    page: Some(
+                                                        "42",
+                                                    ),
+                                                    event: None,
+                                                    data: Some(
+                                                        CitationData {
+                                                            entry_recording_date: Some(
+                                                                "31 DEC 1900",
+                                                            ),
+                                                            text_from_source: [
+                                                                "a sample text\nSample text continued here. The word TEST should not be broken!",
+                                                            ],
+                                                        },
+                                                    ),
+                                                    note: [
+                                                        "A note\nNote continued here. The word TEST should not be broken!",
+                                                    ],
+                                                    certainty_assessment: Some(
+                                                        "3",
+                                                    ),
+                                                },
+                                            ],
+                                            place: Some(
+                                                Place {
+                                                    place: "The place",
+                                                    format: None,
+                                                },
+                                            ),
+                                        },
+                                        age_at_event: None,
+                                    },
+                                ),
+                            },
+                        ),
+                        BarMitzvahEvent(
+                            BarMitzvahEvent {
+                                detail: Some(
+                                    IndividualEventDetail {
+                                        detail: EventDetail {
+                                            address: None,
+                                            event_type: None,
+                                            date: Some(
+                                                "INT 31 DEC 1997 (12/31/97)",
+                                            ),
+                                            responsible_agency: None,
+                                            religious_affiliation: None,
+                                            cause_of_event: None,
+                                            restriction_notice: None,
+                                            notes: [
+                                                "BAR_MITZVAH event note (the ceremonial event held when a Jewish boy reaches age 13)\nNote continued here. The word TEST should not be broken!",
+                                            ],
+                                            sources: [
+                                                SourceCitation {
+                                                    source: XRef {
+                                                        xref: Some(
+                                                            "@SOURCE1@",
+                                                        ),
+                                                    },
+                                                    page: Some(
+                                                        "42",
+                                                    ),
+                                                    event: None,
+                                                    data: Some(
+                                                        CitationData {
+                                                            entry_recording_date: Some(
+                                                                "31 DEC 1900",
+                                                            ),
+                                                            text_from_source: [
+                                                                "a sample text\nSample text continued here. The word TEST should not be broken!",
+                                                            ],
+                                                        },
+                                                    ),
+                                                    note: [
+                                                        "A note\nNote continued here. The word TEST should not be broken!",
+                                                    ],
+                                                    certainty_assessment: Some(
+                                                        "3",
+                                                    ),
+                                                },
+                                            ],
+                                            place: Some(
+                                                Place {
+                                                    place: "The place",
+                                                    format: None,
+                                                },
+                                            ),
+                                        },
+                                        age_at_event: None,
+                                    },
+                                ),
+                            },
+                        ),
+                        BasMitzvahEvent(
+                            BasMitzvahEvent {
+                                detail: Some(
+                                    IndividualEventDetail {
+                                        detail: EventDetail {
+                                            address: None,
+                                            event_type: None,
+                                            date: Some(
+                                                "FROM 31 DEC 1997",
+                                            ),
+                                            responsible_agency: None,
+                                            religious_affiliation: None,
+                                            cause_of_event: None,
+                                            restriction_notice: None,
+                                            notes: [
+                                                "BAS_MITZVAH event note (the ceremonial event held when a Jewish girl reaches age 13, also known as \"Bat Mitzvah.\")\nNote continued here. The word TEST should not be broken!",
+                                            ],
+                                            sources: [
+                                                SourceCitation {
+                                                    source: XRef {
+                                                        xref: Some(
+                                                            "@SOURCE1@",
+                                                        ),
+                                                    },
+                                                    page: Some(
+                                                        "42",
+                                                    ),
+                                                    event: None,
+                                                    data: Some(
+                                                        CitationData {
+                                                            entry_recording_date: Some(
+                                                                "31 DEC 1900",
+                                                            ),
+                                                            text_from_source: [
+                                                                "a sample text\nSample text continued here. The word TEST should not be broken!",
+                                                            ],
+                                                        },
+                                                    ),
+                                                    note: [
+                                                        "A note\nNote continued here. The word TEST should not be broken!",
+                                                    ],
+                                                    certainty_assessment: Some(
+                                                        "3",
+                                                    ),
+                                                },
+                                            ],
+                                            place: Some(
+                                                Place {
+                                                    place: "The place",
+                                                    format: None,
+                                                },
+                                            ),
+                                        },
+                                        age_at_event: None,
+                                    },
+                                ),
+                            },
+                        ),
+                        BlessingEvent(
+                            BlessingEvent {
+                                detail: Some(
+                                    IndividualEventDetail {
+                                        detail: EventDetail {
+                                            address: None,
+                                            event_type: None,
+                                            date: Some(
+                                                "TO 31 DEC 1997",
+                                            ),
+                                            responsible_agency: None,
+                                            religious_affiliation: None,
+                                            cause_of_event: None,
+                                            restriction_notice: None,
+                                            notes: [
+                                                "BLESSING event note (a religious event of bestowing divine care or intercession. Sometimes given in connection with a naming ceremony)\nNote continued here. The word TEST should not be broken!",
+                                            ],
+                                            sources: [
+                                                SourceCitation {
+                                                    source: XRef {
+                                                        xref: Some(
+                                                            "@SOURCE1@",
+                                                        ),
+                                                    },
+                                                    page: Some(
+                                                        "42",
+                                                    ),
+                                                    event: None,
+                                                    data: Some(
+                                                        CitationData {
+                                                            entry_recording_date: Some(
+                                                                "31 DEC 1900",
+                                                            ),
+                                                            text_from_source: [
+                                                                "a sample text\nSample text continued here. The word TEST should not be broken!",
+                                                            ],
+                                                        },
+                                                    ),
+                                                    note: [
+                                                        "A note\nNote continued here. The word TEST should not be broken!",
+                                                    ],
+                                                    certainty_assessment: Some(
+                                                        "3",
+                                                    ),
+                                                },
+                                            ],
+                                            place: Some(
+                                                Place {
+                                                    place: "The place",
+                                                    format: None,
+                                                },
+                                            ),
+                                        },
+                                        age_at_event: None,
+                                    },
+                                ),
+                            },
+                        ),
+                        AdultChristeningEvent(
+                            AdultChristeningEvent {
+                                detail: Some(
+                                    IndividualEventDetail {
+                                        detail: EventDetail {
+                                            address: None,
+                                            event_type: None,
+                                            date: Some(
+                                                "FROM 31 DEC 1997 TO 1 FEB 1998",
+                                            ),
+                                            responsible_agency: None,
+                                            religious_affiliation: None,
+                                            cause_of_event: None,
+                                            restriction_notice: None,
+                                            notes: [
+                                                "ADULT_CHRISTENING event note (the religious event (not LDS) of baptizing and/or naming an adult person)\nNote continued here. The word TEST should not be broken!",
+                                            ],
+                                            sources: [
+                                                SourceCitation {
+                                                    source: XRef {
+                                                        xref: Some(
+                                                            "@SOURCE1@",
+                                                        ),
+                                                    },
+                                                    page: Some(
+                                                        "42",
+                                                    ),
+                                                    event: None,
+                                                    data: Some(
+                                                        CitationData {
+                                                            entry_recording_date: Some(
+                                                                "31 DEC 1900",
+                                                            ),
+                                                            text_from_source: [
+                                                                "a sample text\nSample text continued here. The word TEST should not be broken!",
+                                                            ],
+                                                        },
+                                                    ),
+                                                    note: [
+                                                        "A note\nNote continued here. The word TEST should not be broken!",
+                                                    ],
+                                                    certainty_assessment: Some(
+                                                        "3",
+                                                    ),
+                                                },
+                                            ],
+                                            place: Some(
+                                                Place {
+                                                    place: "The place",
+                                                    format: None,
+                                                },
+                                            ),
+                                        },
+                                        age_at_event: None,
+                                    },
+                                ),
+                            },
+                        ),
+                        ConfirmationEvent(
+                            ConfirmationEvent {
+                                detail: Some(
+                                    IndividualEventDetail {
+                                        detail: EventDetail {
+                                            address: None,
+                                            event_type: None,
+                                            date: Some(
+                                                "@#DGREGORIAN@ 31 DEC 1997",
+                                            ),
+                                            responsible_agency: None,
+                                            religious_affiliation: None,
+                                            cause_of_event: None,
+                                            restriction_notice: None,
+                                            notes: [
+                                                "CONFIRMATION event note (the religious event (not LDS) of conferring the gift of the Holy Ghost and, among protestants, full church membership)\nNote continued here. The word TEST should not be broken!",
+                                            ],
+                                            sources: [
+                                                SourceCitation {
+                                                    source: XRef {
+                                                        xref: Some(
+                                                            "@SOURCE1@",
+                                                        ),
+                                                    },
+                                                    page: Some(
+                                                        "42",
+                                                    ),
+                                                    event: None,
+                                                    data: Some(
+                                                        CitationData {
+                                                            entry_recording_date: Some(
+                                                                "31 DEC 1900",
+                                                            ),
+                                                            text_from_source: [
+                                                                "a sample text\nSample text continued here. The word TEST should not be broken!",
+                                                            ],
+                                                        },
+                                                    ),
+                                                    note: [
+                                                        "A note\nNote continued here. The word TEST should not be broken!",
+                                                    ],
+                                                    certainty_assessment: Some(
+                                                        "3",
+                                                    ),
+                                                },
+                                            ],
+                                            place: Some(
+                                                Place {
+                                                    place: "The place",
+                                                    format: None,
+                                                },
+                                            ),
+                                        },
+                                        age_at_event: None,
+                                    },
+                                ),
+                            },
+                        ),
+                        FirstCommunionEvent(
+                            FirstCommunionEvent {
+                                detail: Some(
+                                    IndividualEventDetail {
+                                        detail: EventDetail {
+                                            address: None,
+                                            event_type: None,
+                                            date: Some(
+                                                "31 DEC 1997",
+                                            ),
+                                            responsible_agency: None,
+                                            religious_affiliation: None,
+                                            cause_of_event: None,
+                                            restriction_notice: None,
+                                            notes: [
+                                                "FIRST_COMMUNION event note (a religious rite, the first act of sharing in the Lord's supper as part of church worship)\nNote continued here. The word TEST should not be broken!",
+                                            ],
+                                            sources: [
+                                                SourceCitation {
+                                                    source: XRef {
+                                                        xref: Some(
+                                                            "@SOURCE1@",
+                                                        ),
+                                                    },
+                                                    page: Some(
+                                                        "42",
+                                                    ),
+                                                    event: None,
+                                                    data: Some(
+                                                        CitationData {
+                                                            entry_recording_date: Some(
+                                                                "31 DEC 1900",
+                                                            ),
+                                                            text_from_source: [
+                                                                "a sample text\nSample text continued here. The word TEST should not be broken!",
+                                                            ],
+                                                        },
+                                                    ),
+                                                    note: [
+                                                        "A note\nNote continued here. The word TEST should not be broken!",
+                                                    ],
+                                                    certainty_assessment: Some(
+                                                        "3",
+                                                    ),
+                                                },
+                                            ],
+                                            place: Some(
+                                                Place {
+                                                    place: "The place",
+                                                    format: None,
+                                                },
+                                            ),
+                                        },
+                                        age_at_event: None,
+                                    },
+                                ),
+                            },
+                        ),
+                        OrdinationEvent(
+                            OrdinationEvent {
+                                detail: Some(
+                                    IndividualEventDetail {
+                                        detail: EventDetail {
+                                            address: None,
+                                            event_type: None,
+                                            date: Some(
+                                                "31 DEC 1997",
+                                            ),
+                                            responsible_agency: None,
+                                            religious_affiliation: None,
+                                            cause_of_event: None,
+                                            restriction_notice: None,
+                                            notes: [
+                                                "ORDINATION event note (a religious event of receiving authority to act in religious matters)\nNote continued here. The word TEST should not be broken!",
+                                            ],
+                                            sources: [
+                                                SourceCitation {
+                                                    source: XRef {
+                                                        xref: Some(
+                                                            "@SOURCE1@",
+                                                        ),
+                                                    },
+                                                    page: Some(
+                                                        "42",
+                                                    ),
+                                                    event: None,
+                                                    data: Some(
+                                                        CitationData {
+                                                            entry_recording_date: Some(
+                                                                "31 DEC 1900",
+                                                            ),
+                                                            text_from_source: [
+                                                                "a sample text\nSample text continued here. The word TEST should not be broken!",
+                                                            ],
+                                                        },
+                                                    ),
+                                                    note: [
+                                                        "A note\nNote continued here. The word TEST should not be broken!",
+                                                    ],
+                                                    certainty_assessment: Some(
+                                                        "3",
+                                                    ),
+                                                },
+                                            ],
+                                            place: Some(
+                                                Place {
+                                                    place: "The place",
+                                                    format: None,
+                                                },
+                                            ),
+                                        },
+                                        age_at_event: None,
+                                    },
+                                ),
+                            },
+                        ),
+                        NaturalizationEvent(
+                            NaturalizationEvent {
+                                detail: Some(
+                                    IndividualEventDetail {
+                                        detail: EventDetail {
+                                            address: None,
+                                            event_type: None,
+                                            date: Some(
+                                                "31 DEC 1997",
+                                            ),
+                                            responsible_agency: None,
+                                            religious_affiliation: None,
+                                            cause_of_event: None,
+                                            restriction_notice: None,
+                                            notes: [
+                                                "NATURALIZATION event note (the event of obtaining citizenship)\nNote continued here. The word TEST should not be broken!",
+                                            ],
+                                            sources: [
+                                                SourceCitation {
+                                                    source: XRef {
+                                                        xref: Some(
+                                                            "@SOURCE1@",
+                                                        ),
+                                                    },
+                                                    page: Some(
+                                                        "42",
+                                                    ),
+                                                    event: None,
+                                                    data: Some(
+                                                        CitationData {
+                                                            entry_recording_date: Some(
+                                                                "31 DEC 1900",
+                                                            ),
+                                                            text_from_source: [
+                                                                "a sample text\nSample text continued here. The word TEST should not be broken!",
+                                                            ],
+                                                        },
+                                                    ),
+                                                    note: [
+                                                        "A note\nNote continued here. The word TEST should not be broken!",
+                                                    ],
+                                                    certainty_assessment: Some(
+                                                        "3",
+                                                    ),
+                                                },
+                                            ],
+                                            place: Some(
+                                                Place {
+                                                    place: "The place",
+                                                    format: None,
+                                                },
+                                            ),
+                                        },
+                                        age_at_event: None,
+                                    },
+                                ),
+                            },
+                        ),
+                        EmmigrationEvent(
+                            EmmigrationEvent {
+                                detail: Some(
+                                    IndividualEventDetail {
+                                        detail: EventDetail {
+                                            address: None,
+                                            event_type: None,
+                                            date: Some(
+                                                "31 DEC 1997",
+                                            ),
+                                            responsible_agency: None,
+                                            religious_affiliation: None,
+                                            cause_of_event: None,
+                                            restriction_notice: None,
+                                            notes: [
+                                                "EMIGRATION event note (an event of leaving one's homeland with the intent of residing elsewhere)\nNote continued here. The word TEST should not be broken!",
+                                            ],
+                                            sources: [
+                                                SourceCitation {
+                                                    source: XRef {
+                                                        xref: Some(
+                                                            "@SOURCE1@",
+                                                        ),
+                                                    },
+                                                    page: Some(
+                                                        "42",
+                                                    ),
+                                                    event: None,
+                                                    data: Some(
+                                                        CitationData {
+                                                            entry_recording_date: Some(
+                                                                "31 DEC 1900",
+                                                            ),
+                                                            text_from_source: [
+                                                                "a sample text\nSample text continued here. The word TEST should not be broken!",
+                                                            ],
+                                                        },
+                                                    ),
+                                                    note: [
+                                                        "A note\nNote continued here. The word TEST should not be broken!",
+                                                    ],
+                                                    certainty_assessment: Some(
+                                                        "3",
+                                                    ),
+                                                },
+                                            ],
+                                            place: Some(
+                                                Place {
+                                                    place: "The place",
+                                                    format: None,
+                                                },
+                                            ),
+                                        },
+                                        age_at_event: None,
+                                    },
+                                ),
+                            },
+                        ),
+                        ImmigrationEvent(
+                            ImmigrationEvent {
+                                detail: Some(
+                                    IndividualEventDetail {
+                                        detail: EventDetail {
+                                            address: None,
+                                            event_type: None,
+                                            date: Some(
+                                                "31 DEC 1997",
+                                            ),
+                                            responsible_agency: None,
+                                            religious_affiliation: None,
+                                            cause_of_event: None,
+                                            restriction_notice: None,
+                                            notes: [
+                                                "IMMIGRATION event note (an event of entering into a new locality with the intent of residing there)\nNote continued here. The word TEST should not be broken!",
+                                            ],
+                                            sources: [
+                                                SourceCitation {
+                                                    source: XRef {
+                                                        xref: Some(
+                                                            "@SOURCE1@",
+                                                        ),
+                                                    },
+                                                    page: Some(
+                                                        "42",
+                                                    ),
+                                                    event: None,
+                                                    data: Some(
+                                                        CitationData {
+                                                            entry_recording_date: Some(
+                                                                "31 DEC 1900",
+                                                            ),
+                                                            text_from_source: [
+                                                                "a sample text\nSample text continued here. The word TEST should not be broken!",
+                                                            ],
+                                                        },
+                                                    ),
+                                                    note: [
+                                                        "A note\nNote continued here. The word TEST should not be broken!",
+                                                    ],
+                                                    certainty_assessment: Some(
+                                                        "3",
+                                                    ),
+                                                },
+                                            ],
+                                            place: Some(
+                                                Place {
+                                                    place: "The place",
+                                                    format: None,
+                                                },
+                                            ),
+                                        },
+                                        age_at_event: None,
+                                    },
+                                ),
+                            },
+                        ),
+                        CensusEvent(
+                            CensusEvent {
+                                detail: Some(
+                                    IndividualEventDetail {
+                                        detail: EventDetail {
+                                            address: None,
+                                            event_type: None,
+                                            date: Some(
+                                                "31 DEC 1997",
+                                            ),
+                                            responsible_agency: None,
+                                            religious_affiliation: None,
+                                            cause_of_event: None,
+                                            restriction_notice: None,
+                                            notes: [
+                                                "CENSUS event note (the event of the periodic count of the population for a designated locality, such as a national or state Census)\nNote continued here. The word TEST should not be broken!",
+                                            ],
+                                            sources: [
+                                                SourceCitation {
+                                                    source: XRef {
+                                                        xref: Some(
+                                                            "@SOURCE1@",
+                                                        ),
+                                                    },
+                                                    page: Some(
+                                                        "42",
+                                                    ),
+                                                    event: None,
+                                                    data: Some(
+                                                        CitationData {
+                                                            entry_recording_date: Some(
+                                                                "31 DEC 1900",
+                                                            ),
+                                                            text_from_source: [
+                                                                "a sample text\nSample text continued here. The word TEST should not be broken!",
+                                                            ],
+                                                        },
+                                                    ),
+                                                    note: [
+                                                        "A note\nNote continued here. The word TEST should not be broken!",
+                                                    ],
+                                                    certainty_assessment: Some(
+                                                        "3",
+                                                    ),
+                                                },
+                                            ],
+                                            place: Some(
+                                                Place {
+                                                    place: "The place",
+                                                    format: None,
+                                                },
+                                            ),
+                                        },
+                                        age_at_event: None,
+                                    },
+                                ),
+                            },
+                        ),
+                        ProbateEvent(
+                            ProbateEvent {
+                                detail: Some(
+                                    IndividualEventDetail {
+                                        detail: EventDetail {
+                                            address: None,
+                                            event_type: None,
+                                            date: Some(
+                                                "31 DEC 1997",
+                                            ),
+                                            responsible_agency: None,
+                                            religious_affiliation: None,
+                                            cause_of_event: None,
+                                            restriction_notice: None,
+                                            notes: [
+                                                "PROBATE event note (an event of judicial determination of the validity of a will. May indicate several related court activities over several dates)\nNote continued here. The word TEST should not be broken!",
+                                            ],
+                                            sources: [
+                                                SourceCitation {
+                                                    source: XRef {
+                                                        xref: Some(
+                                                            "@SOURCE1@",
+                                                        ),
+                                                    },
+                                                    page: Some(
+                                                        "42",
+                                                    ),
+                                                    event: None,
+                                                    data: Some(
+                                                        CitationData {
+                                                            entry_recording_date: Some(
+                                                                "31 DEC 1900",
+                                                            ),
+                                                            text_from_source: [
+                                                                "a sample text\nSample text continued here. The word TEST should not be broken!",
+                                                            ],
+                                                        },
+                                                    ),
+                                                    note: [
+                                                        "A note\nNote continued here. The word TEST should not be broken!",
+                                                    ],
+                                                    certainty_assessment: Some(
+                                                        "3",
+                                                    ),
+                                                },
+                                            ],
+                                            place: Some(
+                                                Place {
+                                                    place: "The place",
+                                                    format: None,
+                                                },
+                                            ),
+                                        },
+                                        age_at_event: None,
+                                    },
+                                ),
+                            },
+                        ),
+                        WillEvent(
+                            WillEvent {
+                                detail: Some(
+                                    IndividualEventDetail {
+                                        detail: EventDetail {
+                                            address: None,
+                                            event_type: None,
+                                            date: Some(
+                                                "31 DEC 1997",
+                                            ),
+                                            responsible_agency: None,
+                                            religious_affiliation: None,
+                                            cause_of_event: None,
+                                            restriction_notice: None,
+                                            notes: [
+                                                "WILL event note (a legal document treated as an event, by which a person disposes of his or her estate, to take effect after death. The event date is the date the will was signed while the person was alive. See also PROBate)\nNote continued here. The word TEST should not be broken!",
+                                            ],
+                                            sources: [
+                                                SourceCitation {
+                                                    source: XRef {
+                                                        xref: Some(
+                                                            "@SOURCE1@",
+                                                        ),
+                                                    },
+                                                    page: Some(
+                                                        "42",
+                                                    ),
+                                                    event: None,
+                                                    data: Some(
+                                                        CitationData {
+                                                            entry_recording_date: Some(
+                                                                "31 DEC 1900",
+                                                            ),
+                                                            text_from_source: [
+                                                                "a sample text\nSample text continued here. The word TEST should not be broken!",
+                                                            ],
+                                                        },
+                                                    ),
+                                                    note: [
+                                                        "A note\nNote continued here. The word TEST should not be broken!",
+                                                    ],
+                                                    certainty_assessment: Some(
+                                                        "3",
+                                                    ),
+                                                },
+                                            ],
+                                            place: Some(
+                                                Place {
+                                                    place: "The place",
+                                                    format: None,
+                                                },
+                                            ),
+                                        },
+                                        age_at_event: None,
+                                    },
+                                ),
+                            },
+                        ),
+                        GraduationEvent(
+                            GraduationEvent {
+                                detail: Some(
+                                    IndividualEventDetail {
+                                        detail: EventDetail {
+                                            address: None,
+                                            event_type: None,
+                                            date: Some(
+                                                "31 DEC 1997",
+                                            ),
+                                            responsible_agency: None,
+                                            religious_affiliation: None,
+                                            cause_of_event: None,
+                                            restriction_notice: None,
+                                            notes: [
+                                                "GRADUATION event note (an event of awarding educational diplomas or degrees to individuals)\nNote continued here. The word TEST should not be broken!",
+                                            ],
+                                            sources: [
+                                                SourceCitation {
+                                                    source: XRef {
+                                                        xref: Some(
+                                                            "@SOURCE1@",
+                                                        ),
+                                                    },
+                                                    page: Some(
+                                                        "42",
+                                                    ),
+                                                    event: None,
+                                                    data: Some(
+                                                        CitationData {
+                                                            entry_recording_date: Some(
+                                                                "31 DEC 1900",
+                                                            ),
+                                                            text_from_source: [
+                                                                "a sample text\nSample text continued here. The word TEST should not be broken!",
+                                                            ],
+                                                        },
+                                                    ),
+                                                    note: [
+                                                        "A note\nNote continued here. The word TEST should not be broken!",
+                                                    ],
+                                                    certainty_assessment: Some(
+                                                        "3",
+                                                    ),
+                                                },
+                                            ],
+                                            place: Some(
+                                                Place {
+                                                    place: "The place",
+                                                    format: None,
+                                                },
+                                            ),
+                                        },
+                                        age_at_event: None,
+                                    },
+                                ),
+                            },
+                        ),
+                        RetirementEvent(
+                            RetirementEvent {
+                                detail: Some(
+                                    IndividualEventDetail {
+                                        detail: EventDetail {
+                                            address: None,
+                                            event_type: None,
+                                            date: Some(
+                                                "31 DEC 1997",
+                                            ),
+                                            responsible_agency: None,
+                                            religious_affiliation: None,
+                                            cause_of_event: None,
+                                            restriction_notice: None,
+                                            notes: [
+                                                "RETIREMENT event note (an event of exiting an occupational relationship with an employer after a qualifying time period)\nNote continued here. The word TEST should not be broken!",
+                                            ],
+                                            sources: [
+                                                SourceCitation {
+                                                    source: XRef {
+                                                        xref: Some(
+                                                            "@SOURCE1@",
+                                                        ),
+                                                    },
+                                                    page: Some(
+                                                        "42",
+                                                    ),
+                                                    event: None,
+                                                    data: Some(
+                                                        CitationData {
+                                                            entry_recording_date: Some(
+                                                                "31 DEC 1900",
+                                                            ),
+                                                            text_from_source: [
+                                                                "a sample text\nSample text continued here. The word TEST should not be broken!",
+                                                            ],
+                                                        },
+                                                    ),
+                                                    note: [
+                                                        "A note\nNote continued here. The word TEST should not be broken!",
+                                                    ],
+                                                    certainty_assessment: Some(
+                                                        "3",
+                                                    ),
+                                                },
+                                            ],
+                                            place: Some(
+                                                Place {
+                                                    place: "The place",
+                                                    format: None,
+                                                },
+                                            ),
+                                        },
+                                        age_at_event: None,
+                                    },
+                                ),
+                            },
+                        ),
+                        EventEvent(
+                            EventEvent {
+                                event_type: None,
+                                detail: Some(
+                                    IndividualEventDetail {
+                                        detail: EventDetail {
+                                            address: None,
+                                            event_type: Some(
+                                                "Event type",
+                                            ),
+                                            date: Some(
+                                                "31 DEC 1997",
+                                            ),
+                                            responsible_agency: None,
+                                            religious_affiliation: None,
+                                            cause_of_event: None,
+                                            restriction_notice: None,
+                                            notes: [
+                                                "EVENT note (a noteworthy happening related to an individual, a group, or an organization)\nNote continued here. The word TEST should not be broken!",
+                                            ],
+                                            sources: [
+                                                SourceCitation {
+                                                    source: XRef {
+                                                        xref: Some(
+                                                            "@SOURCE1@",
+                                                        ),
+                                                    },
+                                                    page: Some(
+                                                        "42",
+                                                    ),
+                                                    event: None,
+                                                    data: Some(
+                                                        CitationData {
+                                                            entry_recording_date: Some(
+                                                                "31 DEC 1900",
+                                                            ),
+                                                            text_from_source: [
+                                                                "a sample text\nSample text continued here. The word TEST should not be broken!",
+                                                            ],
+                                                        },
+                                                    ),
+                                                    note: [
+                                                        "A note\nNote continued here. The word TEST should not be broken!",
+                                                    ],
+                                                    certainty_assessment: Some(
+                                                        "3",
+                                                    ),
+                                                },
+                                            ],
+                                            place: Some(
+                                                Place {
+                                                    place: "The place",
+                                                    format: None,
+                                                },
+                                            ),
+                                        },
+                                        age_at_event: None,
+                                    },
+                                ),
+                            },
+                        ),
+                    ],
+                    attributes: [
+                        CasteName(
+                            CasteName {
+                                caste_name: "Cast name",
+                                detail: Some(
+                                    IndividualEventDetail {
+                                        detail: EventDetail {
+                                            address: None,
+                                            event_type: None,
+                                            date: Some(
+                                                "31 DEC 1997",
+                                            ),
+                                            responsible_agency: None,
+                                            religious_affiliation: None,
+                                            cause_of_event: None,
+                                            restriction_notice: None,
+                                            notes: [
+                                                "CASTE event note (the name of an individual's rank or status in society, based   on racial or religious differences, or differences in wealth, inherited   rank, profession, occupation, etc)\nNote continued here. The word TEST should not be broken!",
+                                            ],
+                                            sources: [
+                                                SourceCitation {
+                                                    source: XRef {
+                                                        xref: Some(
+                                                            "@SOURCE1@",
+                                                        ),
+                                                    },
+                                                    page: Some(
+                                                        "42",
+                                                    ),
+                                                    event: None,
+                                                    data: Some(
+                                                        CitationData {
+                                                            entry_recording_date: Some(
+                                                                "31 DEC 1900",
+                                                            ),
+                                                            text_from_source: [
+                                                                "a sample text\nSample text continued here. The word TEST should not be broken!",
+                                                            ],
+                                                        },
+                                                    ),
+                                                    note: [
+                                                        "A note\nNote continued here. The word TEST should not be broken!",
+                                                    ],
+                                                    certainty_assessment: Some(
+                                                        "3",
+                                                    ),
+                                                },
+                                            ],
+                                            place: Some(
+                                                Place {
+                                                    place: "The place",
+                                                    format: None,
+                                                },
+                                            ),
+                                        },
+                                        age_at_event: None,
+                                    },
+                                ),
+                            },
+                        ),
+                        PhysicalDescription(
+                            PhysicalDescription {
+                                physical_description: "Physical description",
+                                detail: Some(
+                                    IndividualEventDetail {
+                                        detail: EventDetail {
+                                            address: None,
+                                            event_type: None,
+                                            date: Some(
+                                                "31 DEC 1997",
+                                            ),
+                                            responsible_agency: None,
+                                            religious_affiliation: None,
+                                            cause_of_event: None,
+                                            restriction_notice: None,
+                                            notes: [
+                                                "PHY_DESCRIPTION event note (the physical characteristics of a person, place, or thing)\nNote continued here. The word TEST should not be broken!",
+                                            ],
+                                            sources: [
+                                                SourceCitation {
+                                                    source: XRef {
+                                                        xref: Some(
+                                                            "@SOURCE1@",
+                                                        ),
+                                                    },
+                                                    page: Some(
+                                                        "42",
+                                                    ),
+                                                    event: None,
+                                                    data: Some(
+                                                        CitationData {
+                                                            entry_recording_date: Some(
+                                                                "31 DEC 1900",
+                                                            ),
+                                                            text_from_source: [
+                                                                "a sample text\nSample text continued here. The word TEST should not be broken!",
+                                                            ],
+                                                        },
+                                                    ),
+                                                    note: [
+                                                        "A note\nNote continued here. The word TEST should not be broken!",
+                                                    ],
+                                                    certainty_assessment: Some(
+                                                        "3",
+                                                    ),
+                                                },
+                                            ],
+                                            place: Some(
+                                                Place {
+                                                    place: "The place",
+                                                    format: None,
+                                                },
+                                            ),
+                                        },
+                                        age_at_event: None,
+                                    },
+                                ),
+                            },
+                        ),
+                        ScholasticAchievement(
+                            ScholasticAchievement {
+                                scholastic_achievement: "Education",
+                                detail: Some(
+                                    IndividualEventDetail {
+                                        detail: EventDetail {
+                                            address: None,
+                                            event_type: None,
+                                            date: Some(
+                                                "31 DEC 1997",
+                                            ),
+                                            responsible_agency: None,
+                                            religious_affiliation: None,
+                                            cause_of_event: None,
+                                            restriction_notice: None,
+                                            notes: [
+                                                "EDUCATION event note (Indicator of a level of education attained)\nNote continued here. The word TEST should not be broken!",
+                                            ],
+                                            sources: [
+                                                SourceCitation {
+                                                    source: XRef {
+                                                        xref: Some(
+                                                            "@SOURCE1@",
+                                                        ),
+                                                    },
+                                                    page: Some(
+                                                        "42",
+                                                    ),
+                                                    event: None,
+                                                    data: Some(
+                                                        CitationData {
+                                                            entry_recording_date: Some(
+                                                                "31 DEC 1900",
+                                                            ),
+                                                            text_from_source: [
+                                                                "a sample text\nSample text continued here. The word TEST should not be broken!",
+                                                            ],
+                                                        },
+                                                    ),
+                                                    note: [
+                                                        "A note\nNote continued here. The word TEST should not be broken!",
+                                                    ],
+                                                    certainty_assessment: Some(
+                                                        "3",
+                                                    ),
+                                                },
+                                            ],
+                                            place: Some(
+                                                Place {
+                                                    place: "The place",
+                                                    format: None,
+                                                },
+                                            ),
+                                        },
+                                        age_at_event: None,
+                                    },
+                                ),
+                            },
+                        ),
+                        NationalIdNumber(
+                            NationalIdNumber {
+                                national_id_number: "6942",
+                                detail: Some(
+                                    IndividualEventDetail {
+                                        detail: EventDetail {
+                                            address: None,
+                                            event_type: Some(
+                                                "type of ID number",
+                                            ),
+                                            date: Some(
+                                                "31 DEC 1997",
+                                            ),
+                                            responsible_agency: None,
+                                            religious_affiliation: None,
+                                            cause_of_event: None,
+                                            restriction_notice: None,
+                                            notes: [
+                                                "IDENT_NUMBER event note (A number assigned to identify a person within some significant external system)\nNote continued here. The word TEST should not be broken!",
+                                            ],
+                                            sources: [
+                                                SourceCitation {
+                                                    source: XRef {
+                                                        xref: Some(
+                                                            "@SOURCE1@",
+                                                        ),
+                                                    },
+                                                    page: Some(
+                                                        "42",
+                                                    ),
+                                                    event: None,
+                                                    data: Some(
+                                                        CitationData {
+                                                            entry_recording_date: Some(
+                                                                "31 DEC 1900",
+                                                            ),
+                                                            text_from_source: [
+                                                                "a sample text\nSample text continued here. The word TEST should not be broken!",
+                                                            ],
+                                                        },
+                                                    ),
+                                                    note: [
+                                                        "A note\nNote continued here. The word TEST should not be broken!",
+                                                    ],
+                                                    certainty_assessment: Some(
+                                                        "3",
+                                                    ),
+                                                },
+                                            ],
+                                            place: Some(
+                                                Place {
+                                                    place: "The place",
+                                                    format: None,
+                                                },
+                                            ),
+                                        },
+                                        age_at_event: None,
+                                    },
+                                ),
+                            },
+                        ),
+                        NationalOrTribalOrigin(
+                            NationalOrTribalOrigin {
+                                national_or_tribal_origin: "National or tribe origin",
+                                detail: Some(
+                                    IndividualEventDetail {
+                                        detail: EventDetail {
+                                            address: None,
+                                            event_type: None,
+                                            date: Some(
+                                                "31 DEC 1997",
+                                            ),
+                                            responsible_agency: None,
+                                            religious_affiliation: None,
+                                            cause_of_event: None,
+                                            restriction_notice: None,
+                                            notes: [
+                                                "NATIONALITY event note (the national heritage of an individual)\nNote continued here. The word TEST should not be broken!",
+                                            ],
+                                            sources: [
+                                                SourceCitation {
+                                                    source: XRef {
+                                                        xref: Some(
+                                                            "@SOURCE1@",
+                                                        ),
+                                                    },
+                                                    page: Some(
+                                                        "42",
+                                                    ),
+                                                    event: None,
+                                                    data: Some(
+                                                        CitationData {
+                                                            entry_recording_date: Some(
+                                                                "31 DEC 1900",
+                                                            ),
+                                                            text_from_source: [
+                                                                "a sample text\nSample text continued here. The word TEST should not be broken!",
+                                                            ],
+                                                        },
+                                                    ),
+                                                    note: [
+                                                        "A note\nNote continued here. The word TEST should not be broken!",
+                                                    ],
+                                                    certainty_assessment: Some(
+                                                        "3",
+                                                    ),
+                                                },
+                                            ],
+                                            place: Some(
+                                                Place {
+                                                    place: "The place",
+                                                    format: None,
+                                                },
+                                            ),
+                                        },
+                                        age_at_event: None,
+                                    },
+                                ),
+                            },
+                        ),
+                        CountOfChildren(
+                            CountOfChildren {
+                                count_of_children: "42",
+                                detail: Some(
+                                    IndividualEventDetail {
+                                        detail: EventDetail {
+                                            address: None,
+                                            event_type: None,
+                                            date: Some(
+                                                "31 DEC 1997",
+                                            ),
+                                            responsible_agency: None,
+                                            religious_affiliation: None,
+                                            cause_of_event: None,
+                                            restriction_notice: None,
+                                            notes: [
+                                                "Children number event note\nNote continued here. The word TEST should not be broken!",
+                                            ],
+                                            sources: [
+                                                SourceCitation {
+                                                    source: XRef {
+                                                        xref: Some(
+                                                            "@SOURCE1@",
+                                                        ),
+                                                    },
+                                                    page: Some(
+                                                        "42",
+                                                    ),
+                                                    event: None,
+                                                    data: Some(
+                                                        CitationData {
+                                                            entry_recording_date: Some(
+                                                                "31 DEC 1900",
+                                                            ),
+                                                            text_from_source: [
+                                                                "a sample text\nSample text continued here. The word TEST should not be broken!",
+                                                            ],
+                                                        },
+                                                    ),
+                                                    note: [
+                                                        "A note\nNote continued here. The word TEST should not be broken!",
+                                                    ],
+                                                    certainty_assessment: Some(
+                                                        "3",
+                                                    ),
+                                                },
+                                            ],
+                                            place: Some(
+                                                Place {
+                                                    place: "The place",
+                                                    format: None,
+                                                },
+                                            ),
+                                        },
+                                        age_at_event: None,
+                                    },
+                                ),
+                            },
+                        ),
+                        CountOfMarriages(
+                            CountOfMarriages {
+                                count_of_marriages: "42",
+                                detail: Some(
+                                    IndividualEventDetail {
+                                        detail: EventDetail {
+                                            address: None,
+                                            event_type: None,
+                                            date: Some(
+                                                "31 DEC 1997",
+                                            ),
+                                            responsible_agency: None,
+                                            religious_affiliation: None,
+                                            cause_of_event: None,
+                                            restriction_notice: None,
+                                            notes: [
+                                                "Marriages number event note\nNote continued here. The word TEST should not be broken!",
+                                            ],
+                                            sources: [
+                                                SourceCitation {
+                                                    source: XRef {
+                                                        xref: Some(
+                                                            "@SOURCE1@",
+                                                        ),
+                                                    },
+                                                    page: Some(
+                                                        "42",
+                                                    ),
+                                                    event: None,
+                                                    data: Some(
+                                                        CitationData {
+                                                            entry_recording_date: Some(
+                                                                "31 DEC 1900",
+                                                            ),
+                                                            text_from_source: [
+                                                                "a sample text\nSample text continued here. The word TEST should not be broken!",
+                                                            ],
+                                                        },
+                                                    ),
+                                                    note: [
+                                                        "A note\nNote continued here. The word TEST should not be broken!",
+                                                    ],
+                                                    certainty_assessment: Some(
+                                                        "3",
+                                                    ),
+                                                },
+                                            ],
+                                            place: Some(
+                                                Place {
+                                                    place: "The place",
+                                                    format: None,
+                                                },
+                                            ),
+                                        },
+                                        age_at_event: None,
+                                    },
+                                ),
+                            },
+                        ),
+                        Occupation(
+                            Occupation {
+                                occupation: "Occupation",
+                                detail: Some(
+                                    IndividualEventDetail {
+                                        detail: EventDetail {
+                                            address: None,
+                                            event_type: None,
+                                            date: Some(
+                                                "31 DEC 1997",
+                                            ),
+                                            responsible_agency: None,
+                                            religious_affiliation: None,
+                                            cause_of_event: None,
+                                            restriction_notice: None,
+                                            notes: [
+                                                "OCCUPATION event note (The type of work or profession of an individual)\nNote continued here. The word TEST should not be broken!",
+                                            ],
+                                            sources: [
+                                                SourceCitation {
+                                                    source: XRef {
+                                                        xref: Some(
+                                                            "@SOURCE1@",
+                                                        ),
+                                                    },
+                                                    page: Some(
+                                                        "42",
+                                                    ),
+                                                    event: None,
+                                                    data: Some(
+                                                        CitationData {
+                                                            entry_recording_date: Some(
+                                                                "31 DEC 1900",
+                                                            ),
+                                                            text_from_source: [
+                                                                "a sample text\nSample text continued here. The word TEST should not be broken!",
+                                                            ],
+                                                        },
+                                                    ),
+                                                    note: [
+                                                        "A note\nNote continued here. The word TEST should not be broken!",
+                                                    ],
+                                                    certainty_assessment: Some(
+                                                        "3",
+                                                    ),
+                                                },
+                                            ],
+                                            place: Some(
+                                                Place {
+                                                    place: "The place",
+                                                    format: None,
+                                                },
+                                            ),
+                                        },
+                                        age_at_event: None,
+                                    },
+                                ),
+                            },
+                        ),
+                        Occupation(
+                            Occupation {
+                                occupation: "Another occupation",
+                                detail: Some(
+                                    IndividualEventDetail {
+                                        detail: EventDetail {
+                                            address: None,
+                                            event_type: None,
+                                            date: Some(
+                                                "31 DEC 1998",
+                                            ),
+                                            responsible_agency: None,
+                                            religious_affiliation: None,
+                                            cause_of_event: None,
+                                            restriction_notice: None,
+                                            notes: [
+                                                "Occupation event note\nNote continued here. The word TEST should not be broken!",
+                                            ],
+                                            sources: [
+                                                SourceCitation {
+                                                    source: XRef {
+                                                        xref: Some(
+                                                            "@SOURCE1@",
+                                                        ),
+                                                    },
+                                                    page: Some(
+                                                        "42",
+                                                    ),
+                                                    event: None,
+                                                    data: Some(
+                                                        CitationData {
+                                                            entry_recording_date: Some(
+                                                                "31 DEC 1900",
+                                                            ),
+                                                            text_from_source: [
+                                                                "a sample text\nSample text continued here. The word TEST should not be broken!",
+                                                            ],
+                                                        },
+                                                    ),
+                                                    note: [
+                                                        "A note\nNote continued here. The word TEST should not be broken!",
+                                                    ],
+                                                    certainty_assessment: Some(
+                                                        "3",
+                                                    ),
+                                                },
+                                            ],
+                                            place: Some(
+                                                Place {
+                                                    place: "The place",
+                                                    format: None,
+                                                },
+                                            ),
+                                        },
+                                        age_at_event: None,
+                                    },
+                                ),
+                            },
+                        ),
+                        Possessions(
+                            Possessions {
+                                possessions: "Possessions",
+                                detail: Some(
+                                    IndividualEventDetail {
+                                        detail: EventDetail {
+                                            address: None,
+                                            event_type: None,
+                                            date: Some(
+                                                "31 DEC 1997",
+                                            ),
+                                            responsible_agency: None,
+                                            religious_affiliation: None,
+                                            cause_of_event: None,
+                                            restriction_notice: None,
+                                            notes: [
+                                                "PROPERTY event note (pertaining to possessions such as real estate or other property of interest)\nNote continued here. The word TEST should not be broken!",
+                                            ],
+                                            sources: [
+                                                SourceCitation {
+                                                    source: XRef {
+                                                        xref: Some(
+                                                            "@SOURCE1@",
+                                                        ),
+                                                    },
+                                                    page: Some(
+                                                        "42",
+                                                    ),
+                                                    event: None,
+                                                    data: Some(
+                                                        CitationData {
+                                                            entry_recording_date: Some(
+                                                                "31 DEC 1900",
+                                                            ),
+                                                            text_from_source: [
+                                                                "a sample text\nSample text continued here. The word TEST should not be broken!",
+                                                            ],
+                                                        },
+                                                    ),
+                                                    note: [
+                                                        "A note\nNote continued here. The word TEST should not be broken!",
+                                                    ],
+                                                    certainty_assessment: Some(
+                                                        "3",
+                                                    ),
+                                                },
+                                            ],
+                                            place: Some(
+                                                Place {
+                                                    place: "The place",
+                                                    format: None,
+                                                },
+                                            ),
+                                        },
+                                        age_at_event: None,
+                                    },
+                                ),
+                            },
+                        ),
+                        ReligiousAffiliation(
+                            ReligiousAffiliation {
+                                religious_affiliation: "Religion",
+                                detail: Some(
+                                    IndividualEventDetail {
+                                        detail: EventDetail {
+                                            address: None,
+                                            event_type: None,
+                                            date: Some(
+                                                "31 DEC 1997",
+                                            ),
+                                            responsible_agency: None,
+                                            religious_affiliation: None,
+                                            cause_of_event: None,
+                                            restriction_notice: None,
+                                            notes: [
+                                                "RELIGION event note (a religious denomination to which a person is affiliated or for which a record applies)\nNote continued here. The word TEST should not be broken!",
+                                            ],
+                                            sources: [
+                                                SourceCitation {
+                                                    source: XRef {
+                                                        xref: Some(
+                                                            "@SOURCE1@",
+                                                        ),
+                                                    },
+                                                    page: Some(
+                                                        "42",
+                                                    ),
+                                                    event: None,
+                                                    data: Some(
+                                                        CitationData {
+                                                            entry_recording_date: Some(
+                                                                "31 DEC 1900",
+                                                            ),
+                                                            text_from_source: [
+                                                                "a sample text\nSample text continued here. The word TEST should not be broken!",
+                                                            ],
+                                                        },
+                                                    ),
+                                                    note: [
+                                                        "A note\nNote continued here. The word TEST should not be broken!",
+                                                    ],
+                                                    certainty_assessment: Some(
+                                                        "3",
+                                                    ),
+                                                },
+                                            ],
+                                            place: Some(
+                                                Place {
+                                                    place: "The place",
+                                                    format: None,
+                                                },
+                                            ),
+                                        },
+                                        age_at_event: None,
+                                    },
+                                ),
+                            },
+                        ),
+                        Residence(
+                            Residence {
+                                detail: Some(
+                                    IndividualEventDetail {
+                                        detail: EventDetail {
+                                            address: None,
+                                            event_type: None,
+                                            date: Some(
+                                                "31 DEC 1997",
+                                            ),
+                                            responsible_agency: None,
+                                            religious_affiliation: None,
+                                            cause_of_event: None,
+                                            restriction_notice: None,
+                                            notes: [
+                                                "RESIDENCE event note (The act of dwelling at an address for a period of time)\nNote continued here. The word TEST should not be broken!",
+                                            ],
+                                            sources: [
+                                                SourceCitation {
+                                                    source: XRef {
+                                                        xref: Some(
+                                                            "@SOURCE1@",
+                                                        ),
+                                                    },
+                                                    page: Some(
+                                                        "42",
+                                                    ),
+                                                    event: None,
+                                                    data: Some(
+                                                        CitationData {
+                                                            entry_recording_date: Some(
+                                                                "31 DEC 1900",
+                                                            ),
+                                                            text_from_source: [
+                                                                "a sample text\nSample text continued here. The word TEST should not be broken!",
+                                                            ],
+                                                        },
+                                                    ),
+                                                    note: [
+                                                        "A note\nNote continued here. The word TEST should not be broken!",
+                                                    ],
+                                                    certainty_assessment: Some(
+                                                        "3",
+                                                    ),
+                                                },
+                                            ],
+                                            place: Some(
+                                                Place {
+                                                    place: "The place",
+                                                    format: None,
+                                                },
+                                            ),
+                                        },
+                                        age_at_event: None,
+                                    },
+                                ),
+                            },
+                        ),
+                        SocialSecurityNumber(
+                            SocialSecurityNumber {
+                                social_security_number: "6942",
+                                detail: Some(
+                                    IndividualEventDetail {
+                                        detail: EventDetail {
+                                            address: None,
+                                            event_type: None,
+                                            date: Some(
+                                                "31 DEC 1997",
+                                            ),
+                                            responsible_agency: None,
+                                            religious_affiliation: None,
+                                            cause_of_event: None,
+                                            restriction_notice: None,
+                                            notes: [
+                                                "SOC_SEC_NUMBER event note (a number assigned by the United States Social Security Administration. Used for tax identification purposes)\nNote continued here. The word TEST should not be broken!",
+                                            ],
+                                            sources: [
+                                                SourceCitation {
+                                                    source: XRef {
+                                                        xref: Some(
+                                                            "@SOURCE1@",
+                                                        ),
+                                                    },
+                                                    page: Some(
+                                                        "42",
+                                                    ),
+                                                    event: None,
+                                                    data: Some(
+                                                        CitationData {
+                                                            entry_recording_date: Some(
+                                                                "31 DEC 1900",
+                                                            ),
+                                                            text_from_source: [
+                                                                "a sample text\nSample text continued here. The word TEST should not be broken!",
+                                                            ],
+                                                        },
+                                                    ),
+                                                    note: [
+                                                        "A note\nNote continued here. The word TEST should not be broken!",
+                                                    ],
+                                                    certainty_assessment: Some(
+                                                        "3",
+                                                    ),
+                                                },
+                                            ],
+                                            place: Some(
+                                                Place {
+                                                    place: "The place",
+                                                    format: None,
+                                                },
+                                            ),
+                                        },
+                                        age_at_event: None,
+                                    },
+                                ),
+                            },
+                        ),
+                        NobilityTypeTitle(
+                            NobilityTypeTitle {
+                                nobility_type_title: "Nobility title",
+                                detail: Some(
+                                    IndividualEventDetail {
+                                        detail: EventDetail {
+                                            address: None,
+                                            event_type: None,
+                                            date: Some(
+                                                "31 DEC 1997",
+                                            ),
+                                            responsible_agency: None,
+                                            religious_affiliation: None,
+                                            cause_of_event: None,
+                                            restriction_notice: None,
+                                            notes: [
+                                                "TITLE event note (a description of a specific writing or other work, such as the title of a book when used in a source context, or a formal designation used by an individual in connection with positions of royalty or other social status, \nsuch as Grand Duke)\nNote continued here. The word TEST should not be broken!",
+                                            ],
+                                            sources: [
+                                                SourceCitation {
+                                                    source: XRef {
+                                                        xref: Some(
+                                                            "@SOURCE1@",
+                                                        ),
+                                                    },
+                                                    page: Some(
+                                                        "42",
+                                                    ),
+                                                    event: None,
+                                                    data: Some(
+                                                        CitationData {
+                                                            entry_recording_date: Some(
+                                                                "31 DEC 1900",
+                                                            ),
+                                                            text_from_source: [
+                                                                "a sample text\nSample text continued here. The word TEST should not be broken!",
+                                                            ],
+                                                        },
+                                                    ),
+                                                    note: [
+                                                        "A note\nNote continued here. The word TEST should not be broken!",
+                                                    ],
+                                                    certainty_assessment: Some(
+                                                        "3",
+                                                    ),
+                                                },
+                                            ],
+                                            place: Some(
+                                                Place {
+                                                    place: "The place",
+                                                    format: None,
+                                                },
+                                            ),
+                                        },
+                                        age_at_event: None,
+                                    },
+                                ),
+                            },
+                        ),
+                    ],
+                    restriction_notice: None,
+                    names: [
+                        Name {
+                            personal_name: "given name /surname/jr.",
+                            pieces: Some(
+                                NamePieces {
+                                    prefix: None,
+                                    given: None,
+                                    nickname: None,
+                                    surname_prefix: None,
+                                    surname: None,
+                                    suffix: None,
+                                    notes: [
+                                        "Personal Name note\nNote continued here. The word TEST should not be broken!",
+                                    ],
+                                    sources: [
+                                        SourceCitation {
+                                            source: XRef {
+                                                xref: Some(
+                                                    "@SOURCE1@",
+                                                ),
+                                            },
+                                            page: Some(
+                                                "42",
+                                            ),
+                                            event: None,
+                                            data: Some(
+                                                CitationData {
+                                                    entry_recording_date: Some(
+                                                        "BEF 1 JAN 1900",
+                                                    ),
+                                                    text_from_source: [
+                                                        "a sample text\nSample text continued here. The word TEST should not be broken!",
+                                                    ],
+                                                },
+                                            ),
+                                            note: [
+                                                "A note\nNote continued here. The word TEST should not be broken!",
+                                            ],
+                                            certainty_assessment: Some(
+                                                "0",
+                                            ),
+                                        },
+                                    ],
+                                },
+                            ),
+                            name_type: None,
+                            phonetic: [],
+                            romanized: [],
+                        },
+                        Name {
+                            personal_name: "another name /surname/",
+                            pieces: Some(
+                                NamePieces {
+                                    prefix: None,
+                                    given: None,
+                                    nickname: None,
+                                    surname_prefix: None,
+                                    surname: None,
+                                    suffix: None,
+                                    notes: [
+                                        "Personal Name note\nNote continued here. The word TEST should not be broken!",
+                                    ],
+                                    sources: [
+                                        SourceCitation {
+                                            source: XRef {
+                                                xref: Some(
+                                                    "@SOURCE1@",
+                                                ),
+                                            },
+                                            page: Some(
+                                                "42",
+                                            ),
+                                            event: None,
+                                            data: Some(
+                                                CitationData {
+                                                    entry_recording_date: Some(
+                                                        "AFT 1 JAN 1900",
+                                                    ),
+                                                    text_from_source: [
+                                                        "a sample text\nSample text continued here. The word TEST should not be broken!",
+                                                    ],
+                                                },
+                                            ),
+                                            note: [
+                                                "A note\nNote continued here. The word TEST should not be broken!",
+                                            ],
+                                            certainty_assessment: Some(
+                                                "1",
+                                            ),
+                                        },
+                                    ],
+                                },
+                            ),
+                            name_type: None,
+                            phonetic: [],
+                            romanized: [],
+                        },
+                    ],
+                    sex: Some(
+                        "M",
+                    ),
+                    child_family_link: [
+                        ChildFamilyLink {
+                            family: XRef {
+                                xref: Some(
+                                    "@PARENTS@",
+                                ),
+                            },
+                            pedigree_linkage_type: Some(
+                                "birth",
+                            ),
+                            status: None,
+                            notes: [
+                                "Note about the link to parents\nNote continued here. The word TEST should not be broken!",
+                                "Another note about the link to parents\nNote continued here. The word TEST should not be broken!",
+                            ],
+                        },
+                        ChildFamilyLink {
+                            family: XRef {
+                                xref: Some(
+                                    "@ADOPTIVE_PARENTS@",
+                                ),
+                            },
+                            pedigree_linkage_type: Some(
+                                "adopted",
+                            ),
+                            status: None,
+                            notes: [
+                                "Note about the link to adoptive parents\nNote continued here. The word TEST should not be broken!",
+                            ],
+                        },
+                    ],
+                    spouse_family_link: [
+                        SpouseFamilyLink {
+                            family: XRef {
+                                xref: Some(
+                                    "@FAMILY1@",
+                                ),
+                            },
+                            notes: [
+                                "Note about the link to spouse\nNote continued here. The word TEST should not be broken!",
+                                "Another note about the link to spouse\nNote continued here. The word TEST should not be broken!",
+                            ],
+                        },
+                        SpouseFamilyLink {
+                            family: XRef {
+                                xref: Some(
+                                    "@FAMILY2@",
+                                ),
+                            },
+                            notes: [],
+                        },
+                    ],
+                    submitter: None,
+                    alias: [],
+                    ancestor_interest: [],
+                    descendant_interest: [],
+                    record_file_number: None,
+                    ancestral_file_number: None,
+                    user_reference_number: [],
+                    automated_record_id: None,
+                    change_date: Some(
+                        ChangeDate {
+                            date: DateTime {
+                                date: "1 APR 1998",
+                                time: Some(
+                                    "12:34:56.789",
+                                ),
+                            },
+                            note: [
+                                "A note\nNote continued here. The word TEST should not be broken!",
+                            ],
+                        },
+                    ),
+                    notes: [
+                        "A note about the inidvidual\nNote continued here. The word TEST should not be broken!",
+                    ],
+                    source_citations: [
+                        SourceCitation {
+                            source: XRef {
+                                xref: Some(
+                                    "@SOURCE1@",
+                                ),
+                            },
+                            page: Some(
+                                "42",
+                            ),
+                            event: None,
+                            data: Some(
+                                CitationData {
+                                    entry_recording_date: Some(
+                                        "31 DEC 1900",
+                                    ),
+                                    text_from_source: [
+                                        "a sample text\nSample text continued here. The word TEST should not be broken!",
+                                    ],
+                                },
+                            ),
+                            note: [
+                                "A note\nNote continued here. The word TEST should not be broken!",
+                            ],
+                            certainty_assessment: Some(
+                                "0",
+                            ),
+                        },
+                    ],
+                    multimedia_links: [
+                        MultimediaLink_55 {
+                            file_reference: "\\\\network\\drive\\path\\file name.gif",
+                            format: MultimediaFormat {
+                                format: "gif",
+                                source_media_type: None,
+                            },
+                            descriptive_title: Some(
+                                "A gif picture",
+                            ),
+                            notes: [
+                                "A note\nNote continued here. The word TEST should not be broken!",
+                            ],
+                        },
+                    ],
+                },
+            ),
+            Individual(
+                Individual {
+                    events: [],
+                    attributes: [],
+                    restriction_notice: None,
+                    names: [
+                        Name {
+                            personal_name: "/Wife/",
+                            pieces: None,
+                            name_type: None,
+                            phonetic: [],
+                            romanized: [],
+                        },
+                    ],
+                    sex: Some(
+                        "F",
+                    ),
+                    child_family_link: [],
+                    spouse_family_link: [
+                        SpouseFamilyLink {
+                            family: XRef {
+                                xref: Some(
+                                    "@FAMILY1@",
+                                ),
+                            },
+                            notes: [],
+                        },
+                    ],
+                    submitter: None,
+                    alias: [],
+                    ancestor_interest: [],
+                    descendant_interest: [],
+                    record_file_number: None,
+                    ancestral_file_number: None,
+                    user_reference_number: [],
+                    automated_record_id: None,
+                    change_date: None,
+                    notes: [],
+                    source_citations: [],
+                    multimedia_links: [],
+                },
+            ),
+            Individual(
+                Individual {
+                    events: [],
+                    attributes: [],
+                    restriction_notice: None,
+                    names: [
+                        Name {
+                            personal_name: "/Child 1/",
+                            pieces: None,
+                            name_type: None,
+                            phonetic: [],
+                            romanized: [],
+                        },
+                    ],
+                    sex: None,
+                    child_family_link: [
+                        ChildFamilyLink {
+                            family: XRef {
+                                xref: Some(
+                                    "@FAMILY1@",
+                                ),
+                            },
+                            pedigree_linkage_type: None,
+                            status: None,
+                            notes: [],
+                        },
+                    ],
+                    spouse_family_link: [],
+                    submitter: None,
+                    alias: [],
+                    ancestor_interest: [],
+                    descendant_interest: [],
+                    record_file_number: None,
+                    ancestral_file_number: None,
+                    user_reference_number: [],
+                    automated_record_id: None,
+                    change_date: None,
+                    notes: [],
+                    source_citations: [],
+                    multimedia_links: [],
+                },
+            ),
+            Individual(
+                Individual {
+                    events: [],
+                    attributes: [],
+                    restriction_notice: None,
+                    names: [
+                        Name {
+                            personal_name: "/Child 2/",
+                            pieces: None,
+                            name_type: None,
+                            phonetic: [],
+                            romanized: [],
+                        },
+                    ],
+                    sex: None,
+                    child_family_link: [
+                        ChildFamilyLink {
+                            family: XRef {
+                                xref: Some(
+                                    "@FAMILY1@",
+                                ),
+                            },
+                            pedigree_linkage_type: None,
+                            status: None,
+                            notes: [],
+                        },
+                    ],
+                    spouse_family_link: [],
+                    submitter: None,
+                    alias: [],
+                    ancestor_interest: [],
+                    descendant_interest: [],
+                    record_file_number: None,
+                    ancestral_file_number: None,
+                    user_reference_number: [],
+                    automated_record_id: None,
+                    change_date: None,
+                    notes: [],
+                    source_citations: [],
+                    multimedia_links: [],
+                },
+            ),
+            Individual(
+                Individual {
+                    events: [],
+                    attributes: [],
+                    restriction_notice: None,
+                    names: [
+                        Name {
+                            personal_name: "/Father/",
+                            pieces: None,
+                            name_type: None,
+                            phonetic: [],
+                            romanized: [],
+                        },
+                    ],
+                    sex: Some(
+                        "M",
+                    ),
+                    child_family_link: [],
+                    spouse_family_link: [
+                        SpouseFamilyLink {
+                            family: XRef {
+                                xref: Some(
+                                    "@PARENTS@",
+                                ),
+                            },
+                            notes: [],
+                        },
+                    ],
+                    submitter: None,
+                    alias: [],
+                    ancestor_interest: [],
+                    descendant_interest: [],
+                    record_file_number: None,
+                    ancestral_file_number: None,
+                    user_reference_number: [],
+                    automated_record_id: None,
+                    change_date: None,
+                    notes: [],
+                    source_citations: [],
+                    multimedia_links: [],
+                },
+            ),
+            Individual(
+                Individual {
+                    events: [],
+                    attributes: [],
+                    restriction_notice: None,
+                    names: [
+                        Name {
+                            personal_name: "/Adoptive mother/",
+                            pieces: None,
+                            name_type: None,
+                            phonetic: [],
+                            romanized: [],
+                        },
+                    ],
+                    sex: Some(
+                        "F",
+                    ),
+                    child_family_link: [],
+                    spouse_family_link: [
+                        SpouseFamilyLink {
+                            family: XRef {
+                                xref: Some(
+                                    "@ADOPTIVE_PARENTS@",
+                                ),
+                            },
+                            notes: [],
+                        },
+                    ],
+                    submitter: None,
+                    alias: [],
+                    ancestor_interest: [],
+                    descendant_interest: [],
+                    record_file_number: None,
+                    ancestral_file_number: None,
+                    user_reference_number: [],
+                    automated_record_id: None,
+                    change_date: None,
+                    notes: [],
+                    source_citations: [],
+                    multimedia_links: [],
+                },
+            ),
+            Individual(
+                Individual {
+                    events: [],
+                    attributes: [],
+                    restriction_notice: None,
+                    names: [
+                        Name {
+                            personal_name: "/Child 3/",
+                            pieces: None,
+                            name_type: None,
+                            phonetic: [],
+                            romanized: [],
+                        },
+                    ],
+                    sex: None,
+                    child_family_link: [
+                        ChildFamilyLink {
+                            family: XRef {
+                                xref: Some(
+                                    "@FAMILY2@",
+                                ),
+                            },
+                            pedigree_linkage_type: None,
+                            status: None,
+                            notes: [],
+                        },
+                    ],
+                    spouse_family_link: [],
+                    submitter: None,
+                    alias: [],
+                    ancestor_interest: [],
+                    descendant_interest: [],
+                    record_file_number: None,
+                    ancestral_file_number: None,
+                    user_reference_number: [],
+                    automated_record_id: None,
+                    change_date: None,
+                    notes: [],
+                    source_citations: [],
+                    multimedia_links: [],
+                },
+            ),
+            Individual(
+                Individual {
+                    events: [],
+                    attributes: [],
+                    restriction_notice: None,
+                    names: [
+                        Name {
+                            personal_name: "/2nd Wife/",
+                            pieces: None,
+                            name_type: None,
+                            phonetic: [],
+                            romanized: [],
+                        },
+                    ],
+                    sex: Some(
+                        "F",
+                    ),
+                    child_family_link: [],
+                    spouse_family_link: [
+                        SpouseFamilyLink {
+                            family: XRef {
+                                xref: Some(
+                                    "@FAMILY2@",
+                                ),
+                            },
+                            notes: [],
+                        },
+                    ],
+                    submitter: None,
+                    alias: [],
+                    ancestor_interest: [],
+                    descendant_interest: [],
+                    record_file_number: None,
+                    ancestral_file_number: None,
+                    user_reference_number: [],
+                    automated_record_id: None,
+                    change_date: None,
+                    notes: [],
+                    source_citations: [],
+                    multimedia_links: [],
+                },
+            ),
+        ],
+    },
+)
