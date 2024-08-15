@@ -187,7 +187,7 @@ fn parse_line<'a, S: GEDCOMSource + ?Sized>(
             });
         }
 
-        // TODO: this should produce a diagnostic
+        // TODO: this should produce a diagnostic if it's not true
         let rest_part = if rest_part.starts_with(AsciiChar::Space) {
             rest_part.slice_from(1)
         } else {

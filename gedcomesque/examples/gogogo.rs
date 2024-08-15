@@ -1,8 +1,8 @@
 use std::{path::PathBuf, time::Instant};
 
 use gedcomesque::entities::individual::{ActiveModel as IndividualActive, Entity as Individual};
-use gedcomfy::parser::lines::LineValue;
-use miette::{IntoDiagnostic, NamedSource};
+use gedcomfy::parser::{lines::LineValue, options::ParseOptions, Parser};
+use miette::IntoDiagnostic;
 use sea_orm::{
     sea_query::TableCreateStatement, ActiveValue, ConnectionTrait, Database, DatabaseConnection,
     DbBackend, EntityTrait, PaginatorTrait, Schema, TransactionTrait,
@@ -12,11 +12,9 @@ use sea_orm::{
 async fn main() -> miette::Result<()> {
     let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../private/ITIS.ged");
     let filename = path.file_name().unwrap().to_string_lossy().to_string();
-    let data = std::fs::read(path).into_diagnostic()?;
-    let mut buffer = String::new();
-    let records = gedcomfy::parser::parse(&data, &mut buffer).map_err(|e| {
-        miette::Report::new(e).with_source_code(NamedSource::new(filename, data.clone()))
-    })?;
+
+    let mut parser = Parser::read_file(filename, ParseOptions::default()).into_diagnostic()?;
+    let records = parser.parse_raw()?;
 
     // let target = "sqlite:gogogo.db?mode=rwc";
     let memtarget = "sqlite::memory:";

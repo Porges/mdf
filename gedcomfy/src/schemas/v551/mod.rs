@@ -1,61 +1,12 @@
 use miette::SourceSpan;
 use vec1::Vec1;
 
-use crate::parser::{lines::LineValue, records::RawRecord, Sourced};
+use crate::{
+    parser::{lines::LineValue, records::RawRecord, Sourced},
+    schemas::DataError,
+};
 
-#[derive(Debug, thiserror::Error, miette::Diagnostic, PartialEq, Eq)]
-pub enum SchemaError {
-    #[error("Missing required subrecord {tag}")]
-    MissingRecord {
-        tag: &'static str,
-
-        #[label("this is the parent record")]
-        parent_span: SourceSpan,
-    },
-
-    #[error("Unknown top-level record {tag}")]
-    UnknownTopLevelRecord {
-        tag: String,
-
-        #[label("record was found here")]
-        span: SourceSpan,
-    },
-
-    #[error("Unexpected subrecord {tag}")]
-    UnexpectedTag {
-        tag: String,
-
-        #[label("this record type is not expected here")]
-        span: SourceSpan,
-
-        #[label("this is the parent record")]
-        parent_span: SourceSpan,
-    },
-
-    #[error("Error reading data for record {tag}")]
-    DataError { tag: String, source: DataError },
-
-    #[error("Too many values for subrecord {tag} (expected {expected}, received {received})")]
-    TooManyRecords {
-        tag: &'static str,
-        expected: usize,
-        received: usize,
-    },
-}
-
-#[derive(Debug, thiserror::Error, PartialEq, Eq)]
-pub enum DataError {
-    #[error("Invalid data")]
-    InvalidData {
-        //        source: Box<dyn std::error::Error + Send + Sync + 'static>,
-    },
-
-    #[error("Unexpected pointer")]
-    UnexpectedPointer,
-
-    #[error("Missing required data")]
-    MissingData,
-}
+use super::SchemaError;
 
 // embedded structures can only have 0:1 or 1:1 cardinality
 macro_rules! structure_cardinality {
@@ -437,36 +388,43 @@ impl TryFrom<Sourced<RawRecord<'_>>> for String {
     type Error = SchemaError;
 
     fn try_from(source: Sourced<RawRecord<'_>>) -> Result<Self, Self::Error> {
-        match source.line.line_value.value {
+        let mut result = match source.line.line_value.value {
             LineValue::Ptr(_) => todo!("proper error"),
-            LineValue::Str(s) => {
-                let mut result = s.to_string();
-                for rec in &source.value.records {
-                    match rec.line.tag.as_str() {
-                        "CONT" => {
-                            result.push('\n');
-                            match rec.line.line_value.value {
-                                LineValue::Str(s) => {
-                                    result.push_str(s);
-                                }
-                                LineValue::None => (),
-                                LineValue::Ptr(_) => todo!(),
-                            }
+            // it’s ok to have no value here because it could be a string like "\nsomething": newline followed by CONT/C
+            LineValue::None => String::new(),
+            LineValue::Str(s) => s.to_string(),
+        };
+
+        for rec in &source.value.records {
+            match rec.line.tag.as_str() {
+                "CONT" => {
+                    result.push('\n');
+                    match rec.line.line_value.value {
+                        LineValue::Str(s) => {
+                            result.push_str(s);
                         }
-                        "CONC" => match rec.line.line_value.value {
-                            LineValue::Str(s) => {
-                                result.push_str(s);
-                            }
-                            LineValue::None => (),
-                            LineValue::Ptr(_) => todo!(),
-                        },
-                        tag => unimplemented!("{tag}"),
+                        LineValue::None => (),
+                        LineValue::Ptr(_) => todo!(),
                     }
                 }
-                Ok(result)
+                "CONC" => match rec.line.line_value.value {
+                    LineValue::Str(s) => {
+                        result.push_str(s);
+                    }
+                    LineValue::None => (),
+                    LineValue::Ptr(_) => todo!(),
+                },
+                tag => {
+                    return Err(SchemaError::UnexpectedTag {
+                        parent_span: source.span,
+                        tag: tag.to_string(),
+                        span: rec.line.tag.span,
+                    })
+                }
             }
-            LineValue::None => todo!("proper error"),
         }
+
+        Ok(result)
     }
 }
 
@@ -548,7 +506,8 @@ impl File {
                 "TRLR" => break,
                 _ => match TopLevelRecord::try_from(record) {
                     Ok(r) => records.push(r),
-                    Err(error) => tracing::warn!(?error, "skipping record error"),
+                    Err(error) => return Err(error),
+                    //tracing::warn!(?error, "skipping record error"),
                 },
             }
         }
@@ -1077,7 +1036,7 @@ impl<'a> TryFrom<RawRecord<'a>> for Header {
 mod test {
     use miette::SourceSpan;
 
-    use crate::parser::{decoding::DecodingError, records::read_first_record};
+    use crate::parser::{options::ParseOptions, Parser};
 
     use super::*;
 
@@ -1086,18 +1045,18 @@ mod test {
         let lines = "\
         0 HEAD\n\
         1 SOUR Test\n\
-        1 DEST FamilySearch\n\
+        1 DEST example\n\
         1 SUBM @submitter@\n\
         1 CHAR ANSEL\n\
         1 GEDC\n\
         2 VERS 5.5.1\n\
         2 FORM LINEAGE-LINKED";
 
-        let record = read_first_record::<_, DecodingError>(lines)?.unwrap();
-
-        let header = Header::try_from(record)?;
+        let mut parser = Parser::read_string(lines, ParseOptions::default());
+        let records = parser.parse_raw()?;
+        let header = Header::try_from(records.into_iter().next().unwrap())?;
         assert_eq!(header.source.approved_system_id, "Test".to_string());
-        assert_eq!(header.destination, Some("FamilySearch".to_string()));
+        assert_eq!(header.destination, Some("example".to_string()));
         assert_eq!(header.gedcom.version, "5.5.1");
         assert_eq!(header.gedcom.form, "LINEAGE-LINKED");
 
@@ -1109,7 +1068,7 @@ mod test {
         let lines = "\
         0 HEAD\n\
         1 SOUR Test\n\
-        1 DEST FamilySearch\n\
+        1 DEST example\n\
         1 SUBM @submitter@\n\
         1 GARBAGE GARBAGE\n\
         1 CHAR ANSEL\n\
@@ -1117,14 +1076,14 @@ mod test {
         2 VERS 5.5.1\n\
         2 FORM LINEAGE-LINKED";
 
-        let record = read_first_record::<_, DecodingError>(lines)?.unwrap();
-
-        let err = Header::try_from(record).unwrap_err();
+        let mut parser = Parser::read_string(lines, ParseOptions::default());
+        let records = parser.parse_raw()?;
+        let err = Header::try_from(records.into_iter().next().unwrap()).unwrap_err();
         assert_eq!(
             SchemaError::UnexpectedTag {
                 tag: "GARBAGE".to_string(),
-                span: SourceSpan::from((60, 7)),
-                parent_span: SourceSpan::from((0, 130)),
+                span: SourceSpan::from((55, 7)),
+                parent_span: SourceSpan::from((0, 125)),
             },
             err,
         );
@@ -1137,7 +1096,7 @@ mod test {
         let lines = "\
         0 HEAD\n\
         1 SOUR Test\n\
-        1 DEST FamilySearch\n\
+        1 DEST example\n\
         1 _USER USER STUFF\n\
         1 SUBM @submitter@\n\
         1 CHAR ANSEL\n\
@@ -1145,9 +1104,9 @@ mod test {
         2 VERS 5.5.1\n\
         2 FORM LINEAGE-LINKED";
 
-        let record = read_first_record::<_, DecodingError>(lines)?.unwrap();
-
-        let _header: Header = Header::try_from(record)?;
+        let mut parser = Parser::read_string(lines, ParseOptions::default());
+        let records = parser.parse_raw()?;
+        let _header = Header::try_from(records.into_iter().next().unwrap())?;
 
         Ok(())
     }
@@ -1155,12 +1114,16 @@ mod test {
     #[test]
     fn basic_individual() -> miette::Result<()> {
         let lines = "\
+        0 HEAD\n\
+        1 GEDC\n\
+        2 VERS 5.5.1\n\
         0 INDI\n\
         1 NAME John /Smith/\n";
 
-        let record = read_first_record::<_, DecodingError>(lines)?.unwrap();
+        let mut parser = Parser::read_string(lines, ParseOptions::default());
+        let records = parser.parse_raw()?;
+        let indi = Individual::try_from(records.into_iter().nth(1).unwrap())?;
 
-        let indi = Individual::try_from(record)?;
         assert_eq!(indi.names, vec![Name::new("John /Smith/".to_string())]);
 
         Ok(())
@@ -1169,13 +1132,16 @@ mod test {
     #[test]
     fn individual_two_names() -> miette::Result<()> {
         let lines = "\
+        0 HEAD\n\
+        1 GEDC\n\
+        2 VERS 5.5.1\n\
         0 INDI\n\
         1 NAME John /Smith/\n\
         1 NAME Jim /Smarth/\n";
 
-        let record = read_first_record::<_, DecodingError>(lines)?.unwrap();
-
-        let indi = Individual::try_from(record)?;
+        let mut parser = Parser::read_string(lines, ParseOptions::default());
+        let records = parser.parse_raw()?;
+        let indi = Individual::try_from(records.into_iter().nth(1).unwrap())?;
         assert_eq!(
             indi.names,
             vec![
@@ -1190,14 +1156,17 @@ mod test {
     #[test]
     fn corporate() -> miette::Result<()> {
         let lines = "\
+        0 HEAD\n\
+        1 GEDC\n\
+        2 VERS 5.5.1\n\
         0 CORP Some name\n\
         1 CONT which continues\n\
         1 ADDR it has an address...\n\
         2 CONC which is continued";
 
-        let record = read_first_record::<_, DecodingError>(lines)?.unwrap();
-
-        let corp = Corporate::try_from(record)?;
+        let mut parser = Parser::read_string(lines, ParseOptions::default());
+        let records = parser.parse_raw()?;
+        let corp = Corporate::try_from(records.into_iter().nth(1).unwrap())?;
         assert_eq!(
             corp.name_of_business,
             "Some name\nwhich continues".to_string()

@@ -1,7 +1,7 @@
 use super::encodings::SupportedEncoding;
 
-#[derive(Default)]
 #[non_exhaustive]
+#[derive(Default)]
 pub struct ParseOptions {
     pub(super) force_encoding: Option<SupportedEncoding>,
 }

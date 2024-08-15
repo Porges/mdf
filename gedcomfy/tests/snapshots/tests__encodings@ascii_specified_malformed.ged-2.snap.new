@@ -1,0 +1,37 @@
+---
+source: gedcomfy/tests/tests.rs
+assertion_line: 195
+description: "0 HEAD\r\n1 GEDC\r\n2 VERS 5.5.1\r\n1 CHAR ASCII\r\n0 TEXT HÖÖT\r\n0 TRLR\r\n"
+expression: "format!(\"{:?}\", parser.attach_source(err))"
+input_file: gedcomfy/tests/encoding_inputs/ascii_specified_malformed.ged
+---
+gedcom::encoding::invalid_data
+
+  × GEDCOM file contained data which was invalid in the detected encoding
+  ├─▶ Invalid data for encoding ASCII
+  ╰─▶ the byte at index 52 is not ASCII
+   ╭─[ascii_specified_malformed.ged:5:9]
+ 4 │ 1 CHAR ASCII
+ 5 │ 0 TEXT HÖÖT
+   ·         ┬
+   ·         ╰── this is not valid data for the encoding ASCII
+ 6 │ 0 TRLR
+   ╰────
+
+Advice: gedcom::encoding_reason::header
+
+  ☞ this encoding was specified in the GEDCOM header
+   ╭─[ascii_specified_malformed.ged:4:8]
+ 3 │ 2 VERS 5.5.1
+ 4 │ 1 CHAR ASCII
+   ·        ──┬──
+   ·          ╰── encoding was specified here
+ 5 │ 0 TEXT HÖÖT
+   ╰────
+
+Advice: gedcom::possible_encodings
+
+  ☞ the invalid data appears to be valid in other encodings:
+  │ → [1mHÃ–Ã–T[0m (using Windows-1252)
+  │ → [1mHÖÖT[0m (using UTF-8)
+  help: encoding can be chosen explicitly using the `--force-encoding` option

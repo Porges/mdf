@@ -1,21 +1,20 @@
 use miette::SourceSpan;
 
 use super::{
-    lines::{LineSyntaxError, RawLine},
-    GEDCOMSource, Sourced,
+    decoding::DecodingError, lines::RawLine, GEDCOMSource, NonFatalHandler, ParseError, ParseMode,
+    Sourced,
 };
-use crate::parser;
 
 /// Represents an assembled GEDCOM record, or sub-record,
 /// with its children.
 #[derive(Debug)]
-pub struct RawRecord<'a, S: GEDCOMSource + ?Sized = str> {
-    pub line: Sourced<RawLine<'a, S>>,
-    pub records: Vec<Sourced<RawRecord<'a, S>>>,
+pub struct RawRecord<'i, S: GEDCOMSource + ?Sized = str> {
+    pub line: Sourced<RawLine<'i, S>>,
+    pub records: Vec<Sourced<RawRecord<'i, S>>>,
 }
 
-impl<'a, S: GEDCOMSource + ?Sized> RawRecord<'a, S> {
-    fn new(line: Sourced<RawLine<'a, S>>) -> Self {
+impl<'i, S: GEDCOMSource + ?Sized> RawRecord<'i, S> {
+    fn new(line: Sourced<RawLine<'i, S>>) -> Self {
         Self {
             line,
             records: Vec::new(),
@@ -23,8 +22,8 @@ impl<'a, S: GEDCOMSource + ?Sized> RawRecord<'a, S> {
     }
 }
 
-impl<'a, S: GEDCOMSource + ?Sized> Sourced<RawRecord<'a, S>> {
-    pub(crate) fn ensure_tag(&self, tag: &str) -> Option<&Self> {
+impl<'i, S: GEDCOMSource + ?Sized> Sourced<RawRecord<'i, S>> {
+    pub(crate) fn ensure_tag(self, tag: &str) -> Option<Self> {
         if self.line.tag.value.eq(tag) {
             Some(self)
         } else {
@@ -44,27 +43,40 @@ pub enum RecordStructureError {
         span: SourceSpan,
     },
 
-    #[error("A record without subrecords must have a value")]
-    #[diagnostic(code(gedcom::record_error::value_missing))]
+    #[error("A record without subrecords should have a value")]
+    #[diagnostic(severity(Warning), code(gedcom::record_error::value_missing))]
     MissingRecordValue {
-        #[label("this record must contain a value, since it has no subrecords")]
+        #[label("this record should contain a value, since it has no subrecords")]
         span: SourceSpan,
     },
 }
 
-pub(crate) struct RecordBuilder<'a, S: GEDCOMSource + ?Sized = str> {
-    stack: Vec<RawRecord<'a, S>>,
+impl From<RecordStructureError> for ParseError {
+    fn from(value: RecordStructureError) -> Self {
+        DecodingError::from(value).into()
+    }
 }
 
-impl<'a, S: GEDCOMSource + ?Sized> RecordBuilder<'a, S> {
+pub(crate) struct RecordBuilder<'i, S = str>
+where
+    S: GEDCOMSource + ?Sized,
+{
+    stack: Vec<RawRecord<'i, S>>,
+}
+
+impl<'i, S> RecordBuilder<'i, S>
+where
+    S: GEDCOMSource + ?Sized,
+{
     pub(crate) fn new() -> Self {
         Self { stack: Vec::new() }
     }
 
-    fn pop_to_level(
+    fn pop_to_level<M: NonFatalHandler>(
         &mut self,
         level: usize,
-    ) -> Result<Option<Sourced<RawRecord<'a, S>>>, RecordStructureError> {
+        mode: &mut M,
+    ) -> Result<Option<Sourced<RawRecord<'i, S>>>, RecordStructureError> {
         while self.stack.len() > level {
             let child = self.stack.pop().unwrap(); // UNWRAP: guaranteed, len > 0
 
@@ -74,9 +86,9 @@ impl<'a, S: GEDCOMSource + ?Sized> RecordBuilder<'a, S> {
                 && !child.line.tag.value.eq("CONT")
                 && !child.line.tag.value.eq("TRLR")
             {
-                return Err(RecordStructureError::MissingRecordValue {
+                mode.non_fatal(RecordStructureError::MissingRecordValue {
                     span: child.line.span,
-                });
+                })?;
             }
 
             let span = if let Some(last_child) = child.records.last() {
@@ -106,11 +118,12 @@ impl<'a, S: GEDCOMSource + ?Sized> RecordBuilder<'a, S> {
         Ok(None)
     }
 
-    pub(crate) fn handle_line(
+    pub(super) fn handle_line<M: NonFatalHandler>(
         &mut self,
-        (level, line): (Sourced<usize>, Sourced<RawLine<'a, S>>),
-    ) -> Result<Option<Sourced<RawRecord<'a, S>>>, RecordStructureError> {
-        let to_emit = self.pop_to_level(level.value)?;
+        (level, line): (Sourced<usize>, Sourced<RawLine<'i, S>>),
+        mode: &mut M,
+    ) -> Result<Option<Sourced<RawRecord<'i, S>>>, RecordStructureError> {
+        let to_emit = self.pop_to_level(level.value, mode)?;
 
         let expected_level = self.stack.len();
         if level.value != expected_level {
@@ -126,77 +139,10 @@ impl<'a, S: GEDCOMSource + ?Sized> RecordBuilder<'a, S> {
         Ok(to_emit)
     }
 
-    /*
-    pub(crate) fn handle_syntax_error(
-        self,
-        source: parser::lines::LineSyntaxError,
-    ) -> RecordStructureError {
-        // TODO; we could do something smarter about levels
-        RecordStructureError::LineSyntaxError {
-            source,
-            span: self.stack.last().map(|r| r.line.span),
-        }
-    }
-    */
-
-    pub(crate) fn complete(
+    pub(super) fn complete<M: NonFatalHandler>(
         mut self,
-    ) -> Result<Option<Sourced<RawRecord<'a, S>>>, RecordStructureError> {
-        self.pop_to_level(0)
+        mode: &mut M,
+    ) -> Result<Option<Sourced<RawRecord<'i, S>>>, RecordStructureError> {
+        self.pop_to_level(0, mode)
     }
-}
-
-impl<'a, S: GEDCOMSource + ?Sized> Default for RecordBuilder<'a, S> {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-pub fn iterate_records<'a>(
-    lines: impl Iterator<Item = (Sourced<usize>, Sourced<RawLine<'a, str>>)>,
-) -> impl Iterator<Item = Result<Sourced<RawRecord<'a, str>>, RecordStructureError>> {
-    struct I<'i, Inner> {
-        lines: Inner,
-        builder: Option<RecordBuilder<'i>>,
-    }
-
-    impl<'i, Inner> Iterator for I<'i, Inner>
-    where
-        Inner: Iterator<Item = (Sourced<usize>, Sourced<RawLine<'i, str>>)>,
-    {
-        type Item = Result<Sourced<RawRecord<'i, str>>, RecordStructureError>;
-
-        fn next(&mut self) -> Option<Self::Item> {
-            let builder = self.builder.as_mut()?; // if builder is None we finished iterating
-
-            for item in self.lines.by_ref() {
-                if let Some(result) = builder.handle_line(item).transpose() {
-                    return Some(result);
-                }
-            }
-
-            // lines has been exhausted - finish the builder
-            self.builder.take().and_then(|b| b.complete().transpose())
-        }
-    }
-
-    I {
-        lines,
-        builder: Some(RecordBuilder::new()),
-    }
-}
-
-pub(crate) fn read_first_record<S, E>(input: &S) -> Result<Option<Sourced<RawRecord<S>>>, E>
-where
-    S: GEDCOMSource + ?Sized,
-    E: From<RecordStructureError> + From<LineSyntaxError>,
-{
-    let mut builder = RecordBuilder::new();
-    for line in parser::lines::iterate_lines(input) {
-        if let Some(record) = builder.handle_line(line?)? {
-            return Ok(Some(record));
-        }
-    }
-
-    Ok(builder.complete()?)
 }

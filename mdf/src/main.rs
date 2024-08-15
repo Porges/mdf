@@ -6,10 +6,7 @@ use std::{
 
 use clap::{Parser, Subcommand};
 use fancy_duration::FancyDuration;
-use gedcomfy::{
-    parse_file,
-    parser::{encodings::SupportedEncoding, options::ParseOptions},
-};
+use gedcomfy::parser::{encodings::SupportedEncoding, options::ParseOptions};
 use miette::{Context, IntoDiagnostic, NamedSource};
 
 #[derive(Parser)]
@@ -80,8 +77,13 @@ fn main() -> miette::Result<()> {
                 let parse_options =
                     ParseOptions::default().force_encoding(force_encoding.map(Into::into));
 
-                let result = parse_file(&path, parse_options)?;
-                println!("{:#?}", result);
+                let mut parser = gedcomfy::parser::Parser::read_file(&path, parse_options)
+                    .into_diagnostic()
+                    .with_context(|| format!("Parsing file {}", path.display()))?;
+
+                let result = parser.parse()?;
+                // TODO: print warnings
+                println!("{:#?}", result.file);
             }
             GedcomCommands::Validate {
                 path,
@@ -91,40 +93,25 @@ fn main() -> miette::Result<()> {
                     ParseOptions::default().force_encoding(force_encoding.map(Into::into));
 
                 let start_time = Instant::now();
-                let data = std::fs::read(&path)
+                let mut parser = gedcomfy::parser::Parser::read_file(&path, parse_options)
                     .into_diagnostic()
-                    .with_context(|| format!("Loading file {}", path.display()))?;
-
-                let mut buffer = String::new();
+                    .with_context(|| format!("Parsing file {}", path.display()))?;
 
                 println!("File loaded: {}", path.display());
                 println!("Validating file syntax…");
 
-                let validation_result =
-                    gedcomfy::validate_syntax_opt(&data, &mut buffer, parse_options);
+                let result = parser.validate()?;
+
                 println!(
                     "Completed in {}",
                     FancyDuration(start_time.elapsed()).truncate(2)
                 );
 
-                match validation_result {
-                    Ok(count) => {
-                        println!("File syntax validation succeeded: {count} lines");
-                        tracing::info!(
-                            record_count = count,
-                            path = %path.display(),
-                            "file is (syntactically) valid",
-                        );
-                    }
-                    Err(e) => {
-                        println!("File syntax validation failed");
-                        return Err(miette::Report::new(e)
-                            .context(format!("Validating {}", path.display()))
-                            .with_source_code(
-                                NamedSource::new(path.to_string_lossy(), data)
-                                    .with_language("GEDCOM"),
-                            ));
-                    }
+                println!("GEDCOM validation result: {}", result.validity);
+
+                println!("{} messages produced", result.errors.len());
+                for error in result.errors {
+                    println!("{}", error);
                 }
             }
         },

@@ -1,8 +1,8 @@
 use std::{path::PathBuf, sync::Once};
 
 use gedcomfy::parser::{
-    encodings::detect_external_encoding, lines::LineValue, options::ParseOptions, parse,
-    records::RawRecord,
+    encodings::detect_external_encoding, lines::LineValue, options::ParseOptions,
+    records::RawRecord, Parser,
 };
 use kdl::{KdlDocument, KdlEntry, KdlNode};
 use miette::{NamedSource, Report};
@@ -25,15 +25,13 @@ fn ensure_hook() {
 }
 
 #[test]
-fn can_parse_allged_lines() {
+fn can_parse_allged_lines() -> miette::Result<()> {
     let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     path.push("tests/external/others/allged.ged");
 
-    let data = std::fs::read(path).unwrap();
-    let mut buffer = String::new();
-
-    let line_count = gedcomfy::validate_syntax(&data, &mut buffer).unwrap();
-    assert_eq!(line_count, 1159);
+    let result = gedcomfy::validate_file(&path, ParseOptions::default())?;
+    assert_eq!(result.record_count, 18);
+    Ok(())
 }
 
 #[test]
@@ -42,7 +40,7 @@ fn can_parse_allged_fully() -> miette::Result<()> {
     path.push("tests/external/others/allged.ged");
 
     let parsed_file = gedcomfy::parse_file(&path, ParseOptions::default())?;
-    insta::assert_debug_snapshot!(parsed_file);
+    insta::assert_debug_snapshot!(parsed_file.file);
     Ok(())
 }
 
@@ -51,9 +49,8 @@ fn produces_expected_allged_tree() {
     let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     path.push("tests/external/others/allged.ged");
 
-    let data = std::fs::read(path).unwrap();
-    let buffer = &mut String::new();
-    let parsed = parse(&data, buffer).unwrap();
+    let mut parser = Parser::read_file(path, ParseOptions::default()).unwrap();
+    let parsed = parser.parse_raw().unwrap();
 
     insta::assert_snapshot!(to_kdl(parsed.into_iter().map(|r| r.value)));
 }
@@ -63,12 +60,10 @@ fn torture_test_valid() {
     ensure_hook();
 
     insta::glob!("external/torture-test-55-files/*.ged", |path| {
-        let data = std::fs::read(path).unwrap();
-        let filename = path.file_name().unwrap().to_string_lossy();
-        let buffer = &mut String::new();
-        let parsed = parse(&data, buffer)
-            .map_err(|e| Report::new(e).with_source_code(NamedSource::new(filename, data.clone())))
-            .unwrap();
+        let mut parser = Parser::read_file(path, ParseOptions::default())
+            .unwrap()
+            .with_path(path.file_name().unwrap());
+        let parsed = parser.parse_raw().unwrap();
         insta::assert_snapshot!(to_kdl(parsed.into_iter().map(|r| r.value)));
     });
 }
@@ -84,35 +79,35 @@ fn golden_files() -> miette::Result<()> {
             // provide GEDCOM source alongside output
             description => String::from_utf8_lossy(&data),
         }, {
-            match parse(&data, &mut String::new()) {
+            let mut parser = Parser::read_bytes(&data, ParseOptions::default()).with_path(filename);
+            match parser.parse_raw() {
                 Ok(records) => {
                     let kdl = to_kdl(records.into_iter().map(|r| r.value));
                     insta::assert_snapshot!(kdl);
                 }
-                Err(err) => insta::assert_snapshot!(format!(
-                    "{:?}",
-                    Report::new(err).with_source_code(NamedSource::new(filename.to_string_lossy(), data))
-                )),
+                Err(err) => {
+                    insta::assert_snapshot!(format!("{:?}", parser.attach_source(err)));
+                },
             };
         });
     });
 
     insta::glob!("format_inputs/*.ged", |path| {
         let data = std::fs::read(path).unwrap();
-        let filename = path.file_name().unwrap().to_string_lossy();
+        let filename = path.file_name().unwrap();
         insta::with_settings!({
             // provide GEDCOM source alongside output
             description => String::from_utf8_lossy(&data),
         }, {
-            match parse(&data, &mut String::new()) {
+            let mut parser = Parser::read_bytes(&data, ParseOptions::default()).with_path(filename);
+            match parser.parse_raw() {
                 Ok(records) => {
                     let kdl = to_kdl(records.into_iter().map(|r| r.value));
                     insta::assert_snapshot!(kdl);
                 }
-                Err(err) => insta::assert_snapshot!(format!(
-                    "{:?}",
-                    Report::new(err).with_source_code(NamedSource::new(filename, data))
-                )),
+                Err(err) => {
+                    insta::assert_snapshot!(format!("{:?}", parser.attach_source(err)))
+                },
             };
         });
     });
@@ -165,19 +160,23 @@ fn test_encodings() {
 
     insta::glob!("encoding_inputs/*.ged", |path| {
         let data = std::fs::read(path).unwrap();
-        let data_ref: &[u8] = data.as_ref();
-        let filename = path.file_name().unwrap().to_string_lossy();
-        let encoding_report = match detect_external_encoding(data_ref) {
+        let filename = path.file_name().unwrap();
+        let encoding_report = match detect_external_encoding(data.as_ref()) {
             Ok(Some(detected)) => format!(
                 "External encoding detected: {}\nReason: {}",
                 detected.encoding(),
-                Report::new(detected.reason())
-                    .with_source_code(NamedSource::new(filename.clone(), data.clone()))
+                Report::new(detected.reason()).with_source_code(NamedSource::new(
+                    filename.to_string_lossy().clone(),
+                    data.clone()
+                ))
             ),
             Ok(None) => "No external encoding detected (ASCII-compatible)".to_string(),
             Err(err) => format!(
                 "{}",
-                Report::new(err).with_source_code(NamedSource::new(filename.clone(), data.clone()))
+                Report::new(err).with_source_code(NamedSource::new(
+                    filename.to_string_lossy().clone(),
+                    data.clone()
+                ))
             ),
         };
 
@@ -186,15 +185,15 @@ fn test_encodings() {
             description => String::from_utf8_lossy(&data),
         }, {
             insta::assert_snapshot!(encoding_report);
-            match parse(&data, &mut String::new()) {
+            let mut parser = Parser::read_bytes(&data, ParseOptions::default()).with_path(filename);
+            match parser.parse_raw(){
                 Ok(records) => {
                     let kdl = to_kdl(records.into_iter().map(|r| r.value));
                     insta::assert_snapshot!(kdl);
                 }
-                Err(err) => insta::assert_snapshot!(format!(
-                    "{:?}",
-                    Report::new(err).with_source_code(NamedSource::new(filename, data))
-                )),
+                Err(err) => {
+                    insta::assert_snapshot!(format!( "{:?}", parser.attach_source(err)))
+                },
             };
         });
     });
