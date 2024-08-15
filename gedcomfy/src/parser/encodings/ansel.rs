@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 
-use ascii::{AsAsciiStr, IntoAsciiString};
+use ascii::AsAsciiStr;
 
 #[derive(thiserror::Error, Debug, Clone, Copy)]
 pub(crate) enum AnselErr {
@@ -24,7 +24,7 @@ impl AnselErr {
     }
 }
 
-pub(crate) fn decode(input: &[u8]) -> Result<Cow<str>, AnselErr> {
+pub(crate) fn decode(mut input: &[u8]) -> Result<Cow<str>, AnselErr> {
     // if it’s pure ASCII we can return it straight away
     let ascii_err = match input.as_ascii_str() {
         Ok(str) => return Ok(str.as_str().into()),
@@ -34,7 +34,6 @@ pub(crate) fn decode(input: &[u8]) -> Result<Cow<str>, AnselErr> {
     let mut dest = String::new();
     let mut after_next = None;
 
-    let mut input: &[u8] = input.as_ref();
     let mut ascii_err = ascii_err;
 
     loop {

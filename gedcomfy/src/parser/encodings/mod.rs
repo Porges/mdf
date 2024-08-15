@@ -1,7 +1,7 @@
-use std::{borrow::Cow, str::Utf8Error};
+use std::borrow::Cow;
 
-use ascii::{AsAsciiStr, AsAsciiStrError, IntoAsciiString};
-use miette::{NamedSource, SourceSpan};
+use ascii::AsAsciiStr;
+use miette::SourceSpan;
 use owo_colors::{OwoColorize, Stream};
 use vec1::Vec1;
 
@@ -333,7 +333,7 @@ impl DetectedEncoding {
                 }),
             },
             SupportedEncoding::Utf16BigEndian => encoding_rs::UTF_16BE
-                .decode_without_bom_handling_and_without_replacement(&data)
+                .decode_without_bom_handling_and_without_replacement(data)
                 .ok_or_else(|| InvalidDataForEncodingError {
                     encoding: self.encoding,
                     source: None,
@@ -341,7 +341,7 @@ impl DetectedEncoding {
                     reason: Vec1::new(Box::new(self.reason)),
                 }),
             SupportedEncoding::Utf16LittleEndian => encoding_rs::UTF_16LE
-                .decode_without_bom_handling_and_without_replacement(&data)
+                .decode_without_bom_handling_and_without_replacement(data)
                 .ok_or_else(|| InvalidDataForEncodingError {
                     encoding: self.encoding,
                     source: None,

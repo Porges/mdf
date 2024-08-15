@@ -1,8 +1,7 @@
 use miette::SourceSpan;
 
 use super::{
-    decoding::DecodingError, lines::RawLine, GEDCOMSource, NonFatalHandler, ParseError, ParseMode,
-    Sourced,
+    decoding::DecodingError, lines::RawLine, GEDCOMSource, NonFatalHandler, ParseError, Sourced,
 };
 
 /// Represents an assembled GEDCOM record, or sub-record,
@@ -18,16 +17,6 @@ impl<'i, S: GEDCOMSource + ?Sized> RawRecord<'i, S> {
         Self {
             line,
             records: Vec::new(),
-        }
-    }
-}
-
-impl<'i, S: GEDCOMSource + ?Sized> Sourced<RawRecord<'i, S>> {
-    pub(crate) fn ensure_tag(self, tag: &str) -> Option<Self> {
-        if self.line.tag.value.eq(tag) {
-            Some(self)
-        } else {
-            None
         }
     }
 }

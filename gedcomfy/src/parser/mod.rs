@@ -533,25 +533,26 @@ impl<'i> Parser<'i> {
             ParserState::ReadData { ref input } => {
                 let (version, decoded) = self.detect_and_decode(input.as_ref(), mode)?;
 
-                match decoded {
-                    Cow::Borrowed(_) => {
+                let merged = match decoded {
+                    Cow::Borrowed(d) => {
+                        // decoded can only be borrowed if outer was entirley ASCII or UTF-8
+                        // (and ASCII is a subset of UTF-8)
+                        debug_assert_eq!(d.as_bytes(), input.as_ref());
+
                         match input {
                             Cow::Borrowed(i) => {
                                 // output was borrowed from input which was also borrowed
                                 // it must be valid UTF-8
-                                self.state = ParserState::DecodedData {
-                                    input: Cow::Borrowed(unsafe {
-                                        std::str::from_utf8_unchecked(i)
-                                    }),
-                                };
+                                Cow::Borrowed(unsafe { std::str::from_utf8_unchecked(i) })
                             }
-                            _ => {
+                            Cow::Owned(_) => {
                                 // output was borrowed from input which was owned
                                 // it must be valid UTF-8
                                 let ParserState::ReadData {
                                     input: Cow::Owned(vec),
                                 } = std::mem::replace(
                                     &mut self.state,
+                                    // dummy value
                                     ParserState::ReadData {
                                         input: Default::default(),
                                     },
@@ -560,24 +561,26 @@ impl<'i> Parser<'i> {
                                     unreachable!();
                                 };
 
-                                self.state = ParserState::DecodedData {
-                                    input: Cow::Owned(unsafe { String::from_utf8_unchecked(vec) }),
-                                };
+                                Cow::Owned(unsafe { String::from_utf8_unchecked(vec) })
                             }
                         }
                     }
                     Cow::Owned(x) => {
                         // we made a copy of the data so transition to that directly
-                        self.state = ParserState::DecodedData {
-                            input: Cow::Owned(x),
-                        };
+                        Cow::Owned(x)
                     }
-                }
+                };
 
-                match self.state {
-                    ParserState::DecodedData { ref input } => Ok((version, input.as_ref())),
+                self.state = ParserState::DecodedData { input: merged };
+
+                // this is ugly to re-read it straight after, but that's
+                // also how the stdlib does things
+                let input = match self.state {
+                    ParserState::DecodedData { ref input } => input.as_ref(),
                     _ => unreachable!(),
-                }
+                };
+
+                Ok((version, input))
             }
             ParserState::DecodedData { ref input } => {
                 let head = Self::extract_gedcom_header(input.as_ref(), mode)?;
