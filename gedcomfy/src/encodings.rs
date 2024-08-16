@@ -28,7 +28,7 @@ impl Display for GEDCOMEncoding {
 
 #[derive(Error, Diagnostic, Debug)]
 #[error("GEDCOM encoding {encoding} is ambiguous")]
-#[diagnostic(help("This value could imply the following encodings: {}",
+#[diagnostic(help("This value could imply any of the following encodings: {}",
     .possibilities.iter().map(|e| format!("{}", e)).collect::<Vec<_>>().join(", ")))]
 pub struct AmbiguousEncoding {
     encoding: GEDCOMEncoding,

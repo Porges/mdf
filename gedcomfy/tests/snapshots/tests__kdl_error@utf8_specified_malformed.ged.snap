@@ -1,0 +1,15 @@
+---
+source: gedcomfy/tests/tests.rs
+description: "0 HEAD\r\n1 GEDC\r\n2 VERS 5.5.1\r\n1 CHAR UTF-8\r\n0 MALFORMED h�\u0000�ré\r\n"
+expression: "format!(\"{:?}\", miette::Report::new(err))"
+input_file: gedcomfy/tests/encoding_inputs/utf8_specified_malformed.ged
+---
+gedcom::encoding::invalid_data
+
+  × GEDCOM file contained data which was invalid in the detected encoding
+  ├─▶ Invalid data for encoding UTF-8
+  ╰─▶ invalid utf-8 sequence of 1 bytes from index 57
+
+Advice: gedcom::encoding_reason::header
+
+  ☞ this encoding was specified in the GEDCOM header

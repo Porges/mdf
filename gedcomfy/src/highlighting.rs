@@ -1,5 +1,25 @@
 use owo_colors::{Style, Styled};
 
+/// A GEDCOM syntax highlighter for use with `miette`.
+///
+/// ## Example
+///
+/// To use this in your code, set it up like so:
+///
+/// ```rust
+/// fn main() -> miette::Result<()> {
+///     miette::set_hook(Box::new(|_| {
+///         Box::new(
+///             miette::MietteHandlerOpts::default()
+///             .with_syntax_highlighting(gedcomfy::highlighting::GEDCOMHighlighter {})
+///             .build(),
+///         )
+///     }))?;
+///
+///     // etc...
+///     Ok(())
+/// }
+/// ```
 pub struct GEDCOMHighlighter {}
 
 impl miette::highlighters::Highlighter for GEDCOMHighlighter {

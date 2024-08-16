@@ -1,0 +1,16 @@
+---
+source: gedcomfy/tests/tests.rs
+description: "﻿0 HEAD\r\n1 GEDC\r\n2 VERS 5.5.1\r\n1 CHAR UNICODE\r\n0 TRLR\r\n"
+expression: external_encoding
+input_file: gedcomfy/tests/encoding_inputs/utf8_bom.ged
+---
+Ok(
+    Some(
+        DetectedEncoding {
+            encoding: Utf8,
+            reason: BOMDetected {
+                bom_length: 3,
+            },
+        },
+    ),
+)

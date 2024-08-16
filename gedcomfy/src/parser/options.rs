@@ -7,6 +7,7 @@ pub struct ParseOptions {
 }
 
 impl ParseOptions {
+    /// Force the encoding of the file to be interpreted as the provided value.
     pub fn force_encoding(self, force_encoding: impl Into<Option<SupportedEncoding>>) -> Self {
         Self {
             force_encoding: force_encoding.into(),

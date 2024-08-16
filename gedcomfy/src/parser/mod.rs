@@ -1,27 +1,30 @@
-use std::{borrow::Cow, path::PathBuf};
+use std::{borrow::Cow, path::PathBuf, sync::Arc};
 
 use ascii::{AsciiChar, AsciiStr};
 use decoding::DecodingError;
 use encodings::{detect_external_encoding, DetectedEncoding, EncodingReason};
 use lines::LineValue;
-use miette::{Diagnostic, NamedSource, SourceOffset, SourceSpan};
+use miette::{NamedSource, SourceOffset, SourceSpan};
 use options::ParseOptions;
 use records::{RawRecord, RecordBuilder};
 use versions::VersionError;
 
 use crate::{
-    schemas::{AnyFileVersion, SchemaError},
+    schemas::SchemaError,
     versions::{parse_version_head_gedc_vers, GEDCOMVersion, SupportedGEDCOMVersion},
     FileStructureError,
 };
 
+pub mod decoding;
 pub mod encodings;
 pub mod lines;
+mod modes;
 pub mod options;
 pub mod records;
-
-pub mod decoding;
 pub(crate) mod versions;
+
+pub use modes::parse::ParseResult;
+pub use modes::validation::ValidationResult;
 
 /// Represents the minimal amount of decoding needed to
 /// parse information from GEDCOM files.
@@ -130,6 +133,9 @@ impl GEDCOMSource for [u8] {
 /// This is used in many places to ensure that we can track back values
 /// to their original location, which means that we can provide good
 /// diagnostics in the case of errors.
+///
+/// [`SourceSpan`] values are used to represent the location of
+/// the value in the input and can be rendered by [`miette`].
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub struct Sourced<T> {
     pub value: T,
@@ -166,15 +172,77 @@ impl<T> std::ops::Deref for Sourced<T> {
         &self.value
     }
 }
-pub struct Parser<'i> {
+pub struct Parser {
     path: Option<PathBuf>,
-    state: ParserState<'i>,
+    state: ParserState,
     parse_options: options::ParseOptions,
 }
 
-enum ParserState<'i> {
-    ReadData { input: Cow<'i, [u8]> },
-    DecodedData { input: Cow<'i, str> },
+/// Represents the data owned by the parser.
+enum ParserState {
+    /// Data has not yet been decoded.
+    Read { input: Arc<[u8]> },
+    /// Data was decoded from the original input,
+    /// and the decoded data is borrowed from that.
+    ReadAndDecoded { value: Arc<DecodedFromRead> },
+    /// Data was provided in decoded form, or was decoded
+    /// from the original input into an owned form.
+    Decoded {
+        input: Arc<str>,
+        version: Option<SupportedGEDCOMVersion>,
+    },
+}
+
+struct AnySourceCode(Box<dyn miette::SourceCode>);
+
+impl std::fmt::Debug for AnySourceCode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_tuple("AnySourceCode")
+            .field(&"<source code>")
+            .finish()
+    }
+}
+
+impl miette::SourceCode for AnySourceCode {
+    fn read_span<'a>(
+        &'a self,
+        span: &SourceSpan,
+        context_lines_before: usize,
+        context_lines_after: usize,
+    ) -> Result<Box<dyn miette::SpanContents<'a> + 'a>, miette::MietteError> {
+        self.0
+            .read_span(span, context_lines_before, context_lines_after)
+    }
+}
+
+impl AnySourceCode {
+    fn new(source: impl miette::SourceCode + 'static) -> Self {
+        Self(Box::new(source))
+    }
+}
+
+// Helper type to have decoded data that borrows from original.
+type VersionAndDecoded<'a> = (SupportedGEDCOMVersion, Cow<'a, str>);
+self_cell::self_cell!(
+    struct DecodedFromRead {
+        owner: Arc<[u8]>,
+
+        #[covariant]
+        dependent: VersionAndDecoded,
+    }
+);
+
+impl miette::SourceCode for DecodedFromRead {
+    fn read_span<'a>(
+        &'a self,
+        span: &SourceSpan,
+        context_lines_before: usize,
+        context_lines_after: usize,
+    ) -> Result<Box<dyn miette::SpanContents<'a> + 'a>, miette::MietteError> {
+        self.borrow_dependent()
+            .1
+            .read_span(span, context_lines_before, context_lines_after)
+    }
 }
 
 trait NonFatalHandler {
@@ -189,6 +257,7 @@ trait ParseMode: Default + NonFatalHandler {
     fn get_result_builder<'i>(
         self,
         version: SupportedGEDCOMVersion,
+        source_code: AnySourceCode,
     ) -> Result<Self::ResultBuilder<'i>, ParseError>;
 }
 
@@ -198,257 +267,16 @@ trait ResultBuilder<'i>: NonFatalHandler {
     fn complete(self) -> Result<Self::Result, ParseError>;
 }
 
-pub mod validation {
-    use super::*;
-
-    #[derive(Default)]
-    pub(super) struct Mode {
-        non_fatals: Vec<ParseError>,
-    }
-
-    #[derive(thiserror::Error, Debug, miette::Diagnostic)]
-    #[error("Validation completed with {validity}")]
-    pub struct ValidationResult {
-        pub validity: Validity,
-
-        pub record_count: usize,
-
-        #[related]
-        pub errors: Vec<ParseError>,
-    }
-
-    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-    pub enum Validity {
-        Good,
-        Warning,
-        Error,
-    }
-
-    impl std::fmt::Display for Validity {
-        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-            match self {
-                Validity::Good => write!(f, "no errors"),
-                Validity::Warning => write!(f, "warnings"),
-                Validity::Error => write!(f, "errors"),
-            }
-        }
-    }
-
-    impl NonFatalHandler for Mode {
-        fn non_fatal<E>(&mut self, error: E) -> Result<(), E>
-        where
-            E: Into<ParseError>,
-        {
-            self.non_fatals.push(error.into());
-            Ok(())
-        }
-    }
-
-    impl ParseMode for Mode {
-        type ResultBuilder<'i> = Builder;
-
-        fn get_result_builder<'i>(
-            self,
-            _version: SupportedGEDCOMVersion,
-        ) -> Result<Self::ResultBuilder<'i>, ParseError> {
-            Ok(Builder {
-                mode: self,
-                record_count: 0,
-            })
-        }
-    }
-
-    pub(super) struct Builder {
-        mode: Mode,
-        record_count: usize,
-    }
-
-    impl NonFatalHandler for Builder {
-        fn non_fatal<E>(&mut self, error: E) -> Result<(), E>
-        where
-            E: Into<ParseError> + miette::Diagnostic,
-        {
-            self.mode.non_fatal(error)
-        }
-    }
-
-    impl<'i> ResultBuilder<'i> for Builder {
-        type Result = ValidationResult;
-
-        fn handle_record(&mut self, _record: Sourced<RawRecord<'_>>) -> Result<(), ParseError> {
-            self.record_count += 1;
-            Ok(())
-        }
-
-        fn complete(self) -> Result<Self::Result, ParseError> {
-            let mut validity = Validity::Good;
-            for error in &self.mode.non_fatals {
-                match error.severity() {
-                    None | Some(miette::Severity::Error) => {
-                        validity = Validity::Error;
-                        break;
-                    }
-                    Some(miette::Severity::Warning) if validity == Validity::Good => {
-                        validity = Validity::Warning;
-                    }
-                    _ => continue,
-                }
-            }
-
-            Ok(ValidationResult {
-                validity,
-                record_count: self.record_count,
-                errors: self.mode.non_fatals,
-            })
-        }
-    }
-}
-
-pub mod parse {
-    use super::*;
-
-    #[derive(Default)]
-    pub(super) struct Mode {
-        non_fatals: Vec<ParseError>,
-        warnings_as_errors: bool,
-    }
-
-    impl NonFatalHandler for Mode {
-        fn non_fatal<E>(&mut self, error: E) -> Result<(), E>
-        where
-            E: Into<ParseError> + miette::Diagnostic,
-        {
-            match error.severity() {
-                // all errors are fatal for parsing mode
-                None | Some(miette::Severity::Error) => Err(error),
-                // warnings might also be fatal
-                // TODO - stop-on-first vs stop-at-end
-                Some(miette::Severity::Warning) if self.warnings_as_errors => Err(error),
-                // otherwise record and contimue
-                _ => {
-                    self.non_fatals.push(error.into());
-                    Ok(())
-                }
-            }
-        }
-    }
-
-    impl ParseMode for Mode {
-        type ResultBuilder<'i> = Builder<'i>;
-
-        fn get_result_builder<'i>(
-            self,
-            version: SupportedGEDCOMVersion,
-        ) -> Result<Self::ResultBuilder<'i>, ParseError> {
-            Ok(Builder {
-                mode: self,
-                version,
-                records: Vec::new(),
-            })
-        }
-    }
-
-    pub(super) struct Builder<'i> {
-        mode: Mode,
-        version: SupportedGEDCOMVersion,
-        records: Vec<Sourced<RawRecord<'i>>>,
-    }
-
-    pub struct ParseResult {
-        pub file: AnyFileVersion,
-        pub non_fatals: Vec<ParseError>,
-    }
-
-    impl NonFatalHandler for Builder<'_> {
-        fn non_fatal<E>(&mut self, error: E) -> Result<(), E>
-        where
-            E: Into<ParseError> + miette::Diagnostic,
-        {
-            self.mode.non_fatal(error)
-        }
-    }
-
-    impl<'i> ResultBuilder<'i> for Builder<'i> {
-        type Result = ParseResult;
-        fn complete(self) -> Result<Self::Result, ParseError> {
-            Ok(ParseResult {
-                file: AnyFileVersion::try_from((self.version, self.records))?,
-                non_fatals: self.mode.non_fatals,
-            })
-        }
-
-        fn handle_record(&mut self, record: Sourced<RawRecord<'i>>) -> Result<(), ParseError> {
-            self.records.push(record);
-            Ok(())
-        }
-    }
-}
-
-pub mod raw {
-    use super::*;
-
-    #[derive(Default)]
-    pub(super) struct Mode {}
-
-    impl NonFatalHandler for Mode {
-        fn non_fatal<E>(&mut self, _error: E) -> Result<(), E>
-        where
-            E: Into<ParseError> + miette::Diagnostic,
-        {
-            Ok(())
-        }
-    }
-
-    impl ParseMode for Mode {
-        type ResultBuilder<'i> = Builder<'i>;
-
-        fn get_result_builder<'i>(
-            self,
-            _version: SupportedGEDCOMVersion,
-        ) -> Result<Self::ResultBuilder<'i>, ParseError> {
-            Ok(Builder {
-                mode: self,
-                records: Vec::new(),
-            })
-        }
-    }
-
-    pub(super) struct Builder<'i> {
-        mode: Mode,
-        records: Vec<Sourced<RawRecord<'i>>>,
-    }
-
-    impl NonFatalHandler for Builder<'_> {
-        fn non_fatal<E>(&mut self, error: E) -> Result<(), E>
-        where
-            E: Into<ParseError> + miette::Diagnostic,
-        {
-            self.mode.non_fatal(error)
-        }
-    }
-
-    impl<'i> ResultBuilder<'i> for Builder<'i> {
-        fn complete(self) -> Result<Self::Result, ParseError> {
-            Ok(self.records)
-        }
-
-        type Result = Vec<Sourced<RawRecord<'i>>>;
-
-        fn handle_record(&mut self, record: Sourced<RawRecord<'i>>) -> Result<(), ParseError> {
-            self.records.push(record);
-            Ok(())
-        }
-    }
-}
-
 #[derive(thiserror::Error, Debug, miette::Diagnostic)]
-#[error(transparent)]
-#[diagnostic(transparent)]
 pub enum ParseError {
+    #[error(transparent)]
+    #[diagnostic(transparent)]
     Decoding {
         #[from]
         source: DecodingError,
     },
+    #[error(transparent)]
+    #[diagnostic(transparent)]
     Schema {
         #[from]
         source: SchemaError,
@@ -456,61 +284,46 @@ pub enum ParseError {
 }
 
 #[derive(thiserror::Error, Debug, miette::Diagnostic)]
-#[diagnostic()]
-pub enum ParseErrorWithSource {
-    #[error("Error decoding GEDCOM file")]
-    Decoding {
-        #[source]
-        #[diagnostic_source]
-        source: DecodingError,
+#[error("An error occurred while parsing the input")]
+pub struct ParserError {
+    #[source]
+    #[diagnostic_source]
+    source: ParseError,
 
-        #[source_code]
-        source_code: Vec<u8>,
-    },
-    #[error("GEDCOM schema error")]
-    Schema {
-        #[source]
-        #[diagnostic_source]
-        source: SchemaError,
-
-        #[source_code]
-        source_code: Vec<u8>,
-    },
+    #[source_code]
+    source_code: AnySourceCode,
 }
 
-impl Parser<'static> {
+impl Parser {
     pub fn read_file(
         path: impl Into<PathBuf>,
         parse_options: ParseOptions,
-    ) -> Result<Parser<'static>, std::io::Error> {
+    ) -> Result<Self, std::io::Error> {
         let path = path.into();
         let data = std::fs::read(&path)?; // TODO error
         Ok(Self {
             path: Some(path),
-            state: ParserState::ReadData {
-                input: Cow::Owned(data),
-            },
+            state: ParserState::Read { input: data.into() },
             parse_options,
         })
     }
-}
 
-impl<'i> Parser<'i> {
-    pub fn read_bytes(bytes: &'i [u8], parse_options: ParseOptions) -> Self {
+    pub fn read_bytes(bytes: impl Into<Arc<[u8]>>, parse_options: ParseOptions) -> Self {
         Self {
             path: None,
-            state: ParserState::ReadData {
-                input: Cow::Borrowed(bytes),
+            state: ParserState::Read {
+                input: bytes.into(),
             },
             parse_options,
         }
     }
 
-    pub fn read_string(str: &'i str, parse_options: ParseOptions) -> Self {
+    pub fn read_string(str: impl Into<Arc<str>>, parse_options: ParseOptions) -> Self {
         Self {
             path: None,
-            state: ParserState::DecodedData {
-                input: Cow::Borrowed(str),
+            state: ParserState::Decoded {
+                input: str.into(),
+                version: None,
             },
             parse_options,
         }
@@ -523,66 +336,51 @@ impl<'i> Parser<'i> {
         }
     }
 
-    // ensures that the data is decoded and that it is stored inside the parser type
-    // so that we can lend out references to it
-    fn ensure_decoded<'s, M: ParseMode>(
-        &'s mut self,
-        mode: &mut M,
-    ) -> Result<(SupportedGEDCOMVersion, &'s str), DecodingError> {
-        match self.state {
-            ParserState::ReadData { ref input } => {
-                let (version, decoded) = self.detect_and_decode(input.as_ref(), mode)?;
+    fn ensure_input_decoded<M: ParseMode>(&mut self, mode: &mut M) -> Result<(), DecodingError> {
+        if let ParserState::Read { ref input } = self.state {
+            let mut value =
+                DecodedFromRead::try_new(input.clone(), |i| -> Result<_, DecodingError> {
+                    self.detect_and_decode(i, mode)
+                })?;
 
-                let merged = match decoded {
-                    Cow::Borrowed(d) => {
-                        // decoded can only be borrowed if outer was entirley ASCII or UTF-8
-                        // (and ASCII is a subset of UTF-8)
-                        debug_assert_eq!(d.as_bytes(), input.as_ref());
-
-                        match input {
-                            Cow::Borrowed(i) => {
-                                // output was borrowed from input which was also borrowed
-                                // it must be valid UTF-8
-                                Cow::Borrowed(unsafe { std::str::from_utf8_unchecked(i) })
-                            }
-                            Cow::Owned(_) => {
-                                // output was borrowed from input which was owned
-                                // it must be valid UTF-8
-                                let ParserState::ReadData {
-                                    input: Cow::Owned(vec),
-                                } = std::mem::replace(
-                                    &mut self.state,
-                                    // dummy value
-                                    ParserState::ReadData {
-                                        input: Default::default(),
-                                    },
-                                )
-                                else {
-                                    unreachable!();
-                                };
-
-                                Cow::Owned(unsafe { String::from_utf8_unchecked(vec) })
-                            }
-                        }
-                    }
-                    Cow::Owned(x) => {
-                        // we made a copy of the data so transition to that directly
-                        Cow::Owned(x)
-                    }
+            // if the decoded input is owned, we don't need to preserve the original
+            // this could save on memory usage for large inputs
+            if let Some(input) = value.with_dependent_mut(|_, v| match v.1 {
+                Cow::Owned(ref mut o) => Some(std::mem::take(o)),
+                Cow::Borrowed(_) => None,
+            }) {
+                self.state = ParserState::Decoded {
+                    input: input.into(),
+                    version: Some(value.borrow_dependent().0),
                 };
-
-                self.state = ParserState::DecodedData { input: merged };
-
-                // this is ugly to re-read it straight after, but that's
-                // also how the stdlib does things
-                let input = match self.state {
-                    ParserState::DecodedData { ref input } => input.as_ref(),
-                    _ => unreachable!(),
+            } else {
+                self.state = ParserState::ReadAndDecoded {
+                    value: Arc::new(value),
                 };
-
-                Ok((version, input))
             }
-            ParserState::DecodedData { ref input } => {
+        }
+
+        Ok(())
+    }
+
+    fn version_and_input<M: ParseMode>(
+        &self,
+        mode: &mut M,
+    ) -> Result<(SupportedGEDCOMVersion, &str), DecodingError> {
+        match &self.state {
+            ParserState::Read { .. } => unreachable!("checked by ensure_input_decoded"),
+            ParserState::ReadAndDecoded { value } => {
+                let (version, value) = value.borrow_dependent();
+                Ok((*version, value.as_ref()))
+            }
+            ParserState::Decoded {
+                input,
+                version: Some(version),
+            } => Ok((*version, input.as_ref())),
+            ParserState::Decoded {
+                input,
+                version: None,
+            } => {
                 let head = Self::extract_gedcom_header(input.as_ref(), mode)?;
                 let version = Self::version_from_header(&head)?;
                 Ok((*version, input.as_ref()))
@@ -590,42 +388,50 @@ impl<'i> Parser<'i> {
         }
     }
 
-    pub fn parse(&mut self) -> Result<parse::ParseResult, ParseError> {
-        self.run::<parse::Mode>()
+    pub fn parse(&mut self) -> Result<ParseResult, ParseError> {
+        self.run::<modes::parse::Mode>()
     }
 
-    pub fn validate(&mut self) -> Result<validation::ValidationResult, ParseError> {
-        self.run::<validation::Mode>()
+    pub fn validate(&mut self) -> Result<ValidationResult, ParseError> {
+        self.run::<modes::validation::Mode>()
     }
 
     /// Provides raw access to the parsed records.
     pub fn parse_raw(&mut self) -> Result<Vec<Sourced<RawRecord<'_>>>, ParseError> {
-        self.run::<raw::Mode>()
+        self.run::<modes::raw::Mode>()
+    }
+
+    #[cfg(feature = "kdl")]
+    /// Parses a GEDCOM file into KDL format.
+    pub fn parse_kdl(&mut self) -> Result<kdl::KdlDocument, ParseError> {
+        self.run::<modes::kdl::Mode>()
     }
 
     fn run<'s, Mode: ParseMode>(
         &'s mut self,
     ) -> Result<<Mode::ResultBuilder<'s> as ResultBuilder<'s>>::Result, ParseError> {
         let mut mode = Mode::default();
-        let (version, input) = self.ensure_decoded(&mut mode)?;
-
-        let mut builder = mode.get_result_builder::<'s>(version)?;
+        self.ensure_input_decoded(&mut mode)?;
+        let (version, input) = self.version_and_input(&mut mode)?;
+        let source_code = self.get_source_code();
+        let mut builder = mode.get_result_builder::<'s>(version, source_code)?;
         Self::read_all_records::<Mode>(input, &mut builder)?;
         builder.complete()
     }
 
-    pub fn attach_source(self, err: ParseError) -> miette::Report {
-        let report = miette::Report::new(err);
-        match self.state {
-            ParserState::ReadData { input } => match self.path {
-                Some(p) => report
-                    .with_source_code(NamedSource::new(p.to_string_lossy(), input.into_owned())),
-                None => report.with_source_code(input.into_owned()),
+    fn get_source_code(&self) -> AnySourceCode {
+        match &self.state {
+            ParserState::Read { input } => match &self.path {
+                Some(p) => AnySourceCode::new(NamedSource::new(p.to_string_lossy(), input.clone())),
+                None => AnySourceCode::new(input.clone()),
             },
-            ParserState::DecodedData { input } => match self.path {
-                Some(p) => report
-                    .with_source_code(NamedSource::new(p.to_string_lossy(), input.into_owned())),
-                None => report.with_source_code(input.into_owned()),
+            ParserState::ReadAndDecoded { value } => match &self.path {
+                Some(p) => AnySourceCode::new(NamedSource::new(p.to_string_lossy(), value.clone())),
+                None => AnySourceCode::new(value.clone()),
+            },
+            ParserState::Decoded { input, .. } => match &self.path {
+                Some(p) => AnySourceCode::new(NamedSource::new(p.to_string_lossy(), input.clone())),
+                None => AnySourceCode::new(input.clone()),
             },
         }
     }
@@ -679,26 +485,32 @@ impl<'i> Parser<'i> {
     /// on [`detect_file_encoding_opt`].
     fn detect_and_decode<'a, M>(
         &self,
-        input: &'a [u8],
+        input: &'a Arc<[u8]>,
         mode: &mut M,
     ) -> Result<(SupportedGEDCOMVersion, Cow<'a, str>), DecodingError>
     where
         M: ParseMode,
     {
+        let source_code = || match &self.path {
+            Some(p) => AnySourceCode::new(NamedSource::new(p.to_string_lossy(), input.clone())),
+            None => AnySourceCode::new(input.clone()),
+        };
+
         let (version, output) = if let Some(encoding) = self.parse_options.force_encoding {
             // encoding is being forced by settings
             let detected_encoding = DetectedEncoding::new(encoding, EncodingReason::Forced {});
             let decoded = detected_encoding.decode(input)?;
+
             let header = Self::extract_gedcom_header(decoded.as_ref(), mode)?;
             let version = Self::version_from_header(&header)?;
             (*version, decoded)
         } else if let Some(external_encoding) = detect_external_encoding(input)? {
             // we discovered the encoding externally
             tracing::debug!(encoding = ?external_encoding.encoding(), "detected encoding");
+            let ext_enc = external_encoding.encoding();
 
             // now we can decode the file to actually look inside it
             let decoded = external_encoding.decode(input)?;
-            let ext_enc = external_encoding.encoding();
 
             // get version and double-check encoding with file
             let header = Self::extract_gedcom_header(decoded.as_ref(), mode)?;
@@ -710,11 +522,12 @@ impl<'i> Parser<'i> {
             (*version, decoded)
         } else {
             // we need to determine the encoding from the file itself
-            let header = Self::extract_gedcom_header(input, mode)?;
+            let header = Self::extract_gedcom_header(input.as_ref(), mode)?;
             let (version, file_encoding) = Self::parse_gedcom_header(&header, None)?;
 
             // now we can actually decode the input
             let decoded = file_encoding.decode(input)?;
+
             (*version, decoded)
         };
 

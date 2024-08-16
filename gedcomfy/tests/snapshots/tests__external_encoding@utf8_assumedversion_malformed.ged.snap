@@ -1,0 +1,9 @@
+---
+source: gedcomfy/tests/tests.rs
+description: "0 HEAD\r\n1 GEDC\r\n2 VERS 7.0\r\n0 TEXT h�3�ré\r\n0 TRLR"
+expression: external_encoding
+input_file: gedcomfy/tests/encoding_inputs/utf8_assumedversion_malformed.ged
+---
+Ok(
+    None,
+)

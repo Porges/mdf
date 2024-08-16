@@ -1,0 +1,13 @@
+---
+source: gedcomfy/tests/tests.rs
+description: "��0\u0000 \u0000H\u0000E\u0000A\u0000D\u0000\r\u0000\n\u00001\u0000 \u0000G\u0000E\u0000D\u0000C\u0000\r\u0000\n\u00002\u0000 \u0000V\u0000E\u0000R\u0000S\u0000 \u00005\u0000.\u00005\u0000.\u00001\u0000\r\u0000\n\u00001\u0000 \u0000C\u0000H\u0000A\u0000R\u0000 \u0000U\u0000N\u0000I\u0000C\u0000O\u0000D\u0000E\u0000\r\u0000\n\u00000\u0000 \u0000T\u0000R\u0000L\u0000R\u0000\r\u0000\n\u0000"
+expression: kdl
+input_file: gedcomfy/tests/encoding_inputs/utf16le_bom.ged
+---
+HEAD {
+    GEDC {
+        VERS "5.5.1"
+    }
+    CHAR "UNICODE"
+}
+TRLR

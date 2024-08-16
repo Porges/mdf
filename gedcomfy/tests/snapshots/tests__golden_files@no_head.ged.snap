@@ -1,8 +1,8 @@
 ---
-source: gedcom/tests/tests.rs
+source: gedcomfy/tests/tests.rs
 description: "0 TRLR\r\n1 THING\r\n"
-expression: "format!(\"{:?}\",\n    Report::new(err).with_source_code(NamedSource::new(filename, data)))"
-input_file: gedcom/tests/format_inputs/no_head.ged
+expression: "format!(\"{:?}\", parser.attach_source(err))"
+input_file: gedcomfy/tests/format_inputs/no_head.ged
 ---
 gedcom::encoding::not_gedcom
 

@@ -1,8 +1,0 @@
----
-source: gedcom/tests/tests.rs
-description: "0 HEAD\r\n0 TRLR\r\n"
-expression: "format!(\"{:?}\",\n    Report::new(err).with_source_code(NamedSource::new(filename, data)))"
-input_file: gedcom/tests/encoding_inputs/unknown.ged
----
-  × Unable to determine version of GEDCOM file
-  ╰─▶ GEDCOM file appeared to be syntactically valid, but no version could be found

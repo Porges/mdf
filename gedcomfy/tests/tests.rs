@@ -1,11 +1,6 @@
 use std::{path::PathBuf, sync::Once};
 
-use gedcomfy::parser::{
-    encodings::detect_external_encoding, lines::LineValue, options::ParseOptions,
-    records::RawRecord, Parser,
-};
-use kdl::{KdlDocument, KdlEntry, KdlNode};
-use miette::{NamedSource, Report};
+use gedcomfy::parser::{encodings::detect_external_encoding, options::ParseOptions, Parser};
 
 static INIT: Once = Once::new();
 fn ensure_hook() {
@@ -50,9 +45,9 @@ fn produces_expected_allged_tree() {
     path.push("tests/external/others/allged.ged");
 
     let mut parser = Parser::read_file(path, ParseOptions::default()).unwrap();
-    let parsed = parser.parse_raw().unwrap();
+    let kdl = parser.parse_kdl().unwrap();
 
-    insta::assert_snapshot!(to_kdl(parsed.into_iter().map(|r| r.value)));
+    insta::assert_snapshot!(kdl);
 }
 
 #[test]
@@ -63,8 +58,8 @@ fn torture_test_valid() {
         let mut parser = Parser::read_file(path, ParseOptions::default())
             .unwrap()
             .with_path(path.file_name().unwrap());
-        let parsed = parser.parse_raw().unwrap();
-        insta::assert_snapshot!(to_kdl(parsed.into_iter().map(|r| r.value)));
+        let kdl = parser.parse_kdl().unwrap();
+        insta::assert_snapshot!(kdl);
     });
 }
 
@@ -79,14 +74,13 @@ fn golden_files() -> miette::Result<()> {
             // provide GEDCOM source alongside output
             description => String::from_utf8_lossy(&data),
         }, {
-            let mut parser = Parser::read_bytes(&data, ParseOptions::default()).with_path(filename);
-            match parser.parse_raw() {
-                Ok(records) => {
-                    let kdl = to_kdl(records.into_iter().map(|r| r.value));
+            let mut parser = Parser::read_bytes(data, ParseOptions::default()).with_path(filename);
+            match parser.parse_kdl() {
+                Ok(kdl) => {
                     insta::assert_snapshot!(kdl);
                 }
                 Err(err) => {
-                    insta::assert_snapshot!(format!("{:?}", parser.attach_source(err)));
+                    insta::assert_snapshot!(format!("{:?}", miette::Report::new(err)));
                 },
             };
         });
@@ -99,59 +93,19 @@ fn golden_files() -> miette::Result<()> {
             // provide GEDCOM source alongside output
             description => String::from_utf8_lossy(&data),
         }, {
-            let mut parser = Parser::read_bytes(&data, ParseOptions::default()).with_path(filename);
-            match parser.parse_raw() {
-                Ok(records) => {
-                    let kdl = to_kdl(records.into_iter().map(|r| r.value));
+            let mut parser = Parser::read_bytes(data, ParseOptions::default()).with_path(filename);
+            match parser.parse_kdl() {
+                Ok(kdl) => {
                     insta::assert_snapshot!(kdl);
                 }
                 Err(err) => {
-                    insta::assert_snapshot!(format!("{:?}", parser.attach_source(err)))
+                    insta::assert_snapshot!(format!("{:?}", miette::Report::new(err)))
                 },
             };
         });
     });
 
     Ok(())
-}
-
-fn to_kdl<'a>(records: impl Iterator<Item = RawRecord<'a>>) -> KdlDocument {
-    let mut doc = KdlDocument::new();
-    for record in records {
-        doc.nodes_mut().push(record_to_kdl(record));
-    }
-
-    doc
-}
-
-fn record_to_kdl(record: RawRecord) -> KdlNode {
-    let mut node = KdlNode::new(record.line.tag.to_string());
-
-    if let Some(xref) = &record.line.xref {
-        node.entries_mut()
-            .push(KdlEntry::new_prop("xref", xref.value.to_string()));
-    }
-
-    if let Some(mapped) = match record.line.line_value.value {
-        LineValue::Ptr(None) => Some(KdlEntry::new_prop("see", kdl::KdlValue::Null)),
-        LineValue::Ptr(Some(value)) => Some(KdlEntry::new_prop("see", value)),
-        LineValue::Str(data) => Some(KdlEntry::new(data.to_string())),
-        LineValue::None => None,
-    } {
-        node.entries_mut().push(mapped);
-    }
-
-    if record.records.is_empty() {
-        return node;
-    }
-
-    let mut children = KdlDocument::new();
-    for subrecord in record.records {
-        children.nodes_mut().push(record_to_kdl(subrecord.value));
-    }
-
-    node.set_children(children);
-    node
 }
 
 #[test]
@@ -161,38 +115,20 @@ fn test_encodings() {
     insta::glob!("encoding_inputs/*.ged", |path| {
         let data = std::fs::read(path).unwrap();
         let filename = path.file_name().unwrap();
-        let encoding_report = match detect_external_encoding(data.as_ref()) {
-            Ok(Some(detected)) => format!(
-                "External encoding detected: {}\nReason: {}",
-                detected.encoding(),
-                Report::new(detected.reason()).with_source_code(NamedSource::new(
-                    filename.to_string_lossy().clone(),
-                    data.clone()
-                ))
-            ),
-            Ok(None) => "No external encoding detected (ASCII-compatible)".to_string(),
-            Err(err) => format!(
-                "{}",
-                Report::new(err).with_source_code(NamedSource::new(
-                    filename.to_string_lossy().clone(),
-                    data.clone()
-                ))
-            ),
-        };
 
         insta::with_settings!({
             // provide GEDCOM source alongside output
             description => String::from_utf8_lossy(&data),
         }, {
-            insta::assert_snapshot!(encoding_report);
-            let mut parser = Parser::read_bytes(&data, ParseOptions::default()).with_path(filename);
-            match parser.parse_raw(){
-                Ok(records) => {
-                    let kdl = to_kdl(records.into_iter().map(|r| r.value));
-                    insta::assert_snapshot!(kdl);
+            let external_encoding = detect_external_encoding(&data);
+            insta::assert_debug_snapshot!("external_encoding", external_encoding);
+            let mut parser = Parser::read_bytes(data, ParseOptions::default()).with_path(filename);
+            match parser.parse_kdl(){
+                Ok(kdl) => {
+                    insta::assert_snapshot!("kdl", kdl);
                 }
                 Err(err) => {
-                    insta::assert_snapshot!(format!( "{:?}", parser.attach_source(err)))
+                    insta::assert_snapshot!("kdl_error", format!("{:?}", miette::Report::new(err)))
                 },
             };
         });

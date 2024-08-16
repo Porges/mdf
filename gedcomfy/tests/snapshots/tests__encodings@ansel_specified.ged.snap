@@ -1,7 +1,0 @@
----
-source: gedcom/tests/tests.rs
-description: "0 HEAD\r\n1 CHAR ANSEL\r\n0 SOME t�e�a\r\n0 TRLR\r\n"
-expression: encoding_report
-input_file: gedcom/tests/encoding_inputs/ansel_specified.ged
----
-No external encoding detected (ASCII-compatible)

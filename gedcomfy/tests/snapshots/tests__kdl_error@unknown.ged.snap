@@ -1,0 +1,8 @@
+---
+source: gedcomfy/tests/tests.rs
+description: "0 HEAD\r\n1 FOO X\r\n0 TRLR\r\n"
+expression: "format!(\"{:?}\", parser.attach_source(err))"
+input_file: gedcomfy/tests/encoding_inputs/unknown.ged
+---
+  × Unable to determine version of GEDCOM file
+  ╰─▶ GEDCOM file appeared to be syntactically valid, but no version could be found

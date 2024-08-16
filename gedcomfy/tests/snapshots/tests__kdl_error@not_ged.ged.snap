@@ -1,0 +1,11 @@
+---
+source: gedcomfy/tests/tests.rs
+description: "Hello, world!\r\n"
+expression: "format!(\"{:?}\", parser.attach_source(err))"
+input_file: gedcomfy/tests/encoding_inputs/not_ged.ged
+---
+gedcom::encoding::not_gedcom
+
+  × Unable to determine encoding of GEDCOM file
+  ╰─▶ Input does not appear to be a GEDCOM file
+  help: GEDCOM files must start with a '0 HEAD' record, but this was not found

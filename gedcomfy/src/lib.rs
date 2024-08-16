@@ -43,23 +43,23 @@ impl<'a, S: GEDCOMSource + ?Sized> RawRecord<'a, S> {
 pub fn validate_file(
     path: &Path,
     parse_options: ParseOptions,
-) -> Result<parser::validation::ValidationResult, miette::Report> {
+) -> Result<parser::ValidationResult, miette::Report> {
     let mut parser = parser::Parser::read_file(path, parse_options)
         .into_diagnostic()
         .with_context(|| format!("Parsing file {}", path.display()))?;
 
-    parser.validate().map_err(|e| parser.attach_source(e))
+    Ok(parser.validate()?)
 }
 
 pub fn parse_file(
     path: &Path,
     parse_options: ParseOptions,
-) -> Result<parser::parse::ParseResult, miette::Report> {
+) -> Result<parser::ParseResult, miette::Report> {
     let mut parser = parser::Parser::read_file(path, parse_options)
         .into_diagnostic()
         .with_context(|| format!("Parsing file {}", path.display()))?;
 
-    parser.parse().map_err(|e| parser.attach_source(e))
+    Ok(parser.parse()?)
 }
 
 #[derive(thiserror::Error, Debug, miette::Diagnostic)]

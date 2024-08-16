@@ -1,7 +1,0 @@
----
-source: gedcom/tests/tests.rs
-description: "0 HEAD\r\n1 GEDC\r\n2 VERS 7.0\r\n0 TEXT h�3�ré\r\n0 TRLR\r\n"
-expression: encoding_report
-input_file: gedcom/tests/encoding_inputs/utf8_assumedversion_malformed.ged
----
-No external encoding detected (ASCII-compatible)

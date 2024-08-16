@@ -1,8 +1,0 @@
----
-source: gedcom/tests/tests.rs
-description: "﻿0 HEAD\r\n1 GEDC\r\n2 VERS 5.5.1\r\n1 CHAR UNICODE\r\n0 TRLR\r\n"
-expression: encoding_report
-input_file: gedcom/tests/encoding_inputs/utf8_bom.ged
----
-External encoding detected: UTF-8
-Reason: this encoding was detected from the byte-order mark (BOM) at the start of the file

@@ -4,34 +4,50 @@ use std::{
     time::Instant,
 };
 
-use clap::{Parser, Subcommand};
 use fancy_duration::FancyDuration;
-use gedcomfy::parser::{encodings::SupportedEncoding, options::ParseOptions};
-use miette::{Context, IntoDiagnostic, NamedSource};
+use gedcomfy::parser::{encodings::SupportedEncoding, options::ParseOptions, Parser};
+use miette::{Context, IntoDiagnostic};
 
-#[derive(Parser)]
+#[derive(clap::Parser)]
 enum MdfArgs {
     Gedcom(GedcomArgs),
 }
 
-#[derive(Debug, clap::Args)]
+#[derive(clap::Args)]
 struct GedcomArgs {
     #[command(subcommand)]
     command: GedcomCommands,
 }
 
-#[derive(Debug, Subcommand)]
+#[derive(clap::Subcommand)]
 enum GedcomCommands {
     Parse {
         path: PathBuf,
-        #[arg(long, rename_all = "kebab-case")]
-        force_encoding: Option<Encoding>,
+        #[command(flatten)]
+        parse_options: ParseOptionsArgs,
     },
     Validate {
         path: PathBuf,
-        #[arg(long, rename_all = "kebab-case")]
-        force_encoding: Option<Encoding>,
+        #[command(flatten)]
+        parse_options: ParseOptionsArgs,
     },
+    Kdl {
+        path: PathBuf,
+        #[command(flatten)]
+        parse_options: ParseOptionsArgs,
+    },
+}
+
+#[derive(clap::Args)]
+struct ParseOptionsArgs {
+    #[arg(long, rename_all = "kebab-case")]
+    force_encoding: Option<Encoding>,
+}
+
+impl From<ParseOptionsArgs> for ParseOptions {
+    fn from(args: ParseOptionsArgs) -> ParseOptions {
+        ParseOptions::default().force_encoding(args.force_encoding.map(Into::into))
+    }
 }
 
 #[derive(clap::ValueEnum, Clone, Copy, Debug)]
@@ -51,7 +67,7 @@ impl From<Encoding> for SupportedEncoding {
 }
 
 fn main() -> miette::Result<()> {
-    let args = MdfArgs::parse();
+    let args = <MdfArgs as clap::Parser>::parse();
 
     if stdout().is_terminal() {
         // TODO
@@ -70,14 +86,22 @@ fn main() -> miette::Result<()> {
 
     match args {
         MdfArgs::Gedcom(args) => match args.command {
+            GedcomCommands::Kdl {
+                path,
+                parse_options,
+            } => {
+                let mut parser = Parser::read_file(&path, parse_options.into())
+                    .into_diagnostic()
+                    .with_context(|| format!("Parsing file {}", path.display()))?;
+
+                let result = parser.parse_kdl()?;
+                println!("{}", result);
+            }
             GedcomCommands::Parse {
                 path,
-                force_encoding,
+                parse_options,
             } => {
-                let parse_options =
-                    ParseOptions::default().force_encoding(force_encoding.map(Into::into));
-
-                let mut parser = gedcomfy::parser::Parser::read_file(&path, parse_options)
+                let mut parser = Parser::read_file(&path, parse_options.into())
                     .into_diagnostic()
                     .with_context(|| format!("Parsing file {}", path.display()))?;
 
@@ -87,13 +111,10 @@ fn main() -> miette::Result<()> {
             }
             GedcomCommands::Validate {
                 path,
-                force_encoding,
+                parse_options,
             } => {
-                let parse_options =
-                    ParseOptions::default().force_encoding(force_encoding.map(Into::into));
-
                 let start_time = Instant::now();
-                let mut parser = gedcomfy::parser::Parser::read_file(&path, parse_options)
+                let mut parser = Parser::read_file(&path, parse_options.into())
                     .into_diagnostic()
                     .with_context(|| format!("Parsing file {}", path.display()))?;
 
@@ -107,12 +128,7 @@ fn main() -> miette::Result<()> {
                     FancyDuration(start_time.elapsed()).truncate(2)
                 );
 
-                println!("GEDCOM validation result: {}", result.validity);
-
-                println!("{} messages produced", result.errors.len());
-                for error in result.errors {
-                    println!("{}", error);
-                }
+                println!("{:?}", miette::Report::new(result));
             }
         },
     }

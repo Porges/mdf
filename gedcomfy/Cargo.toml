@@ -1,28 +1,29 @@
 [package]
 name = "gedcomfy"
 version = "0.1.0"
-edition = "2021"
-authors = ["George Pollard <porges@porg.es>"]
-license = "GPL-3.0"
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
 
 [features]
-default = ["miette-highlighting"]
+default = ["miette-highlighting", "kdl"]
 miette-highlighting = ["miette/fancy-no-backtrace"]
 legacy-encodings = ["dep:oem_cp"]
+kdl = ["dep:kdl"]
 
 [dependencies]
 ascii = "1.1.0"
 encoding_rs = "0.8.34"
 # TODO: update once this is released https://github.com/zkat/miette/pull/393
-miette = { git = "https://github.com/zkat/miette", features = ["fancy-no-backtrace"] }
+miette = { git = "https://github.com/porges/miette", features = ["fancy-no-backtrace"], branch = "inherit-source-to-causes" }
 oem_cp = { version = "2.0.0", optional = true }
 owo-colors = { version = "4.0.0", features = ["supports-colors"] }
 paste = "1.0.15"
-serde = { version = "1.0.206", features = ["serde_derive"] }
+self_cell = "1.0.4"
 thiserror = "1.0.63"
 tracing = { version = "0.1", features = ["attributes"] }
 vec1 = "1.12.1"
+kdl = { version = "4.6.0", optional = true }
 
 [dev-dependencies]
 insta = { version = "1.39.0", features = ["glob"] }
-kdl = "4.6.0"

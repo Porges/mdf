@@ -1,4 +1,4 @@
-use std::borrow::Cow;
+use std::{borrow::Cow, path::Path, sync::Arc};
 
 use ascii::AsAsciiStr;
 use miette::SourceSpan;
@@ -9,6 +9,8 @@ use crate::{
     encodings::{GEDCOMEncoding, InvalidGEDCOMEncoding},
     versions::SupportedGEDCOMVersion,
 };
+
+use super::AnySourceCode;
 
 pub(crate) mod ansel;
 
@@ -354,8 +356,6 @@ impl DetectedEncoding {
 
 /// The ‘external’ encoding of the file is the encoding as it can be
 /// determined without actually enumerating GEDCOM records.
-///
-/// See the documentation on [`detect_and_decode`](crate::parser::decoding::detect_and_decode).
 pub fn detect_external_encoding(input: &[u8]) -> Result<Option<DetectedEncoding>, EncodingError> {
     let result = match input {
         // specifically indicate why UTF-32 is not supported

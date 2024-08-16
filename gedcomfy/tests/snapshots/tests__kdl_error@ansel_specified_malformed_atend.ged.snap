@@ -1,0 +1,15 @@
+---
+source: gedcomfy/tests/tests.rs
+description: "0 HEAD\r\n1 GEDC\r\n2 VERS 5.5.1\r\n1 CHAR ANSEL\r\n0 SOME t�"
+expression: "format!(\"{:?}\", miette::Report::new(err))"
+input_file: gedcomfy/tests/encoding_inputs/ansel_specified_malformed_atend.ged
+---
+gedcom::encoding::invalid_data
+
+  × GEDCOM file contained data which was invalid in the detected encoding
+  ├─▶ Invalid data for encoding ANSEL
+  ╰─▶ combining character at end of input
+
+Advice: gedcom::encoding_reason::header
+
+  ☞ this encoding was specified in the GEDCOM header

@@ -1,6 +1,6 @@
 ---
 source: gedcomfy/tests/tests.rs
-expression: to_kdl(parsed.into_iter().map(|r| r.value))
+expression: kdl
 ---
 HEAD {
     CHAR "ASCII" {

@@ -770,7 +770,7 @@ dependencies = [
  "oem_cp",
  "owo-colors",
  "paste",
- "serde",
+ "self_cell",
  "thiserror",
  "tracing",
  "vec1",
@@ -1118,7 +1118,7 @@ dependencies = [
 [[package]]
 name = "miette"
 version = "7.2.0"
-source = "git+https://github.com/zkat/miette#d6b4558502e82fa74e030ccb3c8040656590d7eb"
+source = "git+https://github.com/porges/miette?branch=inherit-source-to-causes#3311d28ac911b2373ce8e1bfdd193f4461922c09"
 dependencies = [
  "cfg-if",
  "miette-derive 7.2.0",
@@ -1146,7 +1146,7 @@ dependencies = [
 [[package]]
 name = "miette-derive"
 version = "7.2.0"
-source = "git+https://github.com/zkat/miette#d6b4558502e82fa74e030ccb3c8040656590d7eb"
+source = "git+https://github.com/porges/miette?branch=inherit-source-to-causes#3311d28ac911b2373ce8e1bfdd193f4461922c09"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1835,6 +1835,12 @@ name = "seahash"
 version = "4.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1c107b6f4780854c8b126e228ea8869f4d7b71260f962fefb57b996b8959ba6b"
+
+[[package]]
+name = "self_cell"
+version = "1.0.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d369a96f978623eb3dc28807c4852d6cc617fed53da5d3c400feff1ef34a714a"
 
 [[package]]
 name = "serde"
