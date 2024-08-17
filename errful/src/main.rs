@@ -4,15 +4,16 @@
 use std::{
     convert::Infallible,
     error::{request_value, Error},
-    fmt::{Display, Formatter},
     process::{ExitCode, Termination},
 };
+
+use errful::Errful;
 
 fn main() -> MainResult<SomeErr> {
     "Hello, world!".to_string();
     Err(SomeErr {
         value: 123,
-        inner: Inner {},
+        inner: Inner { source: Innest {} },
     })?;
     MainResult::success()
 }
@@ -46,7 +47,7 @@ impl<E: Error> Termination for MainResult<E> {
         match self {
             MainResult::Code(exit_code) => exit_code,
             MainResult::Err(err) => {
-                _ = write!(std::io::stderr(), "{}", Errful::new(&err));
+                _ = write!(std::io::stderr(), "{}", err.display_pretty());
                 request_value(&err).unwrap_or(ExitCode::FAILURE)
             }
         }
@@ -68,35 +69,15 @@ struct Innest {}
 
 #[derive(Debug, thiserror::Error)]
 #[error("In between error")]
-struct Inner {}
+struct Inner {
+    source: Innest,
+}
 
 #[derive(Debug, errful_derive::Error)]
-#[error(display = "Outermost error ", exit_code = 123)]
+#[error(display = "Outermost error", exit_code = 123, severity = errful::Severity::Error)]
 struct SomeErr {
     value: usize,
 
     #[error(source)]
     inner: Inner,
-}
-
-struct Errful<'e>(&'e dyn Error);
-
-impl<'e> Errful<'e> {
-    pub fn new(err: &'e dyn Error) -> Self {
-        Self(err)
-    }
-}
-
-impl<'e> Display for Errful<'e> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        writeln!(f, "{}", self.0)?;
-
-        let mut current = self.0;
-        while let Some(source) = current.source() {
-            writeln!(f, "→ {}", source)?;
-            current = source;
-        }
-
-        Ok(())
-    }
 }

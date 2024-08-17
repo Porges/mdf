@@ -1,4 +1,8 @@
-use std::{borrow::Cow, path::PathBuf, sync::Arc};
+use std::{
+    borrow::{BorrowMut, Cow},
+    path::PathBuf,
+    sync::Arc,
+};
 
 use ascii::{AsciiChar, AsciiStr};
 use decoding::DecodingError;
@@ -8,6 +12,7 @@ use miette::{NamedSource, SourceOffset, SourceSpan};
 use options::ParseOptions;
 use records::{RawRecord, RecordBuilder};
 use versions::VersionError;
+use yoke::{Yoke, Yokeable};
 
 use crate::{
     schemas::SchemaError,
@@ -23,8 +28,7 @@ pub mod options;
 pub mod records;
 pub(crate) mod versions;
 
-pub use modes::parse::ParseResult;
-pub use modes::validation::ValidationResult;
+pub use modes::{parse::ParseResult, validation::ValidationResult};
 
 /// Represents the minimal amount of decoding needed to
 /// parse information from GEDCOM files.
@@ -89,7 +93,7 @@ impl GEDCOMSource for [u8] {
     fn lines(&self) -> impl Iterator<Item = &Self> {
         // GEDCOM lines are terminated by "any combination of a carriage return and a line feed"
         (*self).split(|&x| x == b'\r' || x == b'\n').map(|mut s| {
-            while s.starts_with(&[b'\n']) || s.starts_with(&[b'\r']) {
+            while s.starts_with(b"\n") || s.starts_with(b"\r") {
                 s = &s[1..];
             }
 
@@ -178,13 +182,47 @@ pub struct Parser {
     parse_options: options::ParseOptions,
 }
 
+// Helper type to have decoded data that borrows from original.
+#[derive(yoke::Yokeable, Clone)]
+struct VersionAndDecoded<'a> {
+    version: SupportedGEDCOMVersion,
+    decoded: Cow<'a, str>,
+}
+
+impl miette::SourceCode for ParserState {
+    fn read_span<'a>(
+        &'a self,
+        span: &SourceSpan,
+        context_lines_before: usize,
+        context_lines_after: usize,
+    ) -> Result<Box<dyn miette::SpanContents<'a> + 'a>, miette::MietteError> {
+        match self {
+            ParserState::Read { input } => {
+                input.read_span(span, context_lines_before, context_lines_after)
+            }
+            ParserState::ReadAndDecoded { value } => {
+                value
+                    .get()
+                    .decoded
+                    .read_span(span, context_lines_before, context_lines_after)
+            }
+            ParserState::Decoded { input, .. } => {
+                input.read_span(span, context_lines_before, context_lines_after)
+            }
+        }
+    }
+}
+
 /// Represents the data owned by the parser.
+#[derive(Clone)]
 enum ParserState {
     /// Data has not yet been decoded.
     Read { input: Arc<[u8]> },
     /// Data was decoded from the original input,
     /// and the decoded data is borrowed from that.
-    ReadAndDecoded { value: Arc<DecodedFromRead> },
+    ReadAndDecoded {
+        value: Yoke<VersionAndDecoded<'static>, Arc<[u8]>>,
+    },
     /// Data was provided in decoded form, or was decoded
     /// from the original input into an owned form.
     Decoded {
@@ -218,30 +256,6 @@ impl miette::SourceCode for AnySourceCode {
 impl AnySourceCode {
     fn new(source: impl miette::SourceCode + 'static) -> Self {
         Self(Box::new(source))
-    }
-}
-
-// Helper type to have decoded data that borrows from original.
-type VersionAndDecoded<'a> = (SupportedGEDCOMVersion, Cow<'a, str>);
-self_cell::self_cell!(
-    struct DecodedFromRead {
-        owner: Arc<[u8]>,
-
-        #[covariant]
-        dependent: VersionAndDecoded,
-    }
-);
-
-impl miette::SourceCode for DecodedFromRead {
-    fn read_span<'a>(
-        &'a self,
-        span: &SourceSpan,
-        context_lines_before: usize,
-        context_lines_after: usize,
-    ) -> Result<Box<dyn miette::SpanContents<'a> + 'a>, miette::MietteError> {
-        self.borrow_dependent()
-            .1
-            .read_span(span, context_lines_before, context_lines_after)
     }
 }
 
@@ -338,25 +352,27 @@ impl Parser {
 
     fn ensure_input_decoded<M: ParseMode>(&mut self, mode: &mut M) -> Result<(), DecodingError> {
         if let ParserState::Read { ref input } = self.state {
-            let mut value =
-                DecodedFromRead::try_new(input.clone(), |i| -> Result<_, DecodingError> {
-                    self.detect_and_decode(i, mode)
+            let value: Yoke<VersionAndDecoded, Arc<[u8]>> =
+                Yoke::try_attach_to_cart(input.clone(), |i: &[u8]| -> Result<_, DecodingError> {
+                    let (version, decoded) = self.detect_and_decode(i, mode)?;
+                    Ok(VersionAndDecoded { version, decoded })
                 })?;
 
-            // if the decoded input is owned, we don't need to preserve the original
-            // this could save on memory usage for large inputs
-            if let Some(input) = value.with_dependent_mut(|_, v| match v.1 {
-                Cow::Owned(ref mut o) => Some(std::mem::take(o)),
-                Cow::Borrowed(_) => None,
-            }) {
-                self.state = ParserState::Decoded {
-                    input: input.into(),
-                    version: Some(value.borrow_dependent().0),
-                };
-            } else {
-                self.state = ParserState::ReadAndDecoded {
-                    value: Arc::new(value),
-                };
+            // see if we can drop the original input
+            match value.get() {
+                VersionAndDecoded {
+                    version,
+                    decoded: Cow::Owned(o),
+                } => {
+                    // TODO: bad, clones owned data
+                    self.state = ParserState::Decoded {
+                        input: o.clone().into(),
+                        version: Some(*version),
+                    };
+                }
+                _ => {
+                    self.state = ParserState::ReadAndDecoded { value };
+                }
             }
         }
 
@@ -370,8 +386,8 @@ impl Parser {
         match &self.state {
             ParserState::Read { .. } => unreachable!("checked by ensure_input_decoded"),
             ParserState::ReadAndDecoded { value } => {
-                let (version, value) = value.borrow_dependent();
-                Ok((*version, value.as_ref()))
+                let v_and_d = value.get();
+                Ok((v_and_d.version, v_and_d.decoded.as_ref()))
             }
             ParserState::Decoded {
                 input,
@@ -420,19 +436,11 @@ impl Parser {
     }
 
     fn get_source_code(&self) -> AnySourceCode {
-        match &self.state {
-            ParserState::Read { input } => match &self.path {
-                Some(p) => AnySourceCode::new(NamedSource::new(p.to_string_lossy(), input.clone())),
-                None => AnySourceCode::new(input.clone()),
-            },
-            ParserState::ReadAndDecoded { value } => match &self.path {
-                Some(p) => AnySourceCode::new(NamedSource::new(p.to_string_lossy(), value.clone())),
-                None => AnySourceCode::new(value.clone()),
-            },
-            ParserState::Decoded { input, .. } => match &self.path {
-                Some(p) => AnySourceCode::new(NamedSource::new(p.to_string_lossy(), input.clone())),
-                None => AnySourceCode::new(input.clone()),
-            },
+        // TODO: bad, clones owned data
+        let source_code = AnySourceCode::new(self.state.clone());
+        match &self.path {
+            Some(p) => AnySourceCode::new(NamedSource::new(p.to_string_lossy(), source_code)),
+            None => source_code,
         }
     }
 
@@ -485,17 +493,12 @@ impl Parser {
     /// on [`detect_file_encoding_opt`].
     fn detect_and_decode<'a, M>(
         &self,
-        input: &'a Arc<[u8]>,
+        input: &'a [u8],
         mode: &mut M,
     ) -> Result<(SupportedGEDCOMVersion, Cow<'a, str>), DecodingError>
     where
         M: ParseMode,
     {
-        let source_code = || match &self.path {
-            Some(p) => AnySourceCode::new(NamedSource::new(p.to_string_lossy(), input.clone())),
-            None => AnySourceCode::new(input.clone()),
-        };
-
         let (version, output) = if let Some(encoding) = self.parse_options.force_encoding {
             // encoding is being forced by settings
             let detected_encoding = DetectedEncoding::new(encoding, EncodingReason::Forced {});
