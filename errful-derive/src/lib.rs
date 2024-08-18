@@ -1,7 +1,7 @@
-use darling::{ast, FromAttributes, FromDeriveInput, FromField};
+use darling::{ast, FromDeriveInput, FromField};
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::{parse_macro_input, Data, DataStruct, DeriveInput, Label, Type};
+use syn::{parse_macro_input, DeriveInput, Type};
 
 #[derive(FromDeriveInput)]
 #[darling(attributes(error), supports(struct_any))]

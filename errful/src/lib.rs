@@ -6,8 +6,10 @@ use std::{
     process::ExitCode,
 };
 
-use owo_colors::AnsiColors;
+use colors::ColorGenerator;
+use owo_colors::{AnsiColors, Color, OwoColorize};
 
+mod colors;
 pub mod snippets;
 
 pub trait Errful: std::error::Error {
@@ -91,8 +93,33 @@ impl std::fmt::Display for PrettyNoColorDisplay<'_> {
     }
 }
 
+impl PrettyDisplay<'_> {
+    fn render_labels(
+        &self,
+        err: &dyn Error,
+        colors: &mut ColorGenerator,
+        f: &mut Formatter<'_>,
+    ) -> std::fmt::Result {
+        if let Some(labels) = err.labels() {
+            for label in labels {
+                let c = if self.color {
+                    owo_colors::Style::new().color(colors.next())
+                } else {
+                    owo_colors::Style::new()
+                };
+
+                writeln!(f, "LABEL: {:?}", c.style(label.span()))?;
+            }
+        }
+
+        Ok(())
+    }
+}
+
 impl<'e> Display for PrettyDisplay<'e> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let mut colors = ColorGenerator::new();
+
         let err = self.err;
 
         let severity = err.severity().unwrap_or(&Severity::Error);
@@ -103,8 +130,14 @@ impl<'e> Display for PrettyDisplay<'e> {
             owo_colors::Style::new()
         };
 
+        let style_bold = if self.color {
+            style_color.bold()
+        } else {
+            owo_colors::Style::new()
+        };
+
         let style_underlined = if self.color {
-            style_color.underline()
+            style_bold.underline()
         } else {
             owo_colors::Style::new()
         };
@@ -133,11 +166,7 @@ impl<'e> Display for PrettyDisplay<'e> {
             err
         )?;
 
-        if let Some(labels) = err.labels() {
-            for label in labels {
-                writeln!(f, "LABEL: {:?}", label.span())?;
-            }
-        }
+        self.render_labels(err, &mut colors, f)?;
 
         while let Some(source) = next {
             let nn = source.source();
@@ -146,6 +175,8 @@ impl<'e> Display for PrettyDisplay<'e> {
             } else {
                 writeln!(f, " {} {}", style_color.style("├▷"), source)?;
             }
+
+            self.render_labels(source, &mut colors, f)?;
 
             next = nn;
         }

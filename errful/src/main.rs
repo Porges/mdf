@@ -13,7 +13,9 @@ fn main() -> MainResult<SomeErr> {
     "Hello, world!".to_string();
     Err(SomeErr {
         value: 123,
-        inner: Inner { source: Innest {} },
+        inner: Inner {
+            source: Innest::default(),
+        },
     })?;
     MainResult::success()
 }
@@ -63,9 +65,21 @@ impl<E> From<Result<(), E>> for MainResult<E> {
     }
 }
 
-#[derive(Debug, thiserror::Error)]
-#[error("Root error ")]
-struct Innest {}
+#[derive(Debug, errful_derive::Error, Default)]
+#[error(display = "Root error")]
+struct Innest {
+    #[error(label = "label 1")]
+    label_1: (usize, usize),
+
+    #[error(label = "label 2")]
+    label_2: (usize, usize),
+
+    #[error(label = "label 3")]
+    label_3: (usize, usize),
+
+    #[error(label = "label 4")]
+    label_4: (usize, usize),
+}
 
 #[derive(Debug, thiserror::Error)]
 #[error("In between error")]
