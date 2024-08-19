@@ -7,10 +7,13 @@ edition.workspace = true
 
 [dependencies]
 thiserror = "1.0.63"
+complex-indifference = { path = "../complex-indifference" }
 errful-derive = { path = "../errful-derive" }
 owo-colors = "4.0.0"
 mappable-rc = "0.1.1"
 yoke = "0.7.4"
+unicode-width = "0.1.13"
 
 [dev-dependencies]
 insta = "1.39.0"
+ansi-to-html = "0.2.1"

@@ -78,6 +78,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "ansi-to-html"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d73c455ae09fa2223a75114789f30ad605e9e297f79537953523366c05995f5f"
+dependencies = [
+ "regex",
+ "thiserror",
+]
+
+[[package]]
 name = "anstream"
 version = "0.6.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -418,6 +428,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d3fd119d74b830634cea2a0f58bbd0d54540518a14397557951e79340abc28c0"
 
 [[package]]
+name = "complex-indifference"
+version = "0.1.0"
+
+[[package]]
 name = "console"
 version = "0.15.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -630,11 +644,14 @@ checksum = "5443807d6dff69373d433ab9ef5378ad8df50ca6298caf15de6e52e24aaf54d5"
 name = "errful"
 version = "0.1.0"
 dependencies = [
+ "ansi-to-html",
+ "complex-indifference",
  "errful-derive",
  "insta",
  "mappable-rc",
  "owo-colors",
  "thiserror",
+ "unicode-width",
  "yoke",
 ]
 
@@ -826,6 +843,7 @@ name = "gedcomfy"
 version = "0.1.0"
 dependencies = [
  "ascii",
+ "complex-indifference",
  "encoding_rs",
  "insta",
  "kdl",

@@ -12,7 +12,6 @@ use vec1::Vec1;
 
 pub mod encodings;
 pub mod highlighting;
-mod ntypes;
 pub mod parser;
 pub mod schemas;
 pub(crate) mod versions;

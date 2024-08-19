@@ -1,4 +1,6 @@
 #![feature(error_generic_member_access)]
+#![feature(try_trait_v2)]
+#![feature(vec_pop_if)]
 
 use std::{
     error::Error,
@@ -7,10 +9,15 @@ use std::{
 };
 
 use colors::ColorGenerator;
-use owo_colors::{AnsiColors, Color, OwoColorize};
+use complex_indifference::Span;
+use owo_colors::AnsiColors;
 
 mod colors;
+pub mod result;
 pub mod snippets;
+
+pub use errful_derive::Error;
+pub use result::MainResult;
 
 pub trait Errful: std::error::Error {
     // request helpers
@@ -33,6 +40,10 @@ pub trait Errful: std::error::Error {
 
     fn labels(&self) -> Option<Vec<Label>> {
         std::error::request_value(self)
+    }
+
+    fn source_code(&self) -> Option<&str> {
+        std::error::request_ref::<SourceCode>(self).map(|c| &c.0)
     }
 
     // display helpers
@@ -94,21 +105,35 @@ impl std::fmt::Display for PrettyNoColorDisplay<'_> {
 }
 
 impl PrettyDisplay<'_> {
-    fn render_labels(
+    fn render_sourcelabels(
         &self,
         err: &dyn Error,
         colors: &mut ColorGenerator,
         f: &mut Formatter<'_>,
     ) -> std::fmt::Result {
         if let Some(labels) = err.labels() {
-            for label in labels {
-                let c = if self.color {
-                    owo_colors::Style::new().color(colors.next())
-                } else {
-                    owo_colors::Style::new()
-                };
-
-                writeln!(f, "LABEL: {:?}", c.style(label.span()))?;
+            if let Some(source_code) = err.source_code() {
+                writeln!(
+                    f,
+                    "{}",
+                    snippets::render_spans(
+                        source_code,
+                        labels,
+                        |_: &Label| { owo_colors::Style::new().color(colors.next()) },
+                        |l: &LabelMessage| {
+                            match l {
+                                // TODO: inner errors
+                                LabelMessage::Error(e) => format!("{}", e),
+                                LabelMessage::Literal(l) => l.to_string(),
+                            }
+                        },
+                    )
+                )?;
+            } else {
+                writeln!(
+                    f,
+                    "errful issue: no source code provided to render labels (use #[source_code] to mark an appropriate field)"
+                )?;
             }
         }
 
@@ -124,20 +149,20 @@ impl<'e> Display for PrettyDisplay<'e> {
 
         let severity = err.severity().unwrap_or(&Severity::Error);
 
-        let style_color = if self.color {
-            owo_colors::Style::new().color(severity.style())
+        let base_color = if self.color {
+            owo_colors::Style::new().color(severity.base_colour())
         } else {
             owo_colors::Style::new()
         };
 
-        let style_bold = if self.color {
-            style_color.bold()
+        let bold_style = if self.color {
+            base_color.bold()
         } else {
             owo_colors::Style::new()
         };
 
-        let style_underlined = if self.color {
-            style_bold.underline()
+        let main_sev_style = if self.color {
+            bold_style.underline()
         } else {
             owo_colors::Style::new()
         };
@@ -145,8 +170,8 @@ impl<'e> Display for PrettyDisplay<'e> {
         write!(
             f,
             "{}{} {}",
-            style_underlined.style(severity.name()),
-            style_color.style(":"),
+            main_sev_style.style(severity.name()),
+            base_color.style(":"),
             err
         )?;
 
@@ -161,22 +186,22 @@ impl<'e> Display for PrettyDisplay<'e> {
         writeln!(
             f,
             "{}{} {}",
-            style_color.style(severity.symbol()),
-            style_color.style("┐"),
+            base_color.style(severity.symbol()),
+            base_color.style("┐"),
             err
         )?;
 
-        self.render_labels(err, &mut colors, f)?;
+        self.render_sourcelabels(err, &mut colors, f)?;
 
         while let Some(source) = next {
             let nn = source.source();
             if nn.is_none() {
-                writeln!(f, " {} {}", style_color.style("└▷"), source)?;
+                writeln!(f, " {} {}", base_color.style("└▷"), source)?;
             } else {
-                writeln!(f, " {} {}", style_color.style("├▷"), source)?;
+                writeln!(f, " {} {}", base_color.style("├▷"), source)?;
             }
 
-            self.render_labels(source, &mut colors, f)?;
+            self.render_sourcelabels(source, &mut colors, f)?;
 
             next = nn;
         }
@@ -189,10 +214,19 @@ pub struct Url(pub &'static str);
 
 pub struct Code(pub &'static str);
 
+#[repr(transparent)]
+pub struct SourceCode(str);
+
+impl SourceCode {
+    pub fn new(s: &str) -> &Self {
+        unsafe { &*(s as *const str as *const Self) }
+    }
+}
+
 pub trait PrintableSeverity {
     fn symbol(&self) -> &'static str;
     fn name(&self) -> &'static str;
-    fn style(&self) -> AnsiColors;
+    fn base_colour(&self) -> AnsiColors;
 }
 
 pub enum Severity {
@@ -218,7 +252,7 @@ impl PrintableSeverity for Severity {
         }
     }
 
-    fn style(&self) -> AnsiColors {
+    fn base_colour(&self) -> AnsiColors {
         match self {
             Severity::Info => AnsiColors::Blue,
             Severity::Warning => AnsiColors::Yellow,
@@ -227,21 +261,42 @@ impl PrintableSeverity for Severity {
     }
 }
 
+#[derive(Debug)]
 pub struct Label {
-    message: &'static str,
-    span: (usize, usize),
+    message: LabelMessage,
+    span: Span<u8>,
+}
+
+#[derive(Debug)]
+enum LabelMessage {
+    Error(Box<dyn Error>),
+    Literal(&'static str),
 }
 
 impl Label {
-    pub fn new(
+    pub fn new_error(
         source_id: Option<&'static str>,
-        message: &'static str,
-        span: (usize, usize),
+        message: Box<dyn Error>,
+        span: impl Into<Span<u8>>,
     ) -> Self {
-        Label { message, span }
+        Label {
+            message: LabelMessage::Error(message),
+            span: span.into(),
+        }
     }
 
-    pub fn span(&self) -> (usize, usize) {
+    pub fn new_literal(
+        source_id: Option<&'static str>,
+        message: &'static str,
+        span: impl Into<Span<u8>>,
+    ) -> Self {
+        Label {
+            message: LabelMessage::Literal(message),
+            span: span.into(),
+        }
+    }
+
+    pub fn span(&self) -> Span<u8> {
         self.span
     }
 }

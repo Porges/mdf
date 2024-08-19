@@ -1,6 +1,6 @@
 #![feature(error_generic_member_access)]
 
-use std::alloc;
+use std::num::ParseIntError;
 
 use errful::Errful;
 use insta::assert_snapshot;
@@ -86,6 +86,38 @@ fn label() {
     assert_snapshot!(value.display_pretty_nocolor(), @r###"
     Error: label-haver
     ×┐ label-haver
-    LABEL: (0, 1)
+    errful issue: no source code provided to render labels (use #[source_code] to mark an appropriate field)
+    "###);
+}
+
+#[test]
+fn label_with_field() {
+    #[derive(Debug, errful::Error)]
+    #[error(display = "labelled-with-source")]
+    struct E {
+        #[error(label = source)]
+        span: (usize, usize),
+
+        source: ParseIntError,
+
+        #[error(source_code)]
+        code: String,
+    }
+
+    let code = "abc".to_string();
+
+    let value = E {
+        span: (0, 1),
+        source: code.parse::<usize>().unwrap_err(),
+        code,
+    };
+
+    assert_snapshot!(value.display_pretty_nocolor(), @r###"
+    Error: labelled-with-source
+    ×┐ labelled-with-source
+    1 │ [38;2;119;170;221ma[0mbc
+      ┆ invalid digit found in string
+
+     └▷ invalid digit found in string
     "###);
 }

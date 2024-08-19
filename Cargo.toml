@@ -1,5 +1,5 @@
 [workspace]
-members = ["gedcomfy", "gedcomesque", "mdf", "errful", "errful-derive"]
+members = ["gedcomfy", "gedcomesque", "mdf", "errful", "errful-derive", "complex-indifference"]
 resolver = "2"
 
 [workspace.package]

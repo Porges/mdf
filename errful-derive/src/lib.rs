@@ -1,4 +1,4 @@
-use darling::{ast, FromDeriveInput, FromField};
+use darling::{ast, FromDeriveInput, FromField, FromMeta};
 use proc_macro2::TokenStream;
 use quote::quote;
 use syn::{parse_macro_input, DeriveInput, Type};
@@ -35,6 +35,11 @@ pub fn derive_errful(input: proc_macro::TokenStream) -> proc_macro::TokenStream 
         Err(e) => return e.write_errors().into(),
     };
 
+    let source_code = match find_source_code(&opts.data) {
+        Ok(r) => r,
+        Err(e) => return e.write_errors().into(),
+    };
+
     let display_impl = opts.display.map(|display| {
         quote! {
             impl ::core::fmt::Display for #ident {
@@ -49,7 +54,7 @@ pub fn derive_errful(input: proc_macro::TokenStream) -> proc_macro::TokenStream 
 
     if let Some(exit_code) = opts.exit_code {
         provisions.push(quote! {
-            .provide_value(ExitCode::from(#exit_code))
+            .provide_value(::std::process::ExitCode::from(#exit_code))
         });
     };
 
@@ -75,6 +80,10 @@ pub fn derive_errful(input: proc_macro::TokenStream) -> proc_macro::TokenStream 
         provisions.push(labels);
     }
 
+    if let Some(source_code) = source_code {
+        provisions.push(source_code);
+    }
+
     let output = quote! {
         impl ::core::error::Error for #ident {
             #source_method
@@ -95,15 +104,49 @@ pub fn derive_errful(input: proc_macro::TokenStream) -> proc_macro::TokenStream 
 #[derive(Debug, FromField)]
 #[darling(attributes(error))]
 struct StructFields {
-    // magic fields:
+    // -- magic fields:
     ident: Option<syn::Ident>,
     ty: syn::Type,
 
-    // actual options
+    // -- actual options
+
+    // is this the source of the error?
     #[darling(default)]
     source: bool,
-    label: Option<String>,
+
+    // labels
+    label: Option<LabelTarget>,
     source_id: Option<String>,
+
+    // source code
+    #[darling(default)]
+    source_code: bool,
+}
+
+#[derive(Debug)]
+enum LabelTarget {
+    Field(syn::Ident),
+    Literal(String),
+}
+
+impl From<syn::Ident> for LabelTarget {
+    fn from(ident: syn::Ident) -> Self {
+        LabelTarget::Field(ident)
+    }
+}
+
+impl From<String> for LabelTarget {
+    fn from(literal: String) -> Self {
+        LabelTarget::Literal(literal)
+    }
+}
+
+impl FromMeta for LabelTarget {
+    fn from_meta(item: &syn::Meta) -> darling::Result<Self> {
+        String::from_meta(item)
+            .map(Into::into)
+            .or_else(|_| syn::Ident::from_meta(item).map(Into::into))
+    }
 }
 
 fn generate_source(data: &ast::Data<(), StructFields>) -> darling::Result<TokenStream> {
@@ -156,21 +199,30 @@ fn find_labels(data: &ast::Data<(), StructFields>) -> darling::Result<Option<Tok
     for (ix, field) in fields.iter().enumerate() {
         let Some(label) = &field.label else { continue };
 
-        let fieldname = field
-            .ident
-            .as_ref()
-            .map(|s| quote! { #s })
-            .unwrap_or_else(|| quote! { #ix });
+        let fieldname = name_for_field((ix, field));
 
-        if let Some(source_id) = &field.source_id {
-            labels.push(quote! {
-                ::errful::Label::new(Some(#source_id), #label, self.#fieldname)
-            });
-        } else {
-            labels.push(quote! {
-                ::errful::Label::new(None, #label, self.#fieldname)
-            });
-        }
+        let source_id = match &field.source_id {
+            Some(id) => quote! { Some(#id) },
+            None => quote! { None },
+        };
+
+        let value = match label {
+            LabelTarget::Field(ident) => {
+                quote! {
+                   ::errful::Label::new_error(
+                       #source_id,
+                       ::std::boxed::Box::new(self.#ident.clone()),
+                       self.#fieldname)
+                }
+            }
+            LabelTarget::Literal(label) => {
+                quote! {
+                    ::errful::Label::new_literal(#source_id, #label, self.#fieldname)
+                }
+            }
+        };
+
+        labels.push(value);
     }
 
     if labels.is_empty() {
@@ -184,6 +236,32 @@ fn find_labels(data: &ast::Data<(), StructFields>) -> darling::Result<Option<Tok
             ]
         })
     }))
+}
+
+fn find_source_code(data: &ast::Data<(), StructFields>) -> darling::Result<Option<TokenStream>> {
+    let fields = data.as_ref().take_struct().expect("struct").fields;
+
+    // TODO error if specified more than once
+
+    for (ix, field) in fields.iter().enumerate() {
+        if field.source_code {
+            let fieldname = name_for_field((ix, field));
+            return Ok(Some(quote! {
+                .provide_ref(::errful::SourceCode::new(&self.#fieldname))
+            }));
+        }
+    }
+
+    Ok(None)
+}
+
+fn name_for_field(field: (usize, &StructFields)) -> TokenStream {
+    if let Some(ident) = &field.1.ident {
+        quote! { #ident }
+    } else {
+        let ix = field.0;
+        quote! { #ix }
+    }
 }
 
 fn is_optional(ty: &Type) -> bool {

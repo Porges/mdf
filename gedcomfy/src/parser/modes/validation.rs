@@ -1,7 +1,7 @@
+use complex_indifference::{plural, Count};
 use miette::Diagnostic;
 
 use crate::{
-    ntypes::Count,
     parser::{
         records::RawRecord, AnySourceCode, NonFatalHandler, ParseError, ParseMode, ResultBuilder,
         Sourced,
@@ -18,9 +18,9 @@ pub(in crate::parser) struct Mode {
 #[error(
     "Validation was {validity}: {} top-level records processed with {}, {}, and {}.",
     record_count,
-    error_count.plural("error(s)"),
-    warning_count.plural("warning(s)"),
-    advice_count.plural("piece(s) of advice")
+    error_count.plural(plural!(error(s))),
+    warning_count.plural(plural!(warning(s))),
+    advice_count.plural(plural!(piece(s)" of advice"))
 )]
 #[diagnostic(severity(Advice))]
 pub struct ValidationResult {
