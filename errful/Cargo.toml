@@ -13,6 +13,7 @@ owo-colors = { version = "4.0.0", features = ["alloc"] }
 mappable-rc = "0.1.1"
 yoke = "0.7.4"
 unicode-width = "0.1.13"
+textwrap = "0.16.1"
 
 [dev-dependencies]
 insta = "1.39.0"

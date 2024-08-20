@@ -107,23 +107,22 @@ impl std::fmt::Display for PrettyNoColorDisplay<'_> {
 impl PrettyDisplay<'_> {
     fn render_sourcelabels(
         &self,
+        prefix: &str,
         err: &dyn Error,
         highlight: &mut impl FnMut(&Label) -> owo_colors::Style,
         f: &mut Formatter<'_>,
     ) -> std::fmt::Result {
         if let Some(labels) = err.labels() {
             if let Some(source_code) = err.source_code() {
-                writeln!(
-                    f,
-                    "{}",
+                let rendered =
                     snippets::render_spans(source_code, labels, highlight, |l: &LabelMessage| {
                         match l {
                             // TODO: inner errors
                             LabelMessage::Error(e) => format!("{}", e),
                             LabelMessage::Literal(l) => l.to_string(),
                         }
-                    },)
-                )?;
+                    });
+                write!(f, "{}", textwrap::indent(&rendered, prefix))?;
             } else {
                 writeln!(
                     f,
@@ -189,32 +188,40 @@ impl<'e> Display for PrettyDisplay<'e> {
             writeln!(f)?;
         }
 
-        let mut next = err.source();
+        let mut index = 0;
 
         writeln!(f)?;
         writeln!(f, "{}", only_bold.style("Details:"))?;
         writeln!(
             f,
-            "{}{} {}",
+            "{} {index:1} {}  {}",
             base_color.style(severity.symbol()),
             base_color.style("┐"),
             err
         )?;
 
-        self.render_sourcelabels(err, &mut colors, f)?;
+        let indent_prefix = format!("{}", base_color.style("    │ "));
 
-        while let Some(source) = next {
-            let nn = source.source();
-            if nn.is_none() {
-                writeln!(f, " {} {}", base_color.style("└▷"), source)?;
+        self.render_sourcelabels(&indent_prefix, err, &mut colors, f)?;
+
+        let mut next = err.source();
+        while let Some(source_err) = next {
+            index += 1;
+            let next_source = source_err.source();
+            if next_source.is_none() {
+                // TODO: check if there is any additional info
+                // └
+                writeln!(f, " {index:2} {} {}", base_color.style("├▷"), source_err)?;
             } else {
-                writeln!(f, " {} {}", base_color.style("├▷"), source)?;
+                writeln!(f, " {index:2} {} {}", base_color.style("├▷"), source_err)?;
             }
 
-            self.render_sourcelabels(source, &mut colors, f)?;
+            self.render_sourcelabels(&indent_prefix, source_err, &mut colors, f)?;
 
-            next = nn;
+            next = next_source;
         }
+
+        writeln!(f, "    {}", base_color.style("┷"))?;
 
         Ok(())
     }

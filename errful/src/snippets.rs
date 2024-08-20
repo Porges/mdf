@@ -162,6 +162,15 @@ pub(crate) fn render_spans(
         };
 
         let mut last_heavy = true;
+        if result.is_empty() {
+            writeln!(
+                result,
+                "{:>indent_width$} ┎",
+                " ", // no line number - this is a supplementary line
+            )
+            .unwrap();
+        }
+
         for (ix, line) in vec {
             if ix == usize::MAX {
                 write!(
@@ -188,6 +197,20 @@ pub(crate) fn render_spans(
             }
         }
     }
+
+    if !result.ends_with('\n') {
+        result.push('\n');
+    }
+
+    // TODO: need indent width here as well
+    // TODO: need last_heavy here as well
+    writeln!(
+        result,
+        "{:>indent_width$} ┖",
+        " ", // no line number - this is a supplementary line
+        indent_width = 1
+    )
+    .unwrap();
 
     result
 }
@@ -246,7 +269,7 @@ fn apply_highlighting(
                 let end = min(wanted_end, sublabel.span().start());
                 let value = Span::new_offset(up_to, end).str(source);
                 let continues = wanted_end > sublabel.span().end();
-                fill_indicator(has_written, continues, value, &style);
+                fill_indicator(has_written, continues, value, style);
                 write!(dest, "{}", style.style(value)).unwrap();
                 if !has_written {
                     let indent = up_to - start;
@@ -254,6 +277,8 @@ fn apply_highlighting(
                     let msg = display(&nested.message);
 
                     // lotta work here for something that's really subtle
+                    // look for places (spaces) where we can penetrate this message
+                    // with ones that come later
                     let mut list = vec![style.style("└╴".to_string())];
                     let mut building = String::new();
                     for c in msg.char_indices() {
@@ -297,6 +322,7 @@ fn apply_highlighting(
 
                     messages.push((indent, format!("{}", StyledList::from(list))));
                 }
+
                 up_to = end;
 
                 // TODO: partial overlaps
@@ -319,6 +345,8 @@ fn apply_highlighting(
         fill_indicator(has_written, false, value, style);
         write!(dest, "{}", style.style(value)).unwrap();
         if !has_written {
+            // TODO: we need to do penetration here as well,
+            // factor it out from the above
             messages.push((
                 up_to - start,
                 format!(
@@ -334,7 +362,6 @@ fn apply_highlighting(
     let indicator = format!("{}\n", StyledList::from(indicator_line));
     (indicator, messages)
 }
-
 #[cfg(test)]
 mod test {
     use complex_indifference::Offset;
@@ -389,9 +416,11 @@ mod test {
         let result = check(source_code, "hello", "here");
 
         assert_snapshot!(result, @r###"
+          ┎
         1 ┃ hello, world!
           ╿ ├───┘
           │ └╴here
+          ┖
         "###);
     }
 
@@ -402,9 +431,11 @@ mod test {
         let result = check(source_code, "world!", "here");
 
         assert_snapshot!(result, @r###"
+          ┎
         1 ┃ hello, world!
           ╿        ├────┘
           │        └╴here
+          ┖
         "###);
     }
 
@@ -415,9 +446,11 @@ mod test {
         let result = check(source_code, "hello, world!", "here");
 
         assert_snapshot!(result, @r###"
+          ┎
         1 ┃ hello, world!
           ╿ ├───────────┘
           │ └╴here
+          ┖
         "###);
     }
 
@@ -431,11 +464,13 @@ mod test {
         let result = check(source_code, "hello", "here");
 
         assert_snapshot!(result, @r###"
+          ┎
         1 ┃ line 1
         2 ┃ hello, world!
           ╿ ├───┘
           │ └╴here
         3 ╽ line 3
+          ┖
         "###);
     }
 
@@ -449,11 +484,13 @@ mod test {
         let result = check(source_code, "world!", "here");
 
         assert_snapshot!(result, @r###"
+          ┎
         1 ┃ line 1
         2 ┃ hello, world!
           ╿        ├────┘
           │        └╴here
         3 ╽ line 3
+          ┖
         "###);
     }
 
@@ -468,12 +505,14 @@ mod test {
         let result = check(source_code, "hello, world!", "here");
 
         assert_snapshot!(result, @r###"
+          ┎
         1 ┃ line 1
         2 ┃ hello, world!
           ╿ ├───────────┘
           │ └╴here
         3 ╽ line 3
         4 ┃ line 4
+          ┖
         "###);
     }
 
@@ -489,6 +528,7 @@ mod test {
         let result = check(source_code, "hello", "here");
 
         assert_snapshot!(result, @r###"
+          ┎
         1 ┃ line 1
         2 ┃ line 2
         3 ┃ hello, world!
@@ -496,6 +536,7 @@ mod test {
           │ └╴here
         4 ╽ line 4
         5 ┃ line 5
+          ┖
         "###);
     }
 
@@ -511,6 +552,7 @@ mod test {
         let result = check(source_code, "world!", "here");
 
         assert_snapshot!(result, @r###"
+          ┎
         1 ┃ line 1
         2 ┃ line 2
         3 ┃ hello, world!
@@ -518,6 +560,7 @@ mod test {
           │        └╴here
         4 ╽ line 4
         5 ┃ line 5
+          ┖
         "###);
     }
 
@@ -533,6 +576,7 @@ mod test {
         let result = check(source_code, "hello, world!", "here");
 
         assert_snapshot!(result, @r###"
+          ┎
         1 ┃ line 1
         2 ┃ line 2
         3 ┃ hello, world!
@@ -540,6 +584,7 @@ mod test {
           │ └╴here
         4 ╽ line 4
         5 ┃ line 5
+          ┖
         "###);
     }
 
@@ -561,11 +606,13 @@ mod test {
         let result = check(source_code, "question", "here");
 
         assert_snapshot!(result, @r###"
+           ┎
          9 ┃ line9
         10 ┃ line10
         11 ┃ line in question
            ╿         ├──────┘
            │         └╴here
+          ┖
         "###);
     }
 
@@ -616,10 +663,12 @@ mod test {
         let result = check_many(source_code, &[("hello, wo", "outer"), ("llo", "inner")]);
 
         assert_snapshot!(result, @r###"
+          ┎
         1 ┃ hello, world!
           ╿ ├╴├─┘╶──┘
           │ └╴outer
           │   └╴inner
+          ┖
         "###);
     }
 
@@ -633,11 +682,13 @@ mod test {
         );
 
         assert_snapshot!(result, @r###"
+          ┎
         1 ┃ hello, world!
           ╿ ├╴├─┘╿╶─┘
           │ └╴╵uter
           │   └╴i[2m╵[0mner
           │      └╴skipping
+          ┖
         "###);
     }
 
@@ -649,9 +700,11 @@ mod test {
         let result = check(source_code, "llo", "here");
 
         assert_snapshot!(result, @r###"
+          ┎
         1 ┃ héllo, world!
           ╿   ├─┘
           │   └╴here
+          ┖
         "###);
     }
 
@@ -671,11 +724,13 @@ mod test {
 
         // checks alignment of the parts here:
         assert_snapshot!(result, @r###"
+          ┎
         1 ┃ héllo, world!
           ╿ ╿╿├─┘
           │ └╴whole
           │  └╴part
           │   └╴part
+          ┖
         "###);
     }
 

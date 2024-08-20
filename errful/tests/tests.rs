@@ -24,8 +24,9 @@ fn source_macro() {
     Error: outer
 
     Details:
-    ×┐ outer
-     └▷ inner
+    × 0 ┐  outer
+      1 ├▷ inner
+        ┷
     "###);
 }
 
@@ -43,8 +44,9 @@ fn source_field_name() {
     Error: outer
 
     Details:
-    ×┐ outer
-     └▷ inner
+    × 0 ┐  outer
+      1 ├▷ inner
+        ┷
     "###);
 }
 
@@ -60,7 +62,8 @@ fn code() {
     Error: code-haver [error-code]
 
     Details:
-    ×┐ code-haver
+    × 0 ┐  code-haver
+        ┷
     "###);
 }
 
@@ -76,7 +79,8 @@ fn url() {
     Error: url-haver
 
     Details:
-    ×┐ url-haver
+    × 0 ┐  url-haver
+        ┷
     "###);
 }
 
@@ -95,8 +99,9 @@ fn label() {
     Error: label-haver
 
     Details:
-    ×┐ label-haver
+    × 0 ┐  label-haver
     errful issue: no source code provided to render labels (use #[source_code] to mark an appropriate field)
+        ┷
     "###);
 }
 
@@ -126,11 +131,13 @@ fn label_with_field() {
     Error: labelled-with-source
 
     Details:
-    ×┐ labelled-with-source
-    1 ┃ abc
-      ╿ ╿
-      │ └╴invalid digit found in string
-
-     └▷ invalid digit found in string
+    × 0 ┐  labelled-with-source
+        │   ┎
+        │ 1 ┃ abc
+        │   ╿ ╿
+        │   │ └╴invalid digit found in string
+        │   ┖
+      1 ├▷ invalid digit found in string
+        ┷
     "###);
 }
