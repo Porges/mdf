@@ -108,7 +108,7 @@ impl PrettyDisplay<'_> {
     fn render_sourcelabels(
         &self,
         err: &dyn Error,
-        colors: &mut ColorGenerator,
+        highlight: &mut impl FnMut(&Label) -> owo_colors::Style,
         f: &mut Formatter<'_>,
     ) -> std::fmt::Result {
         if let Some(labels) = err.labels() {
@@ -116,18 +116,13 @@ impl PrettyDisplay<'_> {
                 writeln!(
                     f,
                     "{}",
-                    snippets::render_spans(
-                        source_code,
-                        labels,
-                        |_: &Label| { owo_colors::Style::new().color(colors.next()) },
-                        |l: &LabelMessage| {
-                            match l {
-                                // TODO: inner errors
-                                LabelMessage::Error(e) => format!("{}", e),
-                                LabelMessage::Literal(l) => l.to_string(),
-                            }
-                        },
-                    )
+                    snippets::render_spans(source_code, labels, highlight, |l: &LabelMessage| {
+                        match l {
+                            // TODO: inner errors
+                            LabelMessage::Error(e) => format!("{}", e),
+                            LabelMessage::Literal(l) => l.to_string(),
+                        }
+                    },)
                 )?;
             } else {
                 writeln!(
@@ -143,7 +138,14 @@ impl PrettyDisplay<'_> {
 
 impl<'e> Display for PrettyDisplay<'e> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        let mut colors = ColorGenerator::new();
+        let mut colorgen = ColorGenerator::new();
+        let mut colors = |_: &Label| {
+            if self.color {
+                owo_colors::Style::new().color(colorgen.next())
+            } else {
+                owo_colors::Style::new()
+            }
+        };
 
         let err = self.err;
 
@@ -167,6 +169,12 @@ impl<'e> Display for PrettyDisplay<'e> {
             owo_colors::Style::new()
         };
 
+        let only_bold = if self.color {
+            owo_colors::Style::new().bold()
+        } else {
+            owo_colors::Style::new()
+        };
+
         write!(
             f,
             "{}{} {}",
@@ -183,6 +191,8 @@ impl<'e> Display for PrettyDisplay<'e> {
 
         let mut next = err.source();
 
+        writeln!(f)?;
+        writeln!(f, "{}", only_bold.style("Details:"))?;
         writeln!(
             f,
             "{}{} {}",

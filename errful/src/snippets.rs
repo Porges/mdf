@@ -624,6 +624,24 @@ mod test {
     }
 
     #[test]
+    fn through_lines() {
+        let source_code = "hello, world!";
+
+        let result = check_many(
+            source_code,
+            &[("hello, wo", " uter"), ("llo", "i ner"), (",", "skipping")],
+        );
+
+        assert_snapshot!(result, @r###"
+        1 ┃ hello, world!
+          ╿ ├╴├─┘╿╶─┘
+          │ └╴╵uter
+          │   └╴i[2m╵[0mner
+          │      └╴skipping
+        "###);
+    }
+
+    #[test]
     fn unicode_width_before() {
         // combining acute
         let source_code = "he\u{0301}llo, world!";

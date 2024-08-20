@@ -22,6 +22,8 @@ fn source_macro() {
 
     assert_snapshot!(value.display_pretty_nocolor(), @r###"
     Error: outer
+
+    Details:
     ×┐ outer
      └▷ inner
     "###);
@@ -39,6 +41,8 @@ fn source_field_name() {
 
     assert_snapshot!(value.display_pretty_nocolor(), @r###"
     Error: outer
+
+    Details:
     ×┐ outer
      └▷ inner
     "###);
@@ -54,6 +58,8 @@ fn code() {
 
     assert_snapshot!(value.display_pretty_nocolor(), @r###"
     Error: code-haver [error-code]
+
+    Details:
     ×┐ code-haver
     "###);
 }
@@ -68,6 +74,8 @@ fn url() {
 
     assert_snapshot!(value.display_pretty_nocolor(), @r###"
     Error: url-haver
+
+    Details:
     ×┐ url-haver
     "###);
 }
@@ -85,6 +93,8 @@ fn label() {
 
     assert_snapshot!(value.display_pretty_nocolor(), @r###"
     Error: label-haver
+
+    Details:
     ×┐ label-haver
     errful issue: no source code provided to render labels (use #[source_code] to mark an appropriate field)
     "###);
@@ -114,9 +124,12 @@ fn label_with_field() {
 
     assert_snapshot!(value.display_pretty_nocolor(), @r###"
     Error: labelled-with-source
+
+    Details:
     ×┐ labelled-with-source
-    1 │ [38;2;119;170;221ma[0mbc
-      ┆ invalid digit found in string
+    1 ┃ abc
+      ╿ ╿
+      │ └╴invalid digit found in string
 
      └▷ invalid digit found in string
     "###);
