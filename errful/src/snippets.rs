@@ -1,6 +1,7 @@
 use std::{borrow::Cow, cmp::min, fmt::Write, sync::Arc};
 
 use complex_indifference::{Count, Offset, Span};
+use owo_colors::StyledList;
 use unicode_width::UnicodeWidthStr;
 
 use crate::{Label, LabelMessage};
@@ -83,7 +84,7 @@ pub(crate) fn render_spans(
         let message_offset = last_line.width();
 
         // indicate the portion of the line that the labels are pointing at
-        let messages = apply_highlighting(
+        let (indicator, messages) = apply_highlighting(
             &mut last_line,
             source_code,
             span.start(),
@@ -106,6 +107,16 @@ pub(crate) fn render_spans(
         }
 
         vec.push((line_num, Cow::Owned(last_line)));
+
+        vec.push((
+            usize::MAX,
+            Cow::Owned(format!(
+                "{:width$}{}",
+                "",
+                indicator,
+                width = message_offset
+            )),
+        ));
 
         // emit messages pointing at the line
         for (starts_at, message) in messages {
@@ -150,25 +161,30 @@ pub(crate) fn render_spans(
             _ => 0, // at this point you have too many lines in your file
         };
 
+        let mut last_heavy = true;
         for (ix, line) in vec {
             if ix == usize::MAX {
                 write!(
                     result,
-                    "{:>indent_width$} ┆ {}",
+                    "{:>indent_width$} {} {}",
                     " ", // no line number - this is a supplementary line
+                    if last_heavy { "╿" } else { "│" },
                     line,
                     indent_width = indent_width
                 )
                 .unwrap();
+                last_heavy = false;
             } else {
                 write!(
                     result,
-                    "{:indent_width$} │ {}",
+                    "{:indent_width$} {} {}",
                     ix + 1, // line numbers are 1-based but we use 0-based up to this point for ease
+                    if last_heavy { "┃" } else { "╽" },
                     line,
                     indent_width = indent_width
                 )
                 .unwrap();
+                last_heavy = true;
             }
         }
     }
@@ -183,29 +199,109 @@ fn apply_highlighting(
     labels: &[Label],
     mut highlight: impl FnMut(&Label) -> owo_colors::Style,
     display: impl Fn(&LabelMessage) -> String,
-) -> Vec<(Count<u8>, String)> {
+) -> (String, Vec<(Count<u8>, String)>) {
     let mut up_to = start;
-    let mut stack: Vec<&Label> = Vec::new();
 
-    let mut messages = Vec::new();
+    let mut indicator_line = Vec::new();
+    let mut fill_indicator =
+        |continuing: bool, continues: bool, value: &str, style: &owo_colors::Style| {
+            let width = value.width();
+            if width == 0 {
+                indicator_line.push(style.style("│".to_string()));
+            } else if width == 1 {
+                let v = match (continues, continuing) {
+                    (true, true) => "╌",
+                    (true, false) => "┘",
+                    (false, true) => "├",
+                    (false, false) => "╿",
+                };
+
+                indicator_line.push(style.style(v.to_string()));
+            } else {
+                indicator_line.push(style.style(format!(
+                    "{}{:─<width$}{}",
+                    if continuing { "╶" } else { "├" },
+                    "",
+                    if continues { "╴" } else { "┘" },
+                    width = width - 2
+                )));
+            }
+        };
+
+    let mut stack: Vec<(bool, &owo_colors::Style, &Label)> = Vec::new();
+    let mut messages: Vec<(Count<u8>, String)> = Vec::new();
+
+    let labels = labels
+        .into_iter()
+        .map(|x| (x, highlight(x)))
+        .collect::<Vec<_>>();
 
     // these are in order ascending by start, descending by length
-    for sublabel in labels {
+    for (sublabel, style) in &labels {
         debug_assert!(sublabel.span().start() >= up_to);
 
         if sublabel.span().start() > up_to {
-            while let Some(nested) = stack.pop() {
-                let nested_span = nested.span();
-                let wanted_end = nested_span.end();
+            while let Some((has_written, style, nested)) = stack.pop() {
+                let wanted_end = nested.span().end();
                 let end = min(wanted_end, sublabel.span().start());
                 let value = Span::new_offset(up_to, end).str(source);
-                write!(dest, "{}", highlight(nested).style(value)).unwrap();
-                messages.push((up_to - start, display(&nested.message)));
+                let continues = wanted_end > sublabel.span().end();
+                fill_indicator(has_written, continues, value, &style);
+                write!(dest, "{}", style.style(value)).unwrap();
+                if !has_written {
+                    let indent = up_to - start;
+
+                    let msg = display(&nested.message);
+
+                    // lotta work here for something that's really subtle
+                    let mut list = vec![style.style("└╴".to_string())];
+                    let mut building = String::new();
+                    for c in msg.char_indices() {
+                        if c.1 == ' ' {
+                            let width = msg[..c.0].width();
+
+                            let mut found = false;
+                            for (l, ls) in &labels {
+                                if l.span().start() > nested.span.start() {
+                                    let len = l.span.start() - nested.span.start();
+                                    if source[nested.span.start().offset()
+                                        ..(nested.span.start() + len).offset()]
+                                        .width()
+                                        == width + 2
+                                    {
+                                        let built = std::mem::take(&mut building);
+                                        list.push(style.style(built));
+                                        // if we're on the first row we can use full brightness
+                                        list.push(if messages.is_empty() {
+                                            ls.style("╵".to_string())
+                                        } else {
+                                            ls.dimmed().style("╵".to_string())
+                                        });
+                                        found = true;
+                                        break;
+                                    }
+                                }
+                            }
+
+                            if !found {
+                                building.push(c.1);
+                            }
+                        } else {
+                            building.push(c.1);
+                        }
+                    }
+
+                    if !building.is_empty() {
+                        list.push(style.style(building));
+                    }
+
+                    messages.push((indent, format!("{}", StyledList::from(list))));
+                }
                 up_to = end;
 
                 // TODO: partial overlaps
-                if wanted_end > sublabel.span().end() {
-                    stack.push(nested);
+                if continues {
+                    stack.push((true, style, nested));
                 }
 
                 if end == sublabel.span().start() {
@@ -214,18 +310,29 @@ fn apply_highlighting(
             }
         }
 
-        stack.push(sublabel);
+        stack.push((false, style, sublabel));
     }
 
-    while let Some(sublabel) = stack.pop() {
+    while let Some((has_written, style, sublabel)) = stack.pop() {
         let end = sublabel.span().end();
         let value = Span::new_offset(up_to, end).str(source);
-        write!(dest, "{}", highlight(sublabel).style(value)).unwrap();
-        messages.push((up_to - start, display(&sublabel.message)));
+        fill_indicator(has_written, false, value, style);
+        write!(dest, "{}", style.style(value)).unwrap();
+        if !has_written {
+            messages.push((
+                up_to - start,
+                format!(
+                    "{}{}",
+                    style.style("└╴"),
+                    style.style(display(&sublabel.message))
+                ),
+            ));
+        }
         up_to = end;
     }
 
-    messages
+    let indicator = format!("{}\n", StyledList::from(indicator_line));
+    (indicator, messages)
 }
 
 #[cfg(test)]
@@ -282,8 +389,9 @@ mod test {
         let result = check(source_code, "hello", "here");
 
         assert_snapshot!(result, @r###"
-        1 │ hello, world!
-          ┆ here
+        1 ┃ hello, world!
+          ╿ ├───┘
+          │ └╴here
         "###);
     }
 
@@ -294,8 +402,9 @@ mod test {
         let result = check(source_code, "world!", "here");
 
         assert_snapshot!(result, @r###"
-        1 │ hello, world!
-          ┆        here
+        1 ┃ hello, world!
+          ╿        ├────┘
+          │        └╴here
         "###);
     }
 
@@ -306,8 +415,9 @@ mod test {
         let result = check(source_code, "hello, world!", "here");
 
         assert_snapshot!(result, @r###"
-        1 │ hello, world!
-          ┆ here
+        1 ┃ hello, world!
+          ╿ ├───────────┘
+          │ └╴here
         "###);
     }
 
@@ -321,10 +431,11 @@ mod test {
         let result = check(source_code, "hello", "here");
 
         assert_snapshot!(result, @r###"
-        1 │ line 1
-        2 │ hello, world!
-          ┆ here
-        3 │ line 3
+        1 ┃ line 1
+        2 ┃ hello, world!
+          ╿ ├───┘
+          │ └╴here
+        3 ╽ line 3
         "###);
     }
 
@@ -338,10 +449,11 @@ mod test {
         let result = check(source_code, "world!", "here");
 
         assert_snapshot!(result, @r###"
-        1 │ line 1
-        2 │ hello, world!
-          ┆        here
-        3 │ line 3
+        1 ┃ line 1
+        2 ┃ hello, world!
+          ╿        ├────┘
+          │        └╴here
+        3 ╽ line 3
         "###);
     }
 
@@ -356,11 +468,12 @@ mod test {
         let result = check(source_code, "hello, world!", "here");
 
         assert_snapshot!(result, @r###"
-        1 │ line 1
-        2 │ hello, world!
-          ┆ here
-        3 │ line 3
-        4 │ line 4
+        1 ┃ line 1
+        2 ┃ hello, world!
+          ╿ ├───────────┘
+          │ └╴here
+        3 ╽ line 3
+        4 ┃ line 4
         "###);
     }
 
@@ -376,12 +489,13 @@ mod test {
         let result = check(source_code, "hello", "here");
 
         assert_snapshot!(result, @r###"
-        1 │ line 1
-        2 │ line 2
-        3 │ hello, world!
-          ┆ here
-        4 │ line 4
-        5 │ line 5
+        1 ┃ line 1
+        2 ┃ line 2
+        3 ┃ hello, world!
+          ╿ ├───┘
+          │ └╴here
+        4 ╽ line 4
+        5 ┃ line 5
         "###);
     }
 
@@ -397,12 +511,13 @@ mod test {
         let result = check(source_code, "world!", "here");
 
         assert_snapshot!(result, @r###"
-        1 │ line 1
-        2 │ line 2
-        3 │ hello, world!
-          ┆        here
-        4 │ line 4
-        5 │ line 5
+        1 ┃ line 1
+        2 ┃ line 2
+        3 ┃ hello, world!
+          ╿        ├────┘
+          │        └╴here
+        4 ╽ line 4
+        5 ┃ line 5
         "###);
     }
 
@@ -418,12 +533,13 @@ mod test {
         let result = check(source_code, "hello, world!", "here");
 
         assert_snapshot!(result, @r###"
-        1 │ line 1
-        2 │ line 2
-        3 │ hello, world!
-          ┆ here
-        4 │ line 4
-        5 │ line 5
+        1 ┃ line 1
+        2 ┃ line 2
+        3 ┃ hello, world!
+          ╿ ├───────────┘
+          │ └╴here
+        4 ╽ line 4
+        5 ┃ line 5
         "###);
     }
 
@@ -445,10 +561,11 @@ mod test {
         let result = check(source_code, "question", "here");
 
         assert_snapshot!(result, @r###"
-         9 │ line9
-        10 │ line10
-        11 │ line in question
-           ┆         here
+         9 ┃ line9
+        10 ┃ line10
+        11 ┃ line in question
+           ╿         ├──────┘
+           │         └╴here
         "###);
     }
 
@@ -499,10 +616,10 @@ mod test {
         let result = check_many(source_code, &[("hello, wo", "outer"), ("llo", "inner")]);
 
         assert_snapshot!(result, @r###"
-        1 │ hello, world!
-          ┆ outer
-          ┆   inner
-          ┆      outer
+        1 ┃ hello, world!
+          ╿ ├╴├─┘╶──┘
+          │ └╴outer
+          │   └╴inner
         "###);
     }
 
@@ -514,8 +631,9 @@ mod test {
         let result = check(source_code, "llo", "here");
 
         assert_snapshot!(result, @r###"
-        1 │ héllo, world!
-          ┆   here
+        1 ┃ héllo, world!
+          ╿   ├─┘
+          │   └╴here
         "###);
     }
 
@@ -535,10 +653,11 @@ mod test {
 
         // checks alignment of the parts here:
         assert_snapshot!(result, @r###"
-        1 │ héllo, world!
-          ┆ whole
-          ┆  part
-          ┆   part
+        1 ┃ héllo, world!
+          ╿ ╿╿├─┘
+          │ └╴whole
+          │  └╴part
+          │   └╴part
         "###);
     }
 

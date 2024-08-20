@@ -9,7 +9,7 @@ edition.workspace = true
 thiserror = "1.0.63"
 complex-indifference = { path = "../complex-indifference" }
 errful-derive = { path = "../errful-derive" }
-owo-colors = "4.0.0"
+owo-colors = { version = "4.0.0", features = ["alloc"] }
 mappable-rc = "0.1.1"
 yoke = "0.7.4"
 unicode-width = "0.1.13"

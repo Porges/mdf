@@ -9,10 +9,10 @@ fn main() -> MainResult<SomeErr> {
         value: 123,
         inner: Inner {
             source: Innest {
-                label_1: (0, 12),
-                label_2: (2, 4),
-                label_3: (7, 3),
-                source_code: "hello, world!".to_string(),
+                label_1: (2, 12),
+                label_2: (4, 3),
+                label_3: (9, 3),
+                source_code: "> helol, borld!".to_string(),
             },
         },
     })?;
@@ -23,13 +23,13 @@ fn main() -> MainResult<SomeErr> {
 #[derive(Debug, errful_derive::Error, Default)]
 #[error(display = "Root error")]
 struct Innest {
-    #[error(label = "the whole")]
+    #[error(label = "uh... phrase is incorrect")]
     label_1: (usize, usize),
 
-    #[error(label = "this part...")]
+    #[error(label = "the standard phrase has ‘llo’")]
     label_2: (usize, usize),
 
-    #[error(label = "... and this part")]
+    #[error(label = "and this should be ‘wor’")]
     label_3: (usize, usize),
 
     #[error(source_code)]
