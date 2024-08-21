@@ -24,7 +24,7 @@ fn source_macro() {
     Error: outer
 
     Details:
-    × 0 ┐  outer
+    × 0 ┐ outer
       1 ├▷ inner
         ┷
     "###);
@@ -44,7 +44,7 @@ fn source_field_name() {
     Error: outer
 
     Details:
-    × 0 ┐  outer
+    × 0 ┐ outer
       1 ├▷ inner
         ┷
     "###);
@@ -62,7 +62,7 @@ fn code() {
     Error: code-haver [error-code]
 
     Details:
-    × 0 ┐  code-haver
+    × 0 ┐ code-haver
         ┷
     "###);
 }
@@ -79,7 +79,7 @@ fn url() {
     Error: url-haver
 
     Details:
-    × 0 ┐  url-haver
+    × 0 ┐ url-haver
         ┷
     "###);
 }
@@ -99,8 +99,9 @@ fn label() {
     Error: label-haver
 
     Details:
-    × 0 ┐  label-haver
-    errful issue: no source code provided to render labels (use #[source_code] to mark an appropriate field)
+    × 0 ┐ label-haver
+        │ ! errful issue: no source code provided to render labels
+        │ !               (use #[source_code] to mark an appropriate field)
         ┷
     "###);
 }
@@ -131,7 +132,7 @@ fn label_with_field() {
     Error: labelled-with-source
 
     Details:
-    × 0 ┐  labelled-with-source
+    × 0 ┐ labelled-with-source
         │   ┎
         │ 1 ┃ abc
         │   ╿ ╿

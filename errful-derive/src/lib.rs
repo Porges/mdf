@@ -60,13 +60,13 @@ pub fn derive_errful(input: proc_macro::TokenStream) -> proc_macro::TokenStream 
 
     if let Some(url) = opts.url {
         provisions.push(quote! {
-            .provide_value(::errful::Url(#url))
+            .provide_value(::errful::protocol::Url(#url))
         });
     };
 
     if let Some(code) = opts.code {
         provisions.push(quote! {
-            .provide_value(::errful::Code(#code))
+            .provide_value(::errful::protocol::Code(#code))
         });
     };
 
@@ -209,7 +209,7 @@ fn find_labels(data: &ast::Data<(), StructFields>) -> darling::Result<Option<Tok
         let value = match label {
             LabelTarget::Field(ident) => {
                 quote! {
-                   ::errful::Label::new_error(
+                   ::errful::protocol::Label::new_error(
                        #source_id,
                        ::std::boxed::Box::new(self.#ident.clone()),
                        self.#fieldname)
@@ -217,7 +217,7 @@ fn find_labels(data: &ast::Data<(), StructFields>) -> darling::Result<Option<Tok
             }
             LabelTarget::Literal(label) => {
                 quote! {
-                    ::errful::Label::new_literal(#source_id, #label, self.#fieldname)
+                    ::errful::protocol::Label::new_literal(#source_id, #label, self.#fieldname)
                 }
             }
         };
@@ -230,7 +230,7 @@ fn find_labels(data: &ast::Data<(), StructFields>) -> darling::Result<Option<Tok
     }
 
     Ok(Some(quote! {
-        .provide_value_with::<::std::vec::Vec<::errful::Label>>(|| {
+        .provide_value_with::<::std::vec::Vec<::errful::protocol::Label>>(|| {
             vec![
                 #(#labels),*
             ]
@@ -247,7 +247,7 @@ fn find_source_code(data: &ast::Data<(), StructFields>) -> darling::Result<Optio
         if field.source_code {
             let fieldname = name_for_field((ix, field));
             return Ok(Some(quote! {
-                .provide_ref(::errful::SourceCode::new(&self.#fieldname))
+                .provide_ref(::errful::protocol::SourceCode::new(&self.#fieldname))
             }));
         }
     }

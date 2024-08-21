@@ -1,8 +1,4 @@
-use std::{
-    borrow::{BorrowMut, Cow},
-    path::PathBuf,
-    sync::Arc,
-};
+use std::{borrow::Cow, path::PathBuf, sync::Arc};
 
 use ascii::{AsciiChar, AsciiStr};
 use decoding::DecodingError;
@@ -12,7 +8,7 @@ use miette::{NamedSource, SourceOffset, SourceSpan};
 use options::ParseOptions;
 use records::{RawRecord, RecordBuilder};
 use versions::VersionError;
-use yoke::{Yoke, Yokeable};
+use yoke::Yoke;
 
 use crate::{
     schemas::SchemaError,
@@ -51,7 +47,7 @@ pub trait GEDCOMSource: ascii::AsAsciiStr + PartialEq<AsciiStr> {
 impl GEDCOMSource for str {
     fn lines(&self) -> impl Iterator<Item = &Self> {
         // GEDCOM lines are terminated by "any combination of a carriage return and a line feed"
-        (*self).split(|c| c == '\r' || c == '\n').map(|mut s| {
+        (*self).split(['\r', '\n']).map(|mut s| {
             while s.starts_with('\n') || s.starts_with('\r') {
                 s = &s[1..];
             }
@@ -525,7 +521,7 @@ impl Parser {
             (*version, decoded)
         } else {
             // we need to determine the encoding from the file itself
-            let header = Self::extract_gedcom_header(input.as_ref(), mode)?;
+            let header = Self::extract_gedcom_header(input, mode)?;
             let (version, file_encoding) = Self::parse_gedcom_header(&header, None)?;
 
             // now we can actually decode the input

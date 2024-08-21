@@ -3,7 +3,7 @@ use crate::{Count, Offset};
 #[derive(Debug, PartialEq, Eq)]
 pub struct Span<T: ?Sized> {
     start: Offset<T>,
-    count: Count<T>,
+    len: Count<T>,
 }
 
 impl<T: ?Sized> Copy for Span<T> {}
@@ -21,14 +21,14 @@ impl<T: ?Sized> From<(usize, usize)> for Span<T> {
 }
 
 impl<T: ?Sized> Span<T> {
-    pub const fn new(start: Offset<T>, count: Count<T>) -> Self {
-        Self { start, count }
+    pub const fn new(start: Offset<T>, len: Count<T>) -> Self {
+        Self { start, len }
     }
 
     pub fn new_offset(start: Offset<T>, end: Offset<T>) -> Self {
         Self {
             start,
-            count: end - start,
+            len: end - start,
         }
     }
 
@@ -39,12 +39,12 @@ impl<T: ?Sized> Span<T> {
 
     #[inline]
     pub fn end(&self) -> Offset<T> {
-        self.start + self.count
+        self.start + self.len
     }
 
     #[inline]
-    pub const fn count(&self) -> Count<T> {
-        self.count
+    pub const fn len(&self) -> Count<T> {
+        self.len
     }
 
     #[inline]
@@ -58,6 +58,10 @@ impl<T: ?Sized> Span<T> {
     {
         &data[self.start().offset()..self.end().offset()]
     }
+
+    pub const fn with_len(self, len: Count<T>) -> Self {
+        Self { len, ..self }
+    }
 }
 
 impl Span<u8> {
@@ -70,7 +74,7 @@ impl<T> std::ops::Index<Span<T>> for [T] {
     type Output = [T];
 
     fn index(&self, index: Span<T>) -> &[T] {
-        &self[index.start.offset()..(index.start.offset() + index.count.count())]
+        &self[index.start.offset()..(index.start.offset() + index.len.count())]
     }
 }
 

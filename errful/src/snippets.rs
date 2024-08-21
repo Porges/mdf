@@ -4,7 +4,7 @@ use complex_indifference::{Count, Offset, Span};
 use owo_colors::StyledList;
 use unicode_width::UnicodeWidthStr;
 
-use crate::{Label, LabelMessage};
+use crate::protocol::{Label, LabelMessage};
 
 struct Sources {
     files: Vec<Arc<[u8]>>,
@@ -20,12 +20,12 @@ impl Sources {
 
 // sorts labels by increasing order
 // if there are overlapping labels, the longest one comes first
-fn sort_labels(labels: &mut [crate::Label]) {
+fn sort_labels(labels: &mut [Label]) {
     labels.sort_by(|a, b| {
         a.span()
             .start()
             .cmp(&b.span().start())
-            .then(b.span().count().cmp(&a.span().count()))
+            .then(b.span().len().cmp(&a.span().len()))
     });
 }
 
@@ -56,7 +56,7 @@ pub(crate) fn render_spans(
 
         // sublabels are entirely nested within this label
         let mut sublabels = vec![label];
-        while let Some(sublabel) = iter.next_if(|l| span.contains(l.span)) {
+        while let Some(sublabel) = iter.next_if(|l| span.contains(l.span())) {
             sublabels.push(sublabel);
         }
 
@@ -254,10 +254,7 @@ fn apply_highlighting(
     let mut stack: Vec<(bool, &owo_colors::Style, &Label)> = Vec::new();
     let mut messages: Vec<(Count<u8>, String)> = Vec::new();
 
-    let labels = labels
-        .into_iter()
-        .map(|x| (x, highlight(x)))
-        .collect::<Vec<_>>();
+    let labels = labels.iter().map(|x| (x, highlight(x))).collect::<Vec<_>>();
 
     // these are in order ascending by start, descending by length
     for (sublabel, style) in &labels {
@@ -274,7 +271,7 @@ fn apply_highlighting(
                 if !has_written {
                     let indent = up_to - start;
 
-                    let msg = display(&nested.message);
+                    let msg = display(nested.message());
 
                     // lotta work here for something that's really subtle
                     // look for places (spaces) where we can penetrate this message
@@ -287,12 +284,9 @@ fn apply_highlighting(
 
                             let mut found = false;
                             for (l, ls) in &labels {
-                                if l.span().start() > nested.span.start() {
-                                    let len = l.span.start() - nested.span.start();
-                                    if source[nested.span.start().offset()
-                                        ..(nested.span.start() + len).offset()]
-                                        .width()
-                                        == width + 2
+                                if l.span().start() > nested.span().start() {
+                                    let len = l.span().start() - nested.span().start();
+                                    if nested.span().with_len(len).str(source).width() == width + 2
                                     {
                                         let built = std::mem::take(&mut building);
                                         list.push(style.style(built));
@@ -352,7 +346,7 @@ fn apply_highlighting(
                 format!(
                     "{}{}",
                     style.style("└╴"),
-                    style.style(display(&sublabel.message))
+                    style.style(display(sublabel.message()))
                 ),
             ));
         }
@@ -368,7 +362,7 @@ mod test {
     use insta::assert_snapshot;
 
     use super::{apply_highlighting, render_span, render_spans, sort_labels};
-    use crate::{Label, LabelMessage};
+    use crate::snippets::{Label, LabelMessage};
 
     fn span_of(source: &str, word: &str) -> (usize, usize) {
         let start = source.find(word).unwrap();
@@ -747,7 +741,7 @@ mod test {
                 make_label(line_to_highlight, "hello, world!", "outer"),
                 make_label(line_to_highlight, "hello", "inner"),
             ],
-            |label| match label.message {
+            |label| match label.message() {
                 LabelMessage::Literal("inner") => owo_colors::Style::new().blue(),
                 LabelMessage::Literal("outer") => owo_colors::Style::new().red(),
                 _ => unreachable!(),
@@ -773,7 +767,7 @@ mod test {
                 make_label(line_to_highlight, "hello", "inner2"),
                 make_label(line_to_highlight, "hel", "inner1"),
             ],
-            |label| match label.message {
+            |label| match label.message() {
                 LabelMessage::Literal("inner1") => owo_colors::Style::new().blue(),
                 LabelMessage::Literal("inner2") => owo_colors::Style::new().yellow(),
                 LabelMessage::Literal("outer") => owo_colors::Style::new().red(),
@@ -800,7 +794,7 @@ mod test {
                 make_label(line_to_highlight, "hello", "inner1"),
                 make_label(line_to_highlight, "world", "inner2"),
             ],
-            |label| match label.message {
+            |label| match label.message() {
                 LabelMessage::Literal("inner1") => owo_colors::Style::new().blue(),
                 LabelMessage::Literal("inner2") => owo_colors::Style::new().yellow(),
                 LabelMessage::Literal("outer") => owo_colors::Style::new().red(),
@@ -830,7 +824,7 @@ mod test {
                 make_label(line_to_highlight, "wor", "inner4"),
                 make_label(line_to_highlight, "ld", "inner5"),
             ],
-            |label| match label.message {
+            |label| match label.message() {
                 LabelMessage::Literal("outer") => owo_colors::Style::new().red(),
                 LabelMessage::Literal("inner1") => owo_colors::Style::new().blue(),
                 LabelMessage::Literal("inner2") => owo_colors::Style::new().yellow(),

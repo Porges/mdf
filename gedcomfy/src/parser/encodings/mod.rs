@@ -1,4 +1,4 @@
-use std::{borrow::Cow, path::Path, sync::Arc};
+use std::borrow::Cow;
 
 use ascii::AsAsciiStr;
 use miette::SourceSpan;
@@ -9,8 +9,6 @@ use crate::{
     encodings::{GEDCOMEncoding, InvalidGEDCOMEncoding},
     versions::SupportedGEDCOMVersion,
 };
-
-use super::AnySourceCode;
 
 pub(crate) mod ansel;
 
