@@ -1,6 +1,7 @@
 use std::{
     error::Error,
     fmt::{Display, Formatter},
+    usize,
 };
 
 use crate::{
@@ -12,11 +13,26 @@ use crate::{
 pub struct PrettyDisplay<'e> {
     err: &'e dyn Error,
     color: bool,
+    width: Option<usize>, // None = use termwidth
 }
 
 impl PrettyDisplay<'_> {
     pub fn with_color(self, color: bool) -> Self {
         Self { color, ..self }
+    }
+
+    pub fn with_terminal_width(self) -> Self {
+        Self {
+            width: None,
+            ..self
+        }
+    }
+
+    pub fn with_width(self, width: usize) -> Self {
+        Self {
+            width: Some(width),
+            ..self
+        }
     }
 
     pub fn use_color(&self) -> bool {
@@ -58,21 +74,20 @@ impl PrettyDisplay<'_> {
     fn print_chain_entry(
         &self,
         f: &mut Formatter<'_>,
-        wrap_opts: textwrap::Options,
-        first_indent: &str,
-        rest_indent: &str,
+        message_wrap_opts: textwrap::Options,
+        body_indent: &str,
         err: &dyn Error,
         colors: &mut impl FnMut(&Label) -> owo_colors::Style,
     ) -> std::fmt::Result {
         // output the message for the error
         let message = format!("{}", err);
-        let wrapped = textwrap::wrap(&message, wrap_opts.initial_indent(first_indent));
+        let wrapped = textwrap::wrap(&message, message_wrap_opts);
         for line in wrapped {
             writeln!(f, "{}", line)?;
         }
 
         // output any additional information
-        self.render_sourcelabels(rest_indent, err, colors, f)?;
+        self.render_sourcelabels(body_indent, err, colors, f)?;
 
         Ok(())
     }
@@ -80,7 +95,11 @@ impl PrettyDisplay<'_> {
 
 impl<'e> From<&'e dyn Error> for PrettyDisplay<'e> {
     fn from(err: &'e dyn Error) -> Self {
-        Self { err, color: true }
+        Self {
+            err,
+            color: true,
+            width: Some(usize::MAX),
+        }
     }
 }
 
@@ -141,8 +160,13 @@ impl<'e> Display for PrettyDisplay<'e> {
         writeln!(f, "{}", only_bold.style("Details:"))?;
 
         // TODO: termwidth
-        let indent_prefix = format!("{}", base_color.style("    │  "));
-        let wrap_opts = textwrap::Options::new(80).subsequent_indent(&indent_prefix);
+        let body_indent = format!("{}", base_color.style("    │ "));
+        let wrap_opts = if let Some(width) = self.width {
+            textwrap::Options::new(width)
+        } else {
+            textwrap::Options::with_termwidth()
+        }
+        .subsequent_indent(&body_indent);
 
         let first_indent = format!(
             "{} 0 {} ",
@@ -152,36 +176,33 @@ impl<'e> Display for PrettyDisplay<'e> {
 
         self.print_chain_entry(
             f,
-            wrap_opts
-                .clone()
-                .subsequent_indent(&indent_prefix[..indent_prefix.len() - 1]),
-            &first_indent,
-            &indent_prefix[..indent_prefix.len() - 1],
+            wrap_opts.clone().initial_indent(&first_indent),
+            &body_indent,
             err,
             &mut colors,
         )?;
 
+        // message must be indented one more level than the body
+        let message_indent = format!("{}", base_color.style("    │  "));
+
         let mut index = 1;
         let mut next = err.source();
         while let Some(err) = next {
-            let next_source = err.source();
-            if next_source.is_none() {
-                // TODO: check if there is any additional info and use └
-            }
-
             // `:3`: if someone has nested errors a thousand layers deep, i can’t save them
             let first_indent = format!("{index:3} {} ", base_color.style("├▷"));
             self.print_chain_entry(
                 f,
-                wrap_opts.clone(),
-                &first_indent,
-                &indent_prefix[..indent_prefix.len() - 1],
+                wrap_opts
+                    .clone()
+                    .initial_indent(&first_indent)
+                    .subsequent_indent(&message_indent),
+                &body_indent,
                 err,
                 &mut colors,
             )?;
 
             // proceed
-            next = next_source;
+            next = err.source();
             index += 1;
         }
 

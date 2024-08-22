@@ -49,6 +49,12 @@ impl<T: ?Sized> Offset<T> {
     }
 }
 
+impl<T: ?Sized> From<usize> for Offset<T> {
+    fn from(value: usize) -> Self {
+        Self::new(value)
+    }
+}
+
 impl<T: ?Sized> std::ops::Sub<Offset<T>> for Offset<T> {
     type Output = Count<T>;
 

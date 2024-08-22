@@ -2,7 +2,7 @@ use std::{error::Error, fmt::Display, process::ExitCode};
 
 use complex_indifference::Span;
 
-use crate::{formatting::PrettyNoColorDisplay, PrettyDisplay, PrintableSeverity};
+use crate::{PrettyDisplay, PrintableSeverity};
 
 pub trait Errful: Error {
     // request helpers
@@ -48,11 +48,11 @@ pub trait Errful: Error {
         self.display_errful()
     }
 
-    fn display_pretty_nocolor(&self) -> PrettyNoColorDisplay
+    fn display_pretty_nocolor(&self) -> PrettyDisplay
     where
         Self: Sized,
     {
-        self.display_errful()
+        self.display_errful::<PrettyDisplay>().with_color(false)
     }
 }
 

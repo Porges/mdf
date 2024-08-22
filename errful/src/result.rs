@@ -45,7 +45,11 @@ impl<E: Error> Termination for MainResult<E> {
             MainResult::Code(exit_code) => exit_code,
             MainResult::Err(err) => {
                 use crate::Errful;
-                _ = write!(std::io::stderr(), "{}", err.display_pretty());
+                _ = write!(
+                    std::io::stderr(),
+                    "{}",
+                    err.display_pretty().with_terminal_width()
+                );
                 request_value(&err).unwrap_or(ExitCode::FAILURE)
             }
         }

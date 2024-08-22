@@ -52,6 +52,11 @@ impl<T: ?Sized> Span<T> {
         span.start() >= self.start() && span.end() <= self.end()
     }
 
+    #[inline]
+    pub fn contains_offset(self, offset: Offset<T>) -> bool {
+        offset >= self.start() && offset <= self.end()
+    }
+
     pub fn slice(self, data: &[T]) -> &[T]
     where
         T: Sized,
@@ -61,6 +66,13 @@ impl<T: ?Sized> Span<T> {
 
     pub const fn with_len(self, len: Count<T>) -> Self {
         Self { len, ..self }
+    }
+
+    pub fn with_end(self, end: Offset<T>) -> Self {
+        Self {
+            len: end - self.start,
+            ..self
+        }
     }
 }
 
