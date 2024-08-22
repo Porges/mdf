@@ -1,6 +1,6 @@
-use std::{borrow::Cow, cmp::min, fmt::Write, sync::Arc};
+use std::{borrow::Cow, cmp::min, fmt::Write, mem::take, sync::Arc};
 
-use complex_indifference::{Count, Offset, Span};
+use complex_indifference::{Offset, Span};
 use owo_colors::{Style, Styled, StyledList};
 use unicode_width::UnicodeWidthStr;
 
@@ -322,42 +322,62 @@ impl LineHighlighter<'_> {
                         // with ones that come later
                         let mut list: Vec<Styled<Cow<str>>> =
                             vec![no_style.style(indent.into()), style.style("└╴".into())];
+
                         let mut building = String::new();
+
+                        // walk through all spaces in the string
                         for c in msg.char_indices() {
                             if c.1 == ' ' {
                                 let width = msg[..c.0].width();
-
                                 let mut found = false;
-                                for (l, ls) in &labels {
-                                    if l.span().start() > nested.span().start() {
-                                        let len = l.span().start() - nested.span().start();
-                                        if nested.span().with_len(len).str(self.source_code).width()
-                                            == width + 2
-                                        {
-                                            let built = std::mem::take(&mut building);
-                                            list.push(style.style(built.into()));
-                                            // if we're on the first row we can use full brightness
-                                            list.push(if self.messages.is_empty() {
-                                                ls.style("╵".into())
-                                            } else {
-                                                ls.dimmed().style("╵".into())
-                                            });
-                                            found = true;
-                                            break;
-                                        }
+                                for (l, ls) in labels
+                                    .iter()
+                                    .skip_while(|(l, _)| l.span().start() <= nested.span().start())
+                                {
+                                    let offset =
+                                        Span::new_offset(nested.span().start(), l.span().start());
+                                    if offset.str(self.source_code).width() == width + 2 {
+                                        list.push(style.style(take(&mut building).into()));
+                                        // if we're on the first row we can use full brightness
+                                        list.push(if self.messages.is_empty() {
+                                            ls.style("╵".into())
+                                        } else {
+                                            ls.dimmed().style("╵".into())
+                                        });
+
+                                        found = true;
+                                        break;
                                     }
                                 }
 
-                                if !found {
-                                    building.push(c.1);
+                                if found {
+                                    continue;
                                 }
-                            } else {
-                                building.push(c.1);
                             }
+
+                            building.push(c.1);
                         }
 
                         if !building.is_empty() {
                             list.push(style.style(building.into()));
+                        }
+
+                        // draw in any others that come after
+                        let mut message_width = msg.width() + 2; // 2 chars at start of messages
+                        for (l, ls) in labels
+                            .iter()
+                            .skip_while(|(l, _)| l.span().start() <= nested.span().start())
+                        {
+                            let offset = Span::new_offset(nested.span().start(), l.span().start());
+                            if let Some(len) = offset
+                                .str(self.source_code)
+                                .width()
+                                .checked_sub(message_width)
+                            {
+                                list.push(no_style.style(" ".repeat(len).into()));
+                                list.push(ls.style("│".into()));
+                                message_width += len + 1; // update with new width
+                            }
                         }
 
                         self.messages.push(list);
@@ -895,8 +915,8 @@ mod test {
           ┎
         1 ┃ <span style='color:var(--blue,#00a)'>hello<span style='color:var(--red,#a00)'>, <span style='color:var(--yellow,#a60)'>world!</span></span></span>
           ╿ <span style='color:var(--blue,#00a)'>├───┘<span style='color:var(--red,#a00)'>├╴<span style='color:var(--yellow,#a60)'>├───┘├</span></span></span>
-          │ <span style='color:var(--blue,#00a)'>└╴</span>
-          │      <span style='color:var(--red,#a00)'>└╴</span>
+          │ <span style='color:var(--blue,#00a)'>└╴</span>     <span style='color:var(--yellow,#a60)'>│</span>
+          │      <span style='color:var(--red,#a00)'>└╴</span>     <span style='color:var(--yellow,#a60)'>│</span>
           │        <span style='color:var(--yellow,#a60)'>└╴</span>
           ┖
         "###);
@@ -932,10 +952,10 @@ mod test {
           ┎
         1 ┃ <span style='color:var(--red,#a00)'>x<span style='color:var(--blue,#00a)'>he<span style='color:var(--yellow,#a60)'>llo, <span style='color:var(--magenta,#a0a)'>wor<span style='color:var(--cyan,#0aa)'>ld<span style='color:var(--green,#0a0)'>!x</span></span></span></span></span></span>
           ╿ <span style='color:var(--red,#a00)'>┘<span style='color:var(--blue,#00a)'>├╴<span style='color:var(--yellow,#a60)'>├┘├╶╴<span style='color:var(--magenta,#a0a)'>├─┘<span style='color:var(--cyan,#0aa)'>├┘<span style='color:var(--green,#0a0)'>╿├</span></span></span></span></span></span>
-          │ <span style='color:var(--red,#a00)'>└╴</span>
-          │  <span style='color:var(--blue,#00a)'>└╴</span>
-          │    <span style='color:var(--yellow,#a60)'>└╴</span>
-          │         <span style='color:var(--magenta,#a0a)'>└╴</span>
+          │ <span style='color:var(--red,#a00)'>└╴</span> <span style='color:var(--yellow,#a60)'>│</span>    <span style='color:var(--green,#0a0)'>│</span>  <span style='color:var(--cyan,#0aa)'>│</span>
+          │  <span style='color:var(--blue,#00a)'>└╴</span><span style='color:var(--yellow,#a60)'>│</span>    <span style='color:var(--green,#0a0)'>│</span>  <span style='color:var(--cyan,#0aa)'>│</span>
+          │    <span style='color:var(--yellow,#a60)'>└╴</span>   <span style='color:var(--green,#0a0)'>│</span>  <span style='color:var(--cyan,#0aa)'>│</span>
+          │         <span style='color:var(--magenta,#a0a)'>└╴</span> <span style='color:var(--cyan,#0aa)'>│</span>
           │            <span style='color:var(--cyan,#0aa)'>└╴</span>
           │              <span style='color:var(--green,#0a0)'>└╴</span>
           ┖
@@ -952,7 +972,7 @@ mod test {
           ┎
         1 ┃ hello, world!
           ╿ ├─────┘├────┘
-          │ └╴1
+          │ └╴1    │
           │        └╴2
           ┖
         "###);
@@ -968,8 +988,28 @@ mod test {
           ┎
         1 ┃ hello, world!
           ╿ ├───┘  ├────┘
-          │ └╴1
+          │ └╴1    │
           │        └╴2
+          ┖
+        "###);
+    }
+
+    #[test]
+    fn overlapping_highlights() {
+        let source_code = "hello, world!";
+
+        let result = check_many(
+            source_code,
+            &[("lo, wor", "2"), ("hello", "1"), ("rld!", "3")],
+        );
+
+        assert_snapshot!(result, @r###"
+          ┎
+        1 ┃ hello, world!
+          ╿ ├─┘├────┘├──┘
+          │ └╴1│     │
+          │    └╴2   │
+          │          └╴3
           ┖
         "###);
     }
