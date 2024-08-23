@@ -1,22 +1,10 @@
-use std::{borrow::Cow, cmp::min, fmt::Write, mem::take, sync::Arc};
+use std::{borrow::Cow, cmp::min, fmt::Write, mem::take};
 
 use complex_indifference::{Offset, Span};
 use owo_colors::{Style, Styled, StyledList};
 use unicode_width::UnicodeWidthStr;
 
 use crate::protocol::{Label, LabelMessage};
-
-struct Sources {
-    files: Vec<Arc<[u8]>>,
-}
-
-impl Sources {
-    fn load_file(&mut self, path: &str) -> Result<usize, std::io::Error> {
-        let data = std::fs::read(path)?;
-        self.files.push(data.into());
-        Ok(0)
-    }
-}
 
 // sorts labels by increasing order
 // if there are overlapping labels, the longest one comes first
@@ -27,15 +15,6 @@ fn sort_labels(labels: &mut [Label]) {
             .cmp(&b.span().start())
             .then(b.span().len().cmp(&a.span().len()))
     });
-}
-
-fn render_span(
-    source_code: &str,
-    label: Label,
-    highlight: impl Fn(&Label) -> owo_colors::Style,
-    display: impl Fn(&LabelMessage) -> String,
-) -> String {
-    render_spans(source_code, vec![label], highlight, display)
 }
 
 pub(crate) fn render_spans(
@@ -465,8 +444,17 @@ struct LitLine {
 mod test {
     use insta::assert_snapshot;
 
-    use super::{render_span, render_spans, sort_labels};
+    use super::{render_spans, sort_labels};
     use crate::snippets::{Highlighter, Label, LabelMessage};
+
+    fn render_span(
+        source_code: &str,
+        label: Label,
+        highlight: impl Fn(&Label) -> owo_colors::Style,
+        display: impl Fn(&LabelMessage) -> String,
+    ) -> String {
+        render_spans(source_code, vec![label], highlight, display)
+    }
 
     fn span_of(source: &str, word: &str) -> (usize, usize) {
         let start = source.find(word).unwrap();

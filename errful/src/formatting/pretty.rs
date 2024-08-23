@@ -1,7 +1,6 @@
 use std::{
     error::Error,
     fmt::{Display, Formatter},
-    usize,
 };
 
 use crate::{

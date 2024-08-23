@@ -6,7 +6,7 @@ use errful::MainResult;
 fn main() -> MainResult<SomeErr> {
     "Hello, world!".to_string();
     Err(SomeErr {
-        value: 123,
+        _value: 123,
         inner: Inner {
             source: Innest {
                 label_1: (2, 12),
@@ -45,7 +45,7 @@ struct Inner {
 #[derive(Debug, errful_derive::Error)]
 #[error(display = "Outermost error", exit_code = 123, severity = errful::Severity::Error)]
 struct SomeErr {
-    value: usize,
+    _value: usize,
 
     #[error(source)]
     inner: Inner,

@@ -98,12 +98,14 @@ impl Display for GEDCOMVersion {
 }
 
 impl SupportedGEDCOMVersion {
+    /*
     pub(crate) fn required_encoding(&self) -> Option<SupportedEncoding> {
         match self {
             SupportedGEDCOMVersion::V7_0 => Some(SupportedEncoding::Utf8),
             _ => None,
         }
     }
+    */
 }
 
 impl Sourced<SupportedGEDCOMVersion> {

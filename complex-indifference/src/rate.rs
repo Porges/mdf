@@ -17,3 +17,9 @@ impl<T: ?Sized> std::ops::Div<Duration> for Count<T> {
         }
     }
 }
+
+impl<T: ?Sized> std::fmt::Display for Rate<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:.2} /s", self.count_per_second)
+    }
+}

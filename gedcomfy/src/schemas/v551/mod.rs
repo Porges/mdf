@@ -1,12 +1,11 @@
 use miette::SourceSpan;
 use vec1::Vec1;
 
+use super::SchemaError;
 use crate::{
     parser::{lines::LineValue, records::RawRecord, Sourced},
     schemas::DataError,
 };
-
-use super::SchemaError;
 
 // embedded structures can only have 0:1 or 1:1 cardinality
 macro_rules! structure_cardinality {
@@ -440,29 +439,11 @@ impl<'a> TryFrom<Sourced<LineValue<'a, str>>> for String {
     }
 }
 
-#[derive(Debug)]
-enum TopLevelRecord {
+#[derive(Debug, derive_more::From)]
+pub enum TopLevelRecord {
     Individual(Individual),
     Submitter(Submitter),
     Submission(Submission),
-}
-
-impl From<Individual> for TopLevelRecord {
-    fn from(indi: Individual) -> Self {
-        Self::Individual(indi)
-    }
-}
-
-impl From<Submitter> for TopLevelRecord {
-    fn from(subm: Submitter) -> Self {
-        Self::Submitter(subm)
-    }
-}
-
-impl From<Submission> for TopLevelRecord {
-    fn from(subn: Submission) -> Self {
-        Self::Submission(subn)
-    }
 }
 
 impl TryFrom<Sourced<RawRecord<'_>>> for TopLevelRecord {
@@ -487,8 +468,8 @@ impl TryFrom<Sourced<RawRecord<'_>>> for TopLevelRecord {
 
 #[derive(Debug)]
 pub struct File {
-    header: Header,
-    records: Vec<TopLevelRecord>,
+    pub header: Header,
+    pub records: Vec<TopLevelRecord>,
 }
 
 impl File {
@@ -981,7 +962,7 @@ impl Name {
 }
 
 #[derive(Debug, Eq, PartialEq)]
-enum NameType {
+pub enum NameType {
     Aka,
     Birth,
     Immigrant,
@@ -991,7 +972,7 @@ enum NameType {
 }
 
 #[derive(Debug, Eq, PartialEq)]
-enum RestrictionNotice {
+pub enum RestrictionNotice {
     Confidential,
     Locked,
     Privacy,
@@ -1036,9 +1017,8 @@ impl<'a> TryFrom<RawRecord<'a>> for Header {
 mod test {
     use miette::SourceSpan;
 
-    use crate::parser::{options::ParseOptions, Parser};
-
     use super::*;
+    use crate::parser::{options::ParseOptions, Parser};
 
     #[test]
     fn basic_header() -> miette::Result<()> {

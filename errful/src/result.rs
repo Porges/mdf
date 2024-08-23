@@ -26,7 +26,6 @@ impl<E> MainResult<E> {
 impl<Err> std::ops::FromResidual<Result<Infallible, Err>> for MainResult<Err> {
     fn from_residual(residual: Result<Infallible, Err>) -> Self {
         match residual {
-            Ok(inf) => match inf {},
             Err(e) => MainResult::Err(e),
         }
     }

@@ -85,7 +85,7 @@ pub enum LabelMessage {
 
 impl Label {
     pub fn new_error(
-        source_id: Option<&'static str>,
+        _source_id: Option<&'static str>,
         message: Box<dyn Error>,
         span: impl Into<Span<u8>>,
     ) -> Self {
@@ -96,7 +96,7 @@ impl Label {
     }
 
     pub fn new_literal(
-        source_id: Option<&'static str>,
+        _source_id: Option<&'static str>,
         message: &'static str,
         span: impl Into<Span<u8>>,
     ) -> Self {

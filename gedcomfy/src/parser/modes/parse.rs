@@ -39,7 +39,7 @@ impl ParseMode for Mode {
     fn get_result_builder<'i>(
         self,
         version: SupportedGEDCOMVersion,
-        source_code: AnySourceCode,
+        _source_code: AnySourceCode,
     ) -> Result<Self::ResultBuilder<'i>, ParseError> {
         Ok(Builder {
             mode: self,
