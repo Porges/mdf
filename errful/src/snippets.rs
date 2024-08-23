@@ -466,7 +466,12 @@ mod test {
         (start, word.len())
     }
 
-    fn check(source: &str, target: &str, message: &'static str) -> String {
+    fn make_label(source: &str, target: &str, message: &'static str) -> Label {
+        let span = span_of(source, target);
+        Label::new_literal(None, message, span)
+    }
+
+    fn highlight(source: &str, target: &str, message: &'static str) -> String {
         render_span(
             source,
             make_label(source, target, message),
@@ -478,12 +483,7 @@ mod test {
         )
     }
 
-    fn make_label(source: &str, target: &str, message: &'static str) -> Label {
-        let span = span_of(source, target);
-        Label::new_literal(None, message, span)
-    }
-
-    fn check_many(source: &str, target_labels: &[(&str, &'static str)]) -> String {
+    fn highlight_many(source: &str, target_labels: &[(&str, &'static str)]) -> String {
         let labels =
             Vec::from_iter(target_labels.iter().map(|(target, message)| {
                 Label::new_literal(None, message, span_of(source, target))
@@ -504,7 +504,7 @@ mod test {
     fn get_lines_start() {
         let source_code = "hello, world!";
 
-        let result = check(source_code, "hello", "here");
+        let result = highlight(source_code, "hello", "here");
 
         assert_snapshot!(result, @r###"
           ┎
@@ -519,7 +519,7 @@ mod test {
     fn get_lines_end() {
         let source_code = "hello, world!";
 
-        let result = check(source_code, "world!", "here");
+        let result = highlight(source_code, "world!", "here");
 
         assert_snapshot!(result, @r###"
           ┎
@@ -534,7 +534,7 @@ mod test {
     fn get_lines_whole() {
         let source_code = "hello, world!";
 
-        let result = check(source_code, "hello, world!", "here");
+        let result = highlight(source_code, "hello, world!", "here");
 
         assert_snapshot!(result, @r###"
           ┎
@@ -552,7 +552,7 @@ mod test {
         hello, world!\n\
         line 3";
 
-        let result = check(source_code, "hello", "here");
+        let result = highlight(source_code, "hello", "here");
 
         assert_snapshot!(result, @r###"
           ┎
@@ -572,7 +572,7 @@ mod test {
         hello, world!\n\
         line 3";
 
-        let result = check(source_code, "world!", "here");
+        let result = highlight(source_code, "world!", "here");
 
         assert_snapshot!(result, @r###"
           ┎
@@ -593,7 +593,7 @@ mod test {
         line 3\n\
         line 4";
 
-        let result = check(source_code, "hello, world!", "here");
+        let result = highlight(source_code, "hello, world!", "here");
 
         assert_snapshot!(result, @r###"
           ┎
@@ -616,7 +616,7 @@ mod test {
         line 4\n\
         line 5";
 
-        let result = check(source_code, "hello", "here");
+        let result = highlight(source_code, "hello", "here");
 
         assert_snapshot!(result, @r###"
           ┎
@@ -640,7 +640,7 @@ mod test {
         line 4\n\
         line 5\n";
 
-        let result = check(source_code, "world!", "here");
+        let result = highlight(source_code, "world!", "here");
 
         assert_snapshot!(result, @r###"
           ┎
@@ -664,7 +664,7 @@ mod test {
         line 4\n\
         line 5\n";
 
-        let result = check(source_code, "hello, world!", "here");
+        let result = highlight(source_code, "hello, world!", "here");
 
         assert_snapshot!(result, @r###"
           ┎
@@ -694,7 +694,7 @@ mod test {
         line10\n\
         line in question";
 
-        let result = check(source_code, "question", "here");
+        let result = highlight(source_code, "question", "here");
 
         assert_snapshot!(result, @r###"
            ┎
@@ -751,7 +751,7 @@ mod test {
     fn nested_labels() {
         let source_code = "hello, world!";
 
-        let result = check_many(source_code, &[("hello, wo", "outer"), ("llo", "inner")]);
+        let result = highlight_many(source_code, &[("hello, wo", "outer"), ("llo", "inner")]);
 
         assert_snapshot!(result, @r###"
           ┎
@@ -767,7 +767,7 @@ mod test {
     fn through_lines() {
         let source_code = "hello, world!";
 
-        let result = check_many(
+        let result = highlight_many(
             source_code,
             &[("hello, wo", " uter"), ("llo", "i ner"), (",", "skipping")],
         );
@@ -788,7 +788,7 @@ mod test {
         // combining acute
         let source_code = "he\u{0301}llo, world!";
 
-        let result = check(source_code, "llo", "here");
+        let result = highlight(source_code, "llo", "here");
 
         assert_snapshot!(result, @r###"
           ┎
@@ -804,7 +804,7 @@ mod test {
         // combining acute
         let source_code = "he\u{0301}llo, world!";
 
-        let result = check_many(
+        let result = highlight_many(
             source_code,
             &[
                 ("he\u{0301}llo", "whole"),
@@ -959,7 +959,7 @@ mod test {
     fn multiple_adjacent_highlights_on_one_line() {
         let source_code = "hello, world!";
 
-        let result = check_many(source_code, &[("world!", "2"), ("hello, ", "1")]);
+        let result = highlight_many(source_code, &[("world!", "2"), ("hello, ", "1")]);
 
         assert_snapshot!(result, @r###"
           ┎
@@ -975,7 +975,7 @@ mod test {
     fn multiple_separated_highlights_on_one_line() {
         let source_code = "hello, world!";
 
-        let result = check_many(source_code, &[("world!", "2"), ("hello", "1")]);
+        let result = highlight_many(source_code, &[("world!", "2"), ("hello", "1")]);
 
         assert_snapshot!(result, @r###"
           ┎
@@ -991,7 +991,7 @@ mod test {
     fn overlapping_highlights() {
         let source_code = "hello, world!";
 
-        let result = check_many(
+        let result = highlight_many(
             source_code,
             &[("lo, wor", "2"), ("hello", "1"), ("rld!", "3")],
         );
@@ -1011,7 +1011,7 @@ mod test {
     fn multiple_lines() {
         let source_code = "hello,\nworld!\n";
 
-        let result = check_many(source_code, &[("hello,", "1"), ("world!", "2")]);
+        let result = highlight_many(source_code, &[("hello,", "1"), ("world!", "2")]);
 
         assert_snapshot!(result, @r###"
           ┎
