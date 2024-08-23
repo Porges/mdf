@@ -1,11 +1,28 @@
 use std::marker::PhantomData;
 
-use crate::Count;
+use crate::{Count, Span};
 
 #[derive(Default, Debug)]
 pub struct Index<T: ?Sized> {
     index: usize,
     _phantom: PhantomData<T>,
+}
+
+impl<T: ?Sized> Index<T> {
+    pub const fn new(index: usize) -> Self {
+        Self {
+            index,
+            _phantom: PhantomData,
+        }
+    }
+
+    pub const fn index(&self) -> usize {
+        self.index
+    }
+
+    pub fn span(&self, ix: Index<T>) -> Span<T> {
+        Span::new_index(*self, ix)
+    }
 }
 
 impl<T: ?Sized> PartialOrd<Index<T>> for Index<T> {
@@ -35,19 +52,6 @@ impl<T: ?Sized> Clone for Index<T> {
 }
 
 impl<T: ?Sized> Copy for Index<T> {}
-
-impl<T: ?Sized> Index<T> {
-    pub const fn new(index: usize) -> Self {
-        Self {
-            index,
-            _phantom: PhantomData,
-        }
-    }
-
-    pub const fn index(&self) -> usize {
-        self.index
-    }
-}
 
 impl<T: ?Sized> From<usize> for Index<T> {
     fn from(value: usize) -> Self {
@@ -117,16 +121,22 @@ impl std::ops::Index<Index<u8>> for str {
 }
 
 pub trait Sliceable<T> {
+    fn slice(&self, span: Span<T>) -> &Self;
     fn slice_to(&self, ix: Index<T>) -> &Self;
     fn slice_from(&self, ix: Index<T>) -> &Self;
 }
 
 pub trait SliceableMut<T>: Sliceable<T> {
+    fn slice_mut(&mut self, span: Span<T>) -> &mut Self;
     fn slice_to_mut(&mut self, ix: Index<T>) -> &mut Self;
     fn slice_from_mut(&mut self, ix: Index<T>) -> &mut Self;
 }
 
 impl Sliceable<u8> for str {
+    fn slice(&self, span: Span<u8>) -> &str {
+        &self[span.start().index()..span.end().index()]
+    }
+
     fn slice_to(&self, ix: Index<u8>) -> &str {
         &self[..ix.index()]
     }
@@ -137,6 +147,10 @@ impl Sliceable<u8> for str {
 }
 
 impl<T> Sliceable<T> for [T] {
+    fn slice(&self, span: Span<T>) -> &Self {
+        &self[span.start().index()..span.end().index()]
+    }
+
     fn slice_to(&self, ix: Index<T>) -> &[T] {
         &self[..ix.index()]
     }
@@ -147,6 +161,10 @@ impl<T> Sliceable<T> for [T] {
 }
 
 impl<T> SliceableMut<T> for [T] {
+    fn slice_mut(&mut self, span: Span<T>) -> &mut Self {
+        &mut self[span.start().index()..span.end().index()]
+    }
+
     fn slice_to_mut(&mut self, ix: Index<T>) -> &mut [T] {
         &mut self[..ix.index()]
     }

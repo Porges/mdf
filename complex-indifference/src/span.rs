@@ -25,7 +25,7 @@ impl<T: ?Sized> Span<T> {
         Self { start, len }
     }
 
-    pub fn new_offset(start: Index<T>, end: Index<T>) -> Self {
+    pub fn new_index(start: Index<T>, end: Index<T>) -> Self {
         Self {
             start,
             len: end - start,
@@ -88,6 +88,14 @@ impl<T> std::ops::Index<Span<T>> for [T] {
     type Output = [T];
 
     fn index(&self, index: Span<T>) -> &[T] {
+        &self[index.start.index()..(index.start.index() + index.len.count())]
+    }
+}
+
+impl std::ops::Index<Span<u8>> for str {
+    type Output = str;
+
+    fn index(&self, index: Span<u8>) -> &str {
         &self[index.start.index()..(index.start.index() + index.len.count())]
     }
 }

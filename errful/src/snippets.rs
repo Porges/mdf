@@ -1,9 +1,4 @@
-use std::{
-    borrow::Cow,
-    cmp::{max, min},
-    fmt::Write,
-    mem::take,
-};
+use std::{borrow::Cow, cmp::min, fmt::Write, mem::take};
 
 use complex_indifference::{Index, Sliceable, Span};
 use owo_colors::{Style, Styled, StyledList};
@@ -54,7 +49,7 @@ impl Highlighter<'_> {
             .unwrap_or(self.source_code.len())
             .into();
 
-        let line_span: Span<u8> = Span::new_offset(start_of_line, end_of_line);
+        let line_span: Span<u8> = Span::new_index(start_of_line, end_of_line);
         debug_assert!(line_span.contains_offset(index));
 
         line_span
@@ -299,12 +294,12 @@ impl LineHighlighter<'_> {
                 while let Some((has_written, style, nested)) = stack.pop() {
                     let wanted_end = nested.span().end();
                     let end = min(wanted_end, sublabel.span().start());
-                    let value = Span::new_offset(up_to, end).str(self.source_code);
+                    let value = Span::new_index(up_to, end).str(self.source_code);
                     let continues = wanted_end > sublabel.span().end();
                     self.line.push(style.style(value.into()));
                     self.fill_indicator(has_written, continues, value, style);
                     if !has_written {
-                        let indent_width = line_span.with_end(up_to).str(self.source_code).width();
+                        let indent_width = self.source_code[line_span.start().span(up_to)].width();
                         let indent = " ".repeat(indent_width);
 
                         let msg = display(nested.message());
@@ -326,9 +321,8 @@ impl LineHighlighter<'_> {
                                     .iter()
                                     .skip_while(|(l, _)| l.span().start() <= nested.span().start())
                                 {
-                                    let offset =
-                                        Span::new_offset(nested.span().start(), l.span().start());
-                                    if offset.str(self.source_code).width() == width + 2 {
+                                    let offset = nested.span().start().span(l.span().start());
+                                    if self.source_code[offset].width() == width + 2 {
                                         list.push(style.style(take(&mut building).into()));
                                         // if we're on the first row we can use full brightness
                                         list.push(if self.messages.is_empty() {
@@ -355,16 +349,14 @@ impl LineHighlighter<'_> {
                         }
 
                         // draw in any others that come after
-                        let mut message_width = msg.width() + 2; // 2 chars at start of messages
+                        let mut message_width = msg.width() + 2; // 2 chars at start of messages |-
                         for (l, ls) in labels
                             .iter()
                             .skip_while(|(l, _)| l.span().start() <= nested.span().start())
                         {
-                            let offset = Span::new_offset(nested.span().start(), l.span().start());
-                            if let Some(len) = offset
-                                .str(self.source_code)
-                                .width()
-                                .checked_sub(message_width)
+                            let offset = nested.span().start().span(l.span().start());
+                            if let Some(len) =
+                                self.source_code[offset].width().checked_sub(message_width)
                             {
                                 list.push(no_style.style(" ".repeat(len).into()));
                                 list.push(ls.style("│".into()));
@@ -390,8 +382,7 @@ impl LineHighlighter<'_> {
                 // if we still didn’t get to the start of the next label
                 if up_to < sublabel.span().start() {
                     // emit unhighlighted characters
-                    let value =
-                        Span::new_offset(up_to, sublabel.span().start()).str(self.source_code);
+                    let value = &self.source_code[up_to.span(sublabel.span().start())];
                     self.line.push(no_style.style(value.into()));
                     // space indicator line wide enough
                     self.indicator_line
@@ -406,13 +397,13 @@ impl LineHighlighter<'_> {
 
         while let Some((has_written, style, sublabel)) = stack.pop() {
             let end = sublabel.span().end();
-            let value = Span::new_offset(up_to, end).str(self.source_code);
+            let value = &self.source_code[up_to.span(end)];
             self.fill_indicator(has_written, false, value, style);
             self.line.push(style.style(value.into()));
             if !has_written {
                 // TODO: we need to do penetration here as well,
                 // factor it out from the above
-                let indent_width = line_span.with_end(up_to).str(self.source_code).width();
+                let indent_width = self.source_code[line_span.start().span(up_to)].width();
                 let indent = " ".repeat(indent_width);
                 self.messages.push(vec![
                     no_style.style(indent.into()),
@@ -420,13 +411,14 @@ impl LineHighlighter<'_> {
                     style.style(display(sublabel.message()).into()),
                 ]);
             }
+
             up_to = end;
         }
 
         // if we didn't reach the end, we nee to emit the rest
         if up_to < line_span.end() {
             // emit unhighlighted characters
-            let value = Span::new_offset(up_to, line_span.end()).str(self.source_code);
+            let value = &self.source_code[up_to.span(line_span.end())];
             self.line.push(no_style.style(value.into()));
             // indicator line doesn't need spacing
         }
