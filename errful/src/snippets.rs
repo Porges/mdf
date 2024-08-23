@@ -1,6 +1,11 @@
-use std::{borrow::Cow, cmp::min, fmt::Write, mem::take};
+use std::{
+    borrow::Cow,
+    cmp::{max, min},
+    fmt::Write,
+    mem::take,
+};
 
-use complex_indifference::{Offset, Span};
+use complex_indifference::{Index, Sliceable, Span};
 use owo_colors::{Style, Styled, StyledList};
 use unicode_width::UnicodeWidthStr;
 
@@ -30,21 +35,27 @@ struct Highlighter<'a> {
 }
 
 impl Highlighter<'_> {
-    fn line_containing(&self, offset: Offset<u8>) -> Span<u8> {
+    fn line_containing(&self, index: Index<u8>) -> Span<u8> {
         // start of line is after the last newline, or at start of string
-        let start_of_line = self.source_code[..offset.offset()]
+        let start_of_line: Index<u8> = self
+            .source_code
+            .slice_to(index)
             .rfind('\n')
             .map(|x| x + 1)
-            .unwrap_or(0);
+            .unwrap_or(0)
+            .into();
 
         // end of line is after the next newline, or at end of string
-        let end_of_line = self.source_code[offset.offset()..]
+        let end_of_line: Index<u8> = self
+            .source_code
+            .slice_from(index)
             .find('\n')
-            .map(|x| x + offset.offset() + 1)
-            .unwrap_or(self.source_code.len());
+            .map(|x| x + index.index() + 1)
+            .unwrap_or(self.source_code.len())
+            .into();
 
-        let line_span: Span<u8> = Span::new_offset(start_of_line.into(), end_of_line.into());
-        debug_assert!(line_span.contains_offset(offset));
+        let line_span: Span<u8> = Span::new_offset(start_of_line, end_of_line);
+        debug_assert!(line_span.contains_offset(index));
 
         line_span
     }
@@ -59,23 +70,34 @@ impl Highlighter<'_> {
 
         let context_lines = 2;
 
-        let mut result = String::new();
+        let mut last_line = None;
 
         let mut iter = labels.into_iter().peekable();
+
+        let mut output_lines: Vec<(usize, Cow<str>)> = Vec::new();
+
         while let Some(label) = iter.next() {
             let span = label.span();
 
             let line_span = self.line_containing(span.start());
-            if !line_span.contains_offset(span.end()) {
+            if span.end() > line_span.end() {
                 todo!("this Span spans multiple lines");
             }
 
-            let line_number = self.source_code[..line_span.start().offset()]
-                .lines()
+            let line_number = self
+                .source_code
+                .slice_to(line_span.start())
+                .bytes()
+                .filter(|c| *c == b'\n')
                 .count();
 
-            // find all labels that apply to this line
-            // TODO: labels that span multiple lines
+            let context_lines = last_line
+                .map(|last| min(context_lines, line_number - last - 1))
+                .unwrap_or(context_lines);
+
+            last_line = Some(line_number);
+
+            // find all labels that start on this line
             let mut line_labels = vec![label];
             while let Some(line_label) =
                 iter.next_if(|l| line_span.contains_offset(l.span().start()))
@@ -83,38 +105,30 @@ impl Highlighter<'_> {
                 line_labels.push(line_label);
             }
 
-            let mut output_group: Vec<(usize, Cow<str>)> =
-                Vec::with_capacity(2 * context_lines + 1);
+            // TODO: handle labels that span multiple lines
 
-            let before_context = self.source_code[..line_span.start().offset()]
+            // N lines before the current line
+            let mut context_before = Vec::from_iter(
+                self.source_code
+                    .slice_to(line_span.start())
+                    .split_inclusive('\n')
+                    .rev()
+                    .take(context_lines)
+                    .enumerate()
+                    .map(|(i, line)| (line_number - i - 1, Cow::Borrowed(line))),
+            );
+
+            context_before.reverse();
+            output_lines.extend(context_before);
+
+            // N lines after the current line
+            let context_after = self
+                .source_code
+                .slice_from(line_span.end())
                 .split_inclusive('\n')
-                .rev()
                 .take(context_lines)
-                .map(Cow::Borrowed)
                 .enumerate()
-                .map(|(i, line)| (line_number - i - 1, line));
-
-            let after_context = self.source_code[line_span.end().offset()..]
-                .split_inclusive('\n')
-                .take(context_lines)
-                .map(Cow::Borrowed)
-                .enumerate()
-                .map(|(i, line)| (line_number + i + 1, line));
-
-            output_group.extend(before_context);
-            output_group.reverse();
-
-            /*
-            let (line_num, mut last_line) = output_group
-                // we are only looking for an unfinished previous line
-                .pop_if(|(_, line)| !line.ends_with('\n'))
-                .map(|(ix, line)| (ix, line.to_string()))
-                .unwrap_or_else(|| (line_number, String::new()));
-            */
-
-            // messages need to be offset to line up with start
-            // note that this is Unicode column width, not byte width
-            //let message_offset = last_line.width();
+                .map(|(i, line)| (line_number + i + 1, Cow::Borrowed(line)));
 
             // indicate the portion of the line that the labels are pointing at
             let mut lit_line = LineHighlighter::new(self.source_code).highlight_line(
@@ -128,78 +142,77 @@ impl Highlighter<'_> {
                 lit_line.line.push('\n');
             }
 
-            output_group.push((line_number, Cow::Owned(lit_line.line)));
+            output_lines.push((line_number, Cow::Owned(lit_line.line)));
 
             // line value can never be usize::MAX (since it must offset by 1)
             // so we reuse it here to mark augmented lines
-            output_group.push((usize::MAX, Cow::Owned(lit_line.indicator_line)));
+            output_lines.push((usize::MAX, Cow::Owned(lit_line.indicator_line)));
             for message in lit_line.messages {
-                output_group.push((usize::MAX, message.into()));
+                output_lines.push((usize::MAX, message.into()));
             }
-
-            output_group.extend(after_context);
-
-            // TODO: switch to https://commaok.xyz/post/lookup_tables/
-            let indent_width = match output_group
-                .iter()
-                .rev()
-                .find(|(n, _)| *n != usize::MAX)
-                .unwrap()
-                .0
-            {
-                0..=9 => 1,
-                10..=99 => 2,
-                100..=999 => 3,
-                1000..=9999 => 4,
-                10000..=99999 => 5,
-                100000..=999999 => 6,
-                1000000..=9999999 => 7,
-                10000000..=99999999 => 8,
-                100000000..=999999999 => 9,
-                1000000000..=9999999999 => 10,
-                10000000000..=99999999999 => 11,
-                100000000000..=999999999999 => 12,
-                1000000000000..=9999999999999 => 13,
-                _ => 0, // at this point you have too many lines in your file
-            };
-
-            let mut last_heavy = true;
-            if result.is_empty() {
-                writeln!(
-                    result,
-                    "{:>indent_width$} ┎",
-                    " ", // no line number - this is a supplementary line
-                )
-                .unwrap();
-            }
-
-            for (ix, line) in output_group {
-                if ix == usize::MAX {
-                    write!(
-                        result,
-                        "{:>indent_width$} {} {}",
-                        " ", // no line number - this is a supplementary line
-                        if last_heavy { "╿" } else { "│" },
-                        line,
-                        indent_width = indent_width
-                    )
-                    .unwrap();
-                    last_heavy = false;
-                } else {
-                    write!(
-                        result,
-                        "{:indent_width$} {} {}",
-                        ix + 1, // line numbers are 1-based but we use 0-based up to this point for ease
-                        if last_heavy { "┃" } else { "╽" },
-                        line,
-                        indent_width = indent_width
-                    )
-                    .unwrap();
-                    last_heavy = true;
-                }
-            }
+            output_lines.extend(context_after);
         }
 
+        // TODO: switch to https://commaok.xyz/post/lookup_tables/
+        let indent_width = match output_lines
+            .iter()
+            .rev()
+            .find(|(n, _)| *n != usize::MAX)
+            .unwrap()
+            .0
+        {
+            0..=9 => 1,
+            10..=99 => 2,
+            100..=999 => 3,
+            1000..=9999 => 4,
+            10000..=99999 => 5,
+            100000..=999999 => 6,
+            1000000..=9999999 => 7,
+            10000000..=99999999 => 8,
+            100000000..=999999999 => 9,
+            1000000000..=9999999999 => 10,
+            10000000000..=99999999999 => 11,
+            100000000000..=999999999999 => 12,
+            1000000000000..=9999999999999 => 13,
+            _ => 0, // at this point you have too many lines in your file
+        };
+
+        let mut result = String::new();
+
+        writeln!(
+            result,
+            "{:>indent_width$} ┎",
+            " ", // no line number - this is a supplementary line
+        )
+        .unwrap();
+
+        let mut last_line_heavy = true;
+
+        for (ix, line) in output_lines {
+            if ix == usize::MAX {
+                write!(
+                    result,
+                    "{:>indent_width$} {} {}",
+                    " ", // no line number - this is a supplementary line
+                    if last_line_heavy { "╿" } else { "│" },
+                    line,
+                    indent_width = indent_width
+                )
+                .unwrap();
+                last_line_heavy = false;
+            } else {
+                write!(
+                    result,
+                    "{:indent_width$} {} {}",
+                    ix + 1, // line numbers are 1-based but we use 0-based up to this point for ease
+                    if last_line_heavy { "┃" } else { "╽" },
+                    line,
+                    indent_width = indent_width
+                )
+                .unwrap();
+                last_line_heavy = true;
+            }
+        }
         if !result.ends_with('\n') {
             result.push('\n');
         }
@@ -210,7 +223,7 @@ impl Highlighter<'_> {
             result,
             "{:>indent_width$} ┖",
             " ", // no line number - this is a supplementary line
-            indent_width = 1
+            indent_width = indent_width
         )
         .unwrap();
 
@@ -698,7 +711,7 @@ mod test {
         11 ┃ line in question
            ╿         ├──────┘
            │         └╴here
-          ┖
+           ┖
         "###);
     }
 
@@ -998,6 +1011,25 @@ mod test {
           │ └╴1│     │
           │    └╴2   │
           │          └╴3
+          ┖
+        "###);
+    }
+
+    #[test]
+    fn multiple_lines() {
+        let source_code = "hello,\nworld!\n";
+
+        let result = check_many(source_code, &[("hello,", "1"), ("world!", "2")]);
+
+        assert_snapshot!(result, @r###"
+          ┎
+        1 ┃ hello,
+          ╿ ├────┘
+          │ └╴1
+        2 ╽ world!
+        2 ┃ world!
+          ╿ ├────┘
+          │ └╴2
           ┖
         "###);
     }

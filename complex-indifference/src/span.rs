@@ -1,8 +1,8 @@
-use crate::{Count, Offset};
+use crate::{Count, Index};
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct Span<T: ?Sized> {
-    start: Offset<T>,
+    start: Index<T>,
     len: Count<T>,
 }
 
@@ -16,29 +16,31 @@ impl<T: ?Sized> Clone for Span<T> {
 
 impl<T: ?Sized> From<(usize, usize)> for Span<T> {
     fn from(value: (usize, usize)) -> Self {
-        Self::new(Offset::new(value.0), Count::new(value.1))
+        Self::new(Index::new(value.0), Count::new(value.1))
     }
 }
 
 impl<T: ?Sized> Span<T> {
-    pub const fn new(start: Offset<T>, len: Count<T>) -> Self {
+    pub const fn new(start: Index<T>, len: Count<T>) -> Self {
         Self { start, len }
     }
 
-    pub fn new_offset(start: Offset<T>, end: Offset<T>) -> Self {
+    pub fn new_offset(start: Index<T>, end: Index<T>) -> Self {
         Self {
             start,
             len: end - start,
         }
     }
 
+    /// Where the span starts (inclusive).
     #[inline]
-    pub const fn start(&self) -> Offset<T> {
+    pub const fn start(&self) -> Index<T> {
         self.start
     }
 
+    /// Where the span ends (exclusive).
     #[inline]
-    pub fn end(&self) -> Offset<T> {
+    pub fn end(&self) -> Index<T> {
         self.start + self.len
     }
 
@@ -53,22 +55,22 @@ impl<T: ?Sized> Span<T> {
     }
 
     #[inline]
-    pub fn contains_offset(self, offset: Offset<T>) -> bool {
-        offset >= self.start() && offset <= self.end()
+    pub fn contains_offset(self, offset: Index<T>) -> bool {
+        offset >= self.start() && offset < self.end()
     }
 
     pub fn slice(self, data: &[T]) -> &[T]
     where
         T: Sized,
     {
-        &data[self.start().offset()..self.end().offset()]
+        &data[self.start().index()..self.end().index()]
     }
 
     pub const fn with_len(self, len: Count<T>) -> Self {
         Self { len, ..self }
     }
 
-    pub fn with_end(self, end: Offset<T>) -> Self {
+    pub fn with_end(self, end: Index<T>) -> Self {
         Self {
             len: end - self.start,
             ..self
@@ -78,7 +80,7 @@ impl<T: ?Sized> Span<T> {
 
 impl Span<u8> {
     pub fn str(self, data: &str) -> &str {
-        &data[self.start().offset()..self.end().offset()]
+        &data[self.start().index()..self.end().index()]
     }
 }
 
@@ -86,7 +88,7 @@ impl<T> std::ops::Index<Span<T>> for [T] {
     type Output = [T];
 
     fn index(&self, index: Span<T>) -> &[T] {
-        &self[index.start.offset()..(index.start.offset() + index.len.count())]
+        &self[index.start.index()..(index.start.index() + index.len.count())]
     }
 }
 
@@ -97,7 +99,7 @@ mod test {
     #[test]
     fn span_index() {
         let data = [1, 2, 3, 4, 5];
-        let span = Span::new(Offset::new(1), Count::new(2));
+        let span = Span::new(Index::new(1), Count::new(2));
 
         assert_eq!(&[2, 3], &data[span]);
     }

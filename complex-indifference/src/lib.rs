@@ -8,11 +8,11 @@
 
 mod count;
 pub mod formatting;
-mod offset;
+mod index;
 mod rate;
 mod span;
 
 pub use count::{Count, Countable};
-pub use offset::Offset;
+pub use index::{Index, Sliceable, SliceableMut};
 pub use rate::Rate;
 pub use span::Span;
