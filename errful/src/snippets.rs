@@ -71,6 +71,8 @@ impl Highlighter<'_> {
 
         let mut output_lines: Vec<(usize, Cow<str>)> = Vec::new();
 
+        let mut context_after = Vec::new();
+
         while let Some(label) = iter.next() {
             let span = label.span();
 
@@ -86,9 +88,22 @@ impl Highlighter<'_> {
                 .filter(|c| *c == b'\n')
                 .count();
 
-            let context_lines = last_line
-                .map(|last| min(context_lines, line_number - last - 1))
-                .unwrap_or(context_lines);
+            for (num, line) in context_after.drain(..) {
+                if num < line_number {
+                    output_lines.push((num, line));
+                    last_line = Some(num);
+                }
+            }
+
+            let before_context_lines;
+            if let Some(last_line) = last_line {
+                before_context_lines = min(context_lines, line_number - last_line - 1);
+                if line_number > last_line + context_lines {
+                    output_lines.push((usize::MAX, Cow::Borrowed("…\n")));
+                }
+            } else {
+                before_context_lines = context_lines;
+            }
 
             last_line = Some(line_number);
 
@@ -108,7 +123,7 @@ impl Highlighter<'_> {
                     .slice_to(line_span.start())
                     .split_inclusive('\n')
                     .rev()
-                    .take(context_lines)
+                    .take(before_context_lines)
                     .enumerate()
                     .map(|(i, line)| (line_number - i - 1, Cow::Borrowed(line))),
             );
@@ -117,13 +132,14 @@ impl Highlighter<'_> {
             output_lines.extend(context_before);
 
             // N lines after the current line
-            let context_after = self
-                .source_code
-                .slice_from(line_span.end())
-                .split_inclusive('\n')
-                .take(context_lines)
-                .enumerate()
-                .map(|(i, line)| (line_number + i + 1, Cow::Borrowed(line)));
+            context_after.extend(
+                self.source_code
+                    .slice_from(line_span.end())
+                    .split_inclusive('\n')
+                    .take(context_lines)
+                    .enumerate()
+                    .map(|(i, line)| (line_number + i + 1, Cow::Borrowed(line))),
+            );
 
             // indicate the portion of the line that the labels are pointing at
             let mut lit_line = LineHighlighter::new(self.source_code).highlight_line(
@@ -145,8 +161,9 @@ impl Highlighter<'_> {
             for message in lit_line.messages {
                 output_lines.push((usize::MAX, message.into()));
             }
-            output_lines.extend(context_after);
         }
+
+        output_lines.extend(context_after);
 
         // TODO: switch to https://commaok.xyz/post/lookup_tables/
         let indent_width = match output_lines
@@ -208,6 +225,7 @@ impl Highlighter<'_> {
                 last_line_heavy = true;
             }
         }
+
         if !result.ends_with('\n') {
             result.push('\n');
         }
@@ -1019,9 +1037,104 @@ mod test {
           ╿ ├────┘
           │ └╴1
         2 ╽ world!
-        2 ┃ world!
           ╿ ├────┘
           │ └╴2
+          ┖
+        "###);
+    }
+
+    #[test]
+    fn multiple_lines_with_context1() {
+        let source_code = "\
+        hello,\n\
+        ctx 1\n\
+        world!\n";
+
+        let result = highlight_many(source_code, &[("hello,", "1"), ("world!", "2")]);
+
+        assert_snapshot!(result, @r###"
+          ┎
+        1 ┃ hello,
+          ╿ ├────┘
+          │ └╴1
+        2 ╽ ctx 1
+        3 ┃ world!
+          ╿ ├────┘
+          │ └╴2
+          ┖
+        "###);
+    }
+
+    #[test]
+    fn multiple_lines_with_context2() {
+        let source_code = "\
+        hello,\n\
+        ctx 1\n\
+        ctx 2\n\
+        world!\n";
+
+        let result = highlight_many(source_code, &[("hello,", "1"), ("world!", "2")]);
+
+        assert_snapshot!(result, @r###"
+          ┎
+        1 ┃ hello,
+          ╿ ├────┘
+          │ └╴1
+        2 ╽ ctx 1
+        3 ┃ ctx 2
+        4 ┃ world!
+          ╿ ├────┘
+          │ └╴2
+          ┖
+        "###);
+    }
+
+    #[test]
+    fn multiple_lines_with_context_skip() {
+        let source_code = "\
+        hello,\n\
+        ctx 1\n\
+        ctx 2\n\
+        ctx 3\n\
+        ctx 4\n\
+        ctx 5\n\
+        world!\n";
+
+        let result = highlight_many(source_code, &[("hello,", "1"), ("world!", "2")]);
+
+        assert_snapshot!(result, @r###"
+          ┎
+        1 ┃ hello,
+          ╿ ├────┘
+          │ └╴1
+        2 ╽ ctx 1
+        3 ┃ ctx 2
+          ╿ …
+        5 ╽ ctx 4
+        6 ┃ ctx 5
+        7 ┃ world!
+          ╿ ├────┘
+          │ └╴2
+          ┖
+        "###);
+    }
+
+    #[test]
+    fn whole_line() {
+        let source_code = "\
+        hello,\nworld!\n\
+        ";
+
+        let result = highlight_many(
+            source_code,
+            &[("hello,\nworld!\n", "this here thing is a full line")],
+        );
+
+        assert_snapshot!(result, @r###"
+          ┎
+        1 ┃ hello, world!
+          ╿ ├────────────┘
+          │ └╴this here thing is a full line
           ┖
         "###);
     }
