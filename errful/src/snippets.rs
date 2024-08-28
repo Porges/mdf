@@ -314,38 +314,36 @@ impl LineHighlighter<'_> {
             for c in msg.char_indices() {
                 if c.1 == ' ' {
                     // ↓ line_start
-                    // -------------------------------------
-                    //                   [message...  ' ' ....]
+                    // ------------------------------------
+                    //                 [message...' '.....]
                     // |← line_offset →|← [..c.0] →|
-                    // |←      offset_to_space      →|
+                    // |←     offset_to_space     →|
                     let offset_to_space = line_offset + msg[..c.0].width();
-                    let mut found = false;
-                    for (l, ls) in other_labels {
+                    if let Some(other_style) = other_labels.iter().find_map(|(l, ls)| {
                         // ↓ line_start
-                        // -----------------------------------------
-                        //                [message... ' ' .... ]
-                        // |←    offset_to_space    →|
-                        //                             [l.start]----
-                        // |←   offset_from_start?  →|
+                        // -------------------------------------
+                        //            [message... ' ' .... ]
+                        // |←   offset_to_space   →|
+                        //                         [l.start]----
+                        // |←  offset_from_start? →|
                         let offset_from_start =
                             self.source_code[line_start.up_to(l.span().start())].width();
 
                         if offset_from_start == offset_to_space {
-                            out.push(style.style(take(&mut building).into()));
-                            out.push(if bright {
-                                ls.style(char.into())
-                            } else if !ls.is_plain() {
-                                ls.dimmed().style(char.into())
-                            } else {
-                                ls.style(char.into())
-                            });
-
-                            found = true;
-                            break;
+                            Some(ls)
+                        } else {
+                            None
                         }
-                    }
+                    }) {
+                        out.push(style.style(take(&mut building).into()));
+                        out.push(if bright {
+                            other_style.style(char.into())
+                        } else if !other_style.is_plain() {
+                            other_style.dimmed().style(char.into())
+                        } else {
+                            other_style.style(char.into())
+                        });
 
-                    if found {
                         continue;
                     }
                 }
@@ -360,7 +358,7 @@ impl LineHighlighter<'_> {
 
         let indent_width = self.source_code[line_start.up_to(label.span().start())].width();
 
-        // 2 chars at start of messages "└╴"
+        // 2 chars at start of messages: "└╴"
         const MSG_PREFIX_WIDTH: usize = 2;
 
         let mut out: Vec<Styled<Cow<str>>> = Vec::new();
@@ -380,11 +378,11 @@ impl LineHighlighter<'_> {
         let mut message_width = indent_width + MSG_PREFIX_WIDTH + msg.width();
         for (l, ls) in other_labels {
             // ↓ line_start
-            // -----------------------------------------------------
-            //                  msg ..... ]
-            // |←     message_width    →|← len? →|
-            //                                       [l.start]-------
-            // |←         offset_from_start       →|
+            // -------------------------------------------
+            //         msg ..... ]
+            // |← message_width →|← len? →|
+            //                            [l.start]-------
+            // |←    offset_from_start   →|
             let offset_from_start = self.source_code[line_start.up_to(l.span().start())].width();
             if let Some(len) = offset_from_start.checked_sub(message_width) {
                 if len > 0 {
