@@ -266,7 +266,7 @@ impl LineHighlighter<'_> {
         if width == 0 {
             self.indicator_line.push(style.style("│".into()));
         } else if width == 1 {
-            let v = match (continues, continuing) {
+            let v = match (continuing, continues) {
                 (true, true) => "╌",
                 (true, false) => "┘",
                 (false, true) => "├",
@@ -290,6 +290,116 @@ impl LineHighlighter<'_> {
         }
     }
 
+    fn emit_message(
+        &mut self,
+        line_span: Span<u8>,
+        label: &Label,
+        style: &Style,
+        other_labels: &[(&Label, Style)],
+        display: impl Fn(&LabelMessage) -> String,
+    ) {
+        let line_start = line_span.start();
+        let no_style = Style::new();
+
+        // lotta work here for something that's really subtle
+        // look for places (spaces) where we can penetrate this message
+        // with ones that come later
+        let fill_holes = |line_offset: usize,
+                          msg: &str,
+                          out: &mut Vec<Styled<Cow<str>>>,
+                          bright: bool,
+                          char: &'static str| {
+            // walk through all spaces in the string
+            let mut building = String::new();
+            for c in msg.char_indices() {
+                if c.1 == ' ' {
+                    // ↓ line_start
+                    // -------------------------------------
+                    //                   [message...  ' ' ....]
+                    // |← line_offset →|← [..c.0] →|
+                    // |←      offset_to_space      →|
+                    let offset_to_space = line_offset + msg[..c.0].width();
+                    let mut found = false;
+                    for (l, ls) in other_labels {
+                        // ↓ line_start
+                        // -----------------------------------------
+                        //                [message... ' ' .... ]
+                        // |←    offset_to_space    →|
+                        //                             [l.start]----
+                        // |←   offset_from_start?  →|
+                        let offset_from_start =
+                            self.source_code[line_start.up_to(l.span().start())].width();
+
+                        if offset_from_start == offset_to_space {
+                            out.push(style.style(take(&mut building).into()));
+                            out.push(if bright {
+                                ls.style(char.into())
+                            } else if !ls.is_plain() {
+                                ls.dimmed().style(char.into())
+                            } else {
+                                ls.style(char.into())
+                            });
+
+                            found = true;
+                            break;
+                        }
+                    }
+
+                    if found {
+                        continue;
+                    }
+                }
+
+                building.push(c.1);
+            }
+
+            if !building.is_empty() {
+                out.push(style.style(building.into()));
+            }
+        };
+
+        let indent_width = self.source_code[line_start.up_to(label.span().start())].width();
+
+        // 2 chars at start of messages "└╴"
+        const MSG_PREFIX_WIDTH: usize = 2;
+
+        let mut out: Vec<Styled<Cow<str>>> = Vec::new();
+
+        let indent = " ".repeat(indent_width);
+        fill_holes(0, &indent, &mut out, true, "│");
+
+        out.push(style.style("└╴".into()));
+
+        // if we're on the first row we can use full brightness
+        // where it connects to the indicator line, otherwise we dim
+        let bright = self.messages.is_empty();
+        let msg = display(label.message());
+        fill_holes(indent_width + MSG_PREFIX_WIDTH, &msg, &mut out, bright, "╵");
+
+        // draw in any others that come after
+        let mut message_width = indent_width + MSG_PREFIX_WIDTH + msg.width();
+        for (l, ls) in other_labels {
+            // ↓ line_start
+            // -----------------------------------------------------
+            //                  msg ..... ]
+            // |←     message_width    →|← len? →|
+            //                                       [l.start]-------
+            // |←         offset_from_start       →|
+            let offset_from_start = self.source_code[line_start.up_to(l.span().start())].width();
+            if let Some(len) = offset_from_start.checked_sub(message_width) {
+                if len > 0 {
+                    out.push(no_style.style(" ".repeat(len).into()));
+                }
+
+                out.push(ls.style("│".into()));
+                // 'len' spaces and one pipe
+                message_width += len + 1;
+            }
+        }
+
+        self.messages.push(out);
+    }
+
     fn highlight_line(
         mut self,
         line_span: Span<u8>,
@@ -299,136 +409,70 @@ impl LineHighlighter<'_> {
     ) -> LitLine {
         let no_style = Style::new();
 
-        let mut stack: Vec<(bool, &owo_colors::Style, &Label)> = Vec::new();
+        let labels = labels.iter().map(|x| (x, highlight(x)));
 
-        let labels = labels.iter().map(|x| (x, highlight(x))).collect::<Vec<_>>();
+        let mut stack: Vec<(&Label, Style)> = Vec::new();
+        let mut message_order = Vec::new();
 
         let mut up_to = line_span.start();
         // these are in order ascending by start, descending by length
-        for (sublabel, style) in &labels {
-            debug_assert!(sublabel.span().start() >= up_to);
+        for (label, style) in labels {
+            debug_assert!(label.span().start() >= up_to);
 
-            if sublabel.span().start() > up_to {
-                while let Some((has_written, style, nested)) = stack.pop() {
-                    let wanted_end = nested.span().end();
-                    let end = min(wanted_end, sublabel.span().start());
+            if label.span().start() > up_to {
+                while let Some((outer_label, style)) = stack.pop() {
+                    let wanted_end = outer_label.span().end();
+                    let end = min(wanted_end, label.span().start());
+
+                    // emit highlighted portion of line
                     let value = Span::new_index(up_to, end).str(self.source_code);
-                    let continues = wanted_end > sublabel.span().end();
                     self.line.push(style.style(value.into()));
-                    self.fill_indicator(has_written, continues, value, style);
-                    if !has_written {
-                        let indent_width = self.source_code[line_span.start().span(up_to)].width();
-                        let indent = " ".repeat(indent_width);
 
-                        let msg = display(nested.message());
+                    // emit indicator line
+                    let continuing = outer_label.span().start() < up_to;
+                    let continues = wanted_end > label.span().end();
+                    self.fill_indicator(continuing, continues, value, &style);
 
-                        // lotta work here for something that's really subtle
-                        // look for places (spaces) where we can penetrate this message
-                        // with ones that come later
-                        let mut list: Vec<Styled<Cow<str>>> =
-                            vec![no_style.style(indent.into()), style.style("└╴".into())];
-
-                        let mut building = String::new();
-
-                        // walk through all spaces in the string
-                        for c in msg.char_indices() {
-                            if c.1 == ' ' {
-                                let width = msg[..c.0].width();
-                                let mut found = false;
-                                for (l, ls) in labels
-                                    .iter()
-                                    .skip_while(|(l, _)| l.span().start() <= nested.span().start())
-                                {
-                                    let offset = nested.span().start().span(l.span().start());
-                                    if self.source_code[offset].width() == width + 2 {
-                                        list.push(style.style(take(&mut building).into()));
-                                        // if we're on the first row we can use full brightness
-                                        list.push(if self.messages.is_empty() {
-                                            ls.style("╵".into())
-                                        } else {
-                                            ls.dimmed().style("╵".into())
-                                        });
-
-                                        found = true;
-                                        break;
-                                    }
-                                }
-
-                                if found {
-                                    continue;
-                                }
-                            }
-
-                            building.push(c.1);
-                        }
-
-                        if !building.is_empty() {
-                            list.push(style.style(building.into()));
-                        }
-
-                        // draw in any others that come after
-                        let mut message_width = msg.width() + 2; // 2 chars at start of messages |-
-                        for (l, ls) in labels
-                            .iter()
-                            .skip_while(|(l, _)| l.span().start() <= nested.span().start())
-                        {
-                            let offset = nested.span().start().span(l.span().start());
-                            if let Some(len) =
-                                self.source_code[offset].width().checked_sub(message_width)
-                            {
-                                list.push(no_style.style(" ".repeat(len).into()));
-                                list.push(ls.style("│".into()));
-                                message_width += len + 1; // update with new width
-                            }
-                        }
-
-                        self.messages.push(list);
+                    // emit message
+                    if continues {
+                        stack.push((outer_label, style));
+                    } else {
+                        message_order.push((outer_label, style));
                     }
 
                     up_to = end;
 
-                    // TODO: partial overlaps
-                    if continues {
-                        stack.push((true, style, nested));
-                    }
-
-                    if end == sublabel.span().start() {
+                    if up_to == label.span().start() {
+                        // we’ve made it to the start of the next label
                         break;
                     }
                 }
 
                 // if we still didn’t get to the start of the next label
-                if up_to < sublabel.span().start() {
+                // then there is an unhighlighted gap
+                if label.span().start() > up_to {
                     // emit unhighlighted characters
-                    let value = &self.source_code[up_to.span(sublabel.span().start())];
+                    let value = &self.source_code[up_to.up_to(label.span().start())];
                     self.line.push(no_style.style(value.into()));
                     // space indicator line wide enough
                     self.indicator_line
                         .push(no_style.style(" ".repeat(value.width()).into()));
 
-                    up_to = sublabel.span().start();
+                    up_to = label.span().start();
                 }
             }
 
-            stack.push((false, style, sublabel));
+            debug_assert!(label.span().start() == up_to);
+            stack.push((label, style));
         }
 
-        while let Some((has_written, style, sublabel)) = stack.pop() {
-            let end = sublabel.span().end();
-            let value = &self.source_code[up_to.span(end)];
-            self.fill_indicator(has_written, false, value, style);
+        while let Some((label, style)) = stack.pop() {
+            let end = label.span().end();
+            let value = &self.source_code[up_to.up_to(end)];
+            let continuing = label.span().start() < up_to;
+            self.fill_indicator(continuing, false, value, &style);
             self.line.push(style.style(value.into()));
-            if !has_written {
-                // TODO: we need to do penetration here as well,
-                // factor it out from the above
-                let indent_width = self.source_code[line_span.start().span(up_to)].width();
-                let indent = " ".repeat(indent_width);
-                self.messages.push(vec![
-                    no_style.style(indent.into()),
-                    style.style("└╴".into()),
-                    style.style(display(sublabel.message()).into()),
-                ]);
-            }
+            message_order.push((label, style));
 
             up_to = end;
         }
@@ -436,9 +480,15 @@ impl LineHighlighter<'_> {
         // if we didn't reach the end, we nee to emit the rest
         if up_to < line_span.end() {
             // emit unhighlighted characters
-            let value = &self.source_code[up_to.span(line_span.end())];
+            let value = &self.source_code[up_to.up_to(line_span.end())];
             self.line.push(no_style.style(value.into()));
             // indicator line doesn't need spacing
+        }
+
+        // emit all messages now that we know the full order
+        let mut message_order = message_order.into_iter();
+        while let Some((label, style)) = message_order.next() {
+            self.emit_message(line_span, label, &style, message_order.as_slice(), &display);
         }
 
         self.result()
@@ -775,8 +825,8 @@ mod test {
           ┎
         1 ┃ hello, world!
           ╿ ├╴├─┘╶──┘
+          │ │ └╴inner
           │ └╴outer
-          │   └╴inner
           ┖
         "###);
     }
@@ -794,9 +844,9 @@ mod test {
           ┎
         1 ┃ hello, world!
           ╿ ├╴├─┘╿╶─┘
-          │ └╴╵uter
-          │   └╴i[2m╵[0mner
-          │      └╴skipping
+          │ │ └╴i╵ner
+          │ │    └╴skipping
+          │ └╴ uter
           ┖
         "###);
     }
@@ -860,13 +910,13 @@ mod test {
             |_: &LabelMessage| "".to_string(), // TODO
         );
 
-        let html = ansi_to_html::convert(&output).unwrap();
-        assert_snapshot!(html, @r###"
+        //let html = ansi_to_html::convert(&output).unwrap();
+        assert_snapshot!(output, @r###"
           ┎
-        1 ┃ <span style='color:var(--blue,#00a)'>hello<span style='color:var(--red,#a00)'>, world!</span></span>
-          ╿ <span style='color:var(--blue,#00a)'>├───┘<span style='color:var(--red,#a00)'>├──────┘</span></span>
-          │ <span style='color:var(--blue,#00a)'>└╴</span>
-          │      <span style='color:var(--red,#a00)'>└╴</span>
+        1 ┃ [34mhello[31m, world![0m
+          ╿ [34m├───┘[31m╶──────┘[0m
+          │ [34m└╴[0m
+          │ [31m└╴[0m
           ┖
         "###);
     }
@@ -890,20 +940,20 @@ mod test {
             |_: &LabelMessage| "".to_string(), // TODO
         );
 
-        let html = ansi_to_html::convert(&output).unwrap();
-        assert_snapshot!(html, @r###"
+        //let html = ansi_to_html::convert(&output).unwrap();
+        assert_snapshot!(output, @r###"
           ┎
-        1 ┃ <span style='color:var(--blue,#00a)'>hel<span style='color:var(--yellow,#a60)'>lo<span style='color:var(--red,#a00)'>, world!</span></span></span>
-          ╿ <span style='color:var(--blue,#00a)'>├─┘<span style='color:var(--yellow,#a60)'>├┘<span style='color:var(--red,#a00)'>├──────┘</span></span></span>
-          │ <span style='color:var(--blue,#00a)'>└╴</span>
-          │    <span style='color:var(--yellow,#a60)'>└╴</span>
-          │      <span style='color:var(--red,#a00)'>└╴</span>
+        1 ┃ [34mhel[33mlo[31m, world![0m
+          ╿ [34m├─┘[33m╶┘[31m╶──────┘[0m
+          │ [34m└╴[0m
+          │ [33m└╴[0m
+          │ [31m└╴[0m
           ┖
         "###);
     }
 
     #[test]
-    fn highlight_separated() {
+    fn highlight_separated_1() {
         let source_code = "hello, world!";
 
         let output = Highlighter { source_code }.render_spans(
@@ -918,17 +968,20 @@ mod test {
                 LabelMessage::Literal("outer") => owo_colors::Style::new().red(),
                 _ => unreachable!(),
             },
-            |_: &LabelMessage| "".to_string(), // TODO
+            |s: &LabelMessage| match s {
+                LabelMessage::Literal(l) => l.to_string(),
+                LabelMessage::Error(e) => e.to_string(),
+            },
         );
 
-        let html = ansi_to_html::convert(&output).unwrap();
-        assert_snapshot!(html, @r###"
+        //let html = ansi_to_html::convert(&output).unwrap();
+        assert_snapshot!(output, @r###"
           ┎
-        1 ┃ <span style='color:var(--blue,#00a)'>hello<span style='color:var(--red,#a00)'>, <span style='color:var(--yellow,#a60)'>world!</span></span></span>
-          ╿ <span style='color:var(--blue,#00a)'>├───┘<span style='color:var(--red,#a00)'>├╴<span style='color:var(--yellow,#a60)'>├───┘├</span></span></span>
-          │ <span style='color:var(--blue,#00a)'>└╴</span>     <span style='color:var(--yellow,#a60)'>│</span>
-          │      <span style='color:var(--red,#a00)'>└╴</span>     <span style='color:var(--yellow,#a60)'>│</span>
-          │        <span style='color:var(--yellow,#a60)'>└╴</span>
+        1 ┃ [34mhello[31m, [33mworld[31m![0m
+          ╿ [34m├───┘[31m╶╴[33m├───┘[31m┘[0m
+          │ [34m└╴inner1[0m
+          │ [33m[31m│[33m      └╴inner2[0m
+          │ [31m└╴outer[0m
           ┖
         "###);
     }
@@ -955,20 +1008,24 @@ mod test {
                 LabelMessage::Literal("inner5") => owo_colors::Style::new().cyan(),
                 _ => unreachable!(),
             },
-            |_: &LabelMessage| "".to_string(), // TODO
+            |s: &LabelMessage| match s {
+                LabelMessage::Literal(l) => l.to_string(),
+                LabelMessage::Error(e) => e.to_string(),
+            },
         );
 
-        let html = ansi_to_html::convert(&output).unwrap();
-        assert_snapshot!(html, @r###"
+        //let html = ansi_to_html::convert(&output).unwrap();
+
+        assert_snapshot!(output, @r###"
           ┎
-        1 ┃ <span style='color:var(--red,#a00)'>x<span style='color:var(--blue,#00a)'>he<span style='color:var(--yellow,#a60)'>llo, <span style='color:var(--magenta,#a0a)'>wor<span style='color:var(--cyan,#0aa)'>ld<span style='color:var(--green,#0a0)'>!x</span></span></span></span></span></span>
-          ╿ <span style='color:var(--red,#a00)'>┘<span style='color:var(--blue,#00a)'>├╴<span style='color:var(--yellow,#a60)'>├┘├╶╴<span style='color:var(--magenta,#a0a)'>├─┘<span style='color:var(--cyan,#0aa)'>├┘<span style='color:var(--green,#0a0)'>╿├</span></span></span></span></span></span>
-          │ <span style='color:var(--red,#a00)'>└╴</span> <span style='color:var(--yellow,#a60)'>│</span>    <span style='color:var(--green,#0a0)'>│</span>  <span style='color:var(--cyan,#0aa)'>│</span>
-          │  <span style='color:var(--blue,#00a)'>└╴</span><span style='color:var(--yellow,#a60)'>│</span>    <span style='color:var(--green,#0a0)'>│</span>  <span style='color:var(--cyan,#0aa)'>│</span>
-          │    <span style='color:var(--yellow,#a60)'>└╴</span>   <span style='color:var(--green,#0a0)'>│</span>  <span style='color:var(--cyan,#0aa)'>│</span>
-          │         <span style='color:var(--magenta,#a0a)'>└╴</span> <span style='color:var(--cyan,#0aa)'>│</span>
-          │            <span style='color:var(--cyan,#0aa)'>└╴</span>
-          │              <span style='color:var(--green,#0a0)'>└╴</span>
+        1 ┃ [31mx[34mhe[33mll[34mo[31m, [35mwor[36mld[32m![31mx[0m
+          ╿ [31m├[34m├╴[33m├┘[34m┘[31m╶╴[35m├─┘[36m├┘[32m┘[31m┘[0m
+          │ [33m[31m│[33m[34m│[33m └╴inner2[36m│[0m
+          │ [34m[31m│[34m└╴inner1[0m  [36m│[0m
+          │ [35m[31m│[35m       └╴inner4[0m
+          │ [36m[31m│[36m       [32m│[36m  └╴inner5[0m
+          │ [32m[31m│[32m       └╴inner3[0m
+          │ [31m└╴outer[0m
           ┖
         "###);
     }

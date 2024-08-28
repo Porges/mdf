@@ -20,7 +20,7 @@ impl<T: ?Sized> Index<T> {
         self.index
     }
 
-    pub fn span(&self, ix: Index<T>) -> Span<T> {
+    pub fn up_to(&self, ix: Index<T>) -> Span<T> {
         Span::new_index(*self, ix)
     }
 }
