@@ -55,6 +55,7 @@ pub(in crate::parser) struct Builder<'i> {
     records: Vec<Sourced<RawRecord<'i>>>,
 }
 
+#[derive(Debug)]
 pub struct ParseResult {
     pub file: AnyFileVersion,
     pub non_fatals: Vec<ParseError>,

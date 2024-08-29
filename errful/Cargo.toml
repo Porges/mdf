@@ -7,7 +7,7 @@ edition.workspace = true
 
 [dependencies]
 thiserror = "1.0.63"
-complex-indifference = { path = "../complex-indifference" }
+complex-indifference = { path = "../complex-indifference", features = ["unicode-width"] }
 errful-derive = { path = "../errful-derive" }
 owo-colors = { version = "4.0.0", features = ["alloc"] }
 mappable-rc = "0.1.1"

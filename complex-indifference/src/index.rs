@@ -2,8 +2,15 @@ use std::marker::PhantomData;
 
 use crate::{Count, Span};
 
+// TODO: distinguish between `Index` and `Offset`?
+// Offset is essentially a `Count` with a different name.
+// Not sure that this is worth it.
+//
+// TODO: distringuish between indices which are "inclusive" and "exclusive"?
+// e.g. the end index of a span is exclusive
+
 #[derive(Default, Debug)]
-pub struct Index<T: ?Sized> {
+pub struct Index<T: ?Sized, const REAL: bool = true> {
     index: usize,
     _phantom: PhantomData<T>,
 }
@@ -21,7 +28,7 @@ impl<T: ?Sized> Index<T> {
     }
 
     pub fn up_to(&self, ix: Index<T>) -> Span<T> {
-        Span::new_index(*self, ix)
+        Span::from_indices(*self, ix)
     }
 }
 

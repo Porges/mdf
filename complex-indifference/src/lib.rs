@@ -12,7 +12,7 @@ mod index;
 mod rate;
 mod span;
 
-pub use count::{Count, Countable};
+pub use count::{ByteCount, CharCount, Count, Countable, UnicodeWidth, UnicodeWidthCount};
 pub use index::{Index, Sliceable, SliceableMut};
 pub use rate::Rate;
 pub use span::Span;

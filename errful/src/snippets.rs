@@ -4,29 +4,55 @@ use complex_indifference::{Index, Sliceable, Span};
 use owo_colors::{Style, Styled, StyledList};
 use unicode_width::UnicodeWidthStr;
 
-use crate::protocol::{Label, LabelMessage};
+use crate::protocol::{Label as ProtocolLabel, LabelMessage};
 
 // sorts labels by increasing order
 // if there are overlapping labels, the longest one comes first
 fn sort_labels(labels: &mut [Label]) {
     labels.sort_by(|a, b| {
-        a.span()
+        a.span
             .start()
-            .cmp(&b.span().start())
-            .then(b.span().len().cmp(&a.span().len()))
+            .cmp(&b.span.start())
+            .then(b.span.len().cmp(&a.span.len()))
     });
 }
 
 pub(crate) fn render_spans(
     source_code: &str,
-    labels: Vec<Label>,
-    highlight: impl FnMut(&Label) -> owo_colors::Style,
+    labels: Vec<ProtocolLabel>,
+    mut highlight: impl FnMut(&ProtocolLabel) -> Style,
     display: impl Fn(&LabelMessage) -> String,
 ) -> String {
-    Highlighter { source_code }.render_spans(labels, highlight, display)
+    Highlighter { source_code }.render_spans(
+        labels
+            .into_iter()
+            .map(|label| Label {
+                span: label.span(),
+                message: display(label.message()),
+                style: highlight(&label),
+            })
+            .collect(),
+    )
 }
+
 struct Highlighter<'a> {
     source_code: &'a str,
+}
+
+struct Label {
+    span: Span<u8>,
+    message: String,
+    style: Style,
+}
+
+impl Label {
+    fn start(&self) -> Index<u8> {
+        self.span.start()
+    }
+
+    fn end(&self) -> Index<u8> {
+        self.span.end()
+    }
 }
 
 impl Highlighter<'_> {
@@ -49,35 +75,26 @@ impl Highlighter<'_> {
             .unwrap_or(self.source_code.len())
             .into();
 
-        let line_span: Span<u8> = Span::new_index(start_of_line, end_of_line);
+        let line_span = Span::from((start_of_line, end_of_line));
+
         debug_assert!(line_span.contains_offset(index));
 
         line_span
     }
 
-    fn render_spans(
-        &self,
-        mut labels: Vec<Label>,
-        mut highlight: impl FnMut(&Label) -> owo_colors::Style,
-        display: impl Fn(&LabelMessage) -> String,
-    ) -> String {
+    fn render_spans(&self, mut labels: Vec<Label>) -> String {
         sort_labels(labels.as_mut_slice());
 
         let context_lines = 2;
 
         let mut last_line = None;
-
         let mut iter = labels.into_iter().peekable();
-
         let mut output_lines: Vec<(usize, Cow<str>)> = Vec::new();
-
         let mut context_after = Vec::new();
 
         while let Some(label) = iter.next() {
-            let span = label.span();
-
-            let line_span = self.line_containing(span.start());
-            if span.end() > line_span.end() {
+            let line_span = self.line_containing(label.start());
+            if label.end() > line_span.end() {
                 todo!("this Span spans multiple lines");
             }
 
@@ -109,9 +126,7 @@ impl Highlighter<'_> {
 
             // find all labels that start on this line
             let mut line_labels = vec![label];
-            while let Some(line_label) =
-                iter.next_if(|l| line_span.contains_offset(l.span().start()))
-            {
+            while let Some(line_label) = iter.next_if(|l| line_span.contains_offset(l.start())) {
                 line_labels.push(line_label);
             }
 
@@ -142,23 +157,22 @@ impl Highlighter<'_> {
             );
 
             // indicate the portion of the line that the labels are pointing at
-            let mut lit_line = LineHighlighter::new(self.source_code).highlight_line(
-                line_span,
-                &line_labels,
-                &mut highlight,
-                &display,
-            );
+            let LitLine {
+                mut line,
+                indicator_line,
+                messages,
+            } = LineHighlighter::new(self.source_code).highlight_line(line_span, &line_labels);
 
-            if !lit_line.line.ends_with('\n') {
-                lit_line.line.push('\n');
+            if !line.ends_with('\n') {
+                line.push('\n');
             }
 
-            output_lines.push((line_number, Cow::Owned(lit_line.line)));
+            output_lines.push((line_number, Cow::Owned(line)));
 
             // line value can never be usize::MAX (since it must offset by 1)
             // so we reuse it here to mark augmented lines
-            output_lines.push((usize::MAX, Cow::Owned(lit_line.indicator_line)));
-            for message in lit_line.messages {
+            output_lines.push((usize::MAX, Cow::Owned(indicator_line)));
+            for message in messages {
                 output_lines.push((usize::MAX, message.into()));
             }
         }
@@ -290,14 +304,7 @@ impl LineHighlighter<'_> {
         }
     }
 
-    fn emit_message(
-        &mut self,
-        line_span: Span<u8>,
-        label: &Label,
-        style: &Style,
-        other_labels: &[(&Label, Style)],
-        display: impl Fn(&LabelMessage) -> String,
-    ) {
+    fn emit_message(&mut self, line_span: Span<u8>, label: &Label, other_labels: &[&Label]) {
         let line_start = line_span.start();
         let no_style = Style::new();
 
@@ -319,7 +326,7 @@ impl LineHighlighter<'_> {
                     // |← line_offset →|← [..c.0] →|
                     // |←     offset_to_space     →|
                     let offset_to_space = line_offset + msg[..c.0].width();
-                    if let Some(other_style) = other_labels.iter().find_map(|(l, ls)| {
+                    if let Some(other_style) = other_labels.iter().find_map(|l| {
                         // ↓ line_start
                         // -------------------------------------
                         //            [message... ' ' .... ]
@@ -327,15 +334,15 @@ impl LineHighlighter<'_> {
                         //                         [l.start]----
                         // |←  offset_from_start? →|
                         let offset_from_start =
-                            self.source_code[line_start.up_to(l.span().start())].width();
+                            self.source_code[line_start.up_to(l.start())].width();
 
                         if offset_from_start == offset_to_space {
-                            Some(ls)
+                            Some(&l.style)
                         } else {
                             None
                         }
                     }) {
-                        out.push(style.style(take(&mut building).into()));
+                        out.push(label.style.style(take(&mut building).into()));
                         out.push(if bright {
                             other_style.style(char.into())
                         } else if !other_style.is_plain() {
@@ -352,11 +359,11 @@ impl LineHighlighter<'_> {
             }
 
             if !building.is_empty() {
-                out.push(style.style(building.into()));
+                out.push(label.style.style(building.into()));
             }
         };
 
-        let indent_width = self.source_code[line_start.up_to(label.span().start())].width();
+        let indent_width = self.source_code[line_start.up_to(label.start())].width();
 
         // 2 chars at start of messages: "└╴"
         const MSG_PREFIX_WIDTH: usize = 2;
@@ -366,81 +373,79 @@ impl LineHighlighter<'_> {
         let indent = " ".repeat(indent_width);
         fill_holes(0, &indent, &mut out, true, "│");
 
-        out.push(style.style("└╴".into()));
+        out.push(label.style.style("└╴".into()));
 
         // if we're on the first row we can use full brightness
         // where it connects to the indicator line, otherwise we dim
         let bright = self.messages.is_empty();
-        let msg = display(label.message());
-        fill_holes(indent_width + MSG_PREFIX_WIDTH, &msg, &mut out, bright, "╵");
+        fill_holes(
+            indent_width + MSG_PREFIX_WIDTH,
+            &label.message,
+            &mut out,
+            bright,
+            "╵",
+        );
 
         // draw in any others that come after
-        let mut message_width = indent_width + MSG_PREFIX_WIDTH + msg.width();
-        for (l, ls) in other_labels {
+        let mut total_width = indent_width + MSG_PREFIX_WIDTH + label.message.width();
+        for l in other_labels {
             // ↓ line_start
             // -------------------------------------------
-            //         msg ..... ]
-            // |← message_width →|← len? →|
-            //                            [l.start]-------
-            // |←    offset_from_start   →|
-            let offset_from_start = self.source_code[line_start.up_to(l.span().start())].width();
-            if let Some(len) = offset_from_start.checked_sub(message_width) {
+            //         msg ... ]
+            // |← total_width →|← len? →|
+            //                          [l.start]-------
+            // |←   offset_from_start  →|
+            let offset_from_start = self.source_code[line_start.up_to(l.start())].width();
+            if let Some(len) = offset_from_start.checked_sub(total_width) {
                 if len > 0 {
                     out.push(no_style.style(" ".repeat(len).into()));
                 }
 
-                out.push(ls.style("│".into()));
+                out.push(l.style.style("│".into()));
                 // 'len' spaces and one pipe
-                message_width += len + 1;
+                total_width += len + 1;
             }
         }
 
         self.messages.push(out);
     }
 
-    fn highlight_line(
-        mut self,
-        line_span: Span<u8>,
-        labels: &[Label],
-        mut highlight: impl FnMut(&Label) -> Style,
-        display: impl Fn(&LabelMessage) -> String,
-    ) -> LitLine {
+    fn highlight_line(mut self, line_span: Span<u8>, labels: &[Label]) -> LitLine {
         let no_style = Style::new();
 
-        let labels = labels.iter().map(|x| (x, highlight(x)));
-
-        let mut stack: Vec<(&Label, Style)> = Vec::new();
+        let mut stack: Vec<&Label> = Vec::new();
         let mut message_order = Vec::new();
 
         let mut up_to = line_span.start();
         // these are in order ascending by start, descending by length
-        for (label, style) in labels {
-            debug_assert!(label.span().start() >= up_to);
+        for label in labels {
+            debug_assert!(line_span.contains(label.span), "label must be within line");
+            debug_assert!(label.start() >= up_to, "labels must be in order");
 
-            if label.span().start() > up_to {
-                while let Some((outer_label, style)) = stack.pop() {
-                    let wanted_end = outer_label.span().end();
-                    let end = min(wanted_end, label.span().start());
+            if label.start() > up_to {
+                while let Some(outer_label) = stack.pop() {
+                    let wanted_end = outer_label.end();
+                    let end = min(wanted_end, label.start());
 
                     // emit highlighted portion of line
-                    let value = Span::new_index(up_to, end).str(self.source_code);
-                    self.line.push(style.style(value.into()));
+                    let value = Span::from_indices(up_to, end).str(self.source_code);
+                    self.line.push(outer_label.style.style(value.into()));
 
                     // emit indicator line
-                    let continuing = outer_label.span().start() < up_to;
-                    let continues = wanted_end > label.span().end();
-                    self.fill_indicator(continuing, continues, value, &style);
+                    let continuing = outer_label.start() < up_to;
+                    let continues = wanted_end > label.end();
+                    self.fill_indicator(continuing, continues, value, &outer_label.style);
 
                     // emit message
                     if continues {
-                        stack.push((outer_label, style));
+                        stack.push(outer_label);
                     } else {
-                        message_order.push((outer_label, style));
+                        message_order.push(outer_label);
                     }
 
                     up_to = end;
 
-                    if up_to == label.span().start() {
+                    if up_to == label.start() {
                         // we’ve made it to the start of the next label
                         break;
                     }
@@ -448,29 +453,29 @@ impl LineHighlighter<'_> {
 
                 // if we still didn’t get to the start of the next label
                 // then there is an unhighlighted gap
-                if label.span().start() > up_to {
+                if label.start() > up_to {
                     // emit unhighlighted characters
-                    let value = &self.source_code[up_to.up_to(label.span().start())];
+                    let value = &self.source_code[up_to.up_to(label.start())];
                     self.line.push(no_style.style(value.into()));
                     // space indicator line wide enough
                     self.indicator_line
                         .push(no_style.style(" ".repeat(value.width()).into()));
 
-                    up_to = label.span().start();
+                    up_to = label.start();
                 }
             }
 
-            debug_assert!(label.span().start() == up_to);
-            stack.push((label, style));
+            debug_assert!(label.start() == up_to);
+            stack.push(label);
         }
 
-        while let Some((label, style)) = stack.pop() {
-            let end = label.span().end();
+        while let Some(label) = stack.pop() {
+            let end = label.end();
             let value = &self.source_code[up_to.up_to(end)];
-            let continuing = label.span().start() < up_to;
-            self.fill_indicator(continuing, false, value, &style);
-            self.line.push(style.style(value.into()));
-            message_order.push((label, style));
+            let continuing = label.start() < up_to;
+            self.fill_indicator(continuing, false, value, &label.style);
+            self.line.push(label.style.style(value.into()));
+            message_order.push(label);
 
             up_to = end;
         }
@@ -485,8 +490,8 @@ impl LineHighlighter<'_> {
 
         // emit all messages now that we know the full order
         let mut message_order = message_order.into_iter();
-        while let Some((label, style)) = message_order.next() {
-            self.emit_message(line_span, label, &style, message_order.as_slice(), &display);
+        while let Some(label) = message_order.next() {
+            self.emit_message(line_span, label, message_order.as_slice());
         }
 
         self.result()
@@ -516,7 +521,7 @@ mod test {
     use insta::assert_snapshot;
 
     use super::{render_spans, sort_labels};
-    use crate::snippets::{Highlighter, Label, LabelMessage};
+    use crate::{protocol::Label, snippets::LabelMessage};
 
     fn render_span(
         source_code: &str,
@@ -775,34 +780,73 @@ mod test {
 
     #[test]
     fn sort_labels_simple() {
+        use owo_colors::Style;
+
+        use super::Label;
         let mut labels = [
-            Label::new_literal(None, "c", (2, 1)),
-            Label::new_literal(None, "a", (0, 1)),
-            Label::new_literal(None, "b", (1, 1)),
+            Label {
+                message: "c".into(),
+                span: (2, 1).into(),
+                style: Style::new(),
+            },
+            Label {
+                message: "a".into(),
+                span: (0, 1).into(),
+                style: Style::new(),
+            },
+            Label {
+                message: "b".into(),
+                span: (1, 1).into(),
+                style: Style::new(),
+            },
         ];
 
         sort_labels(&mut labels);
 
         assert_eq!(
-            labels.map(|x| x.span()),
+            labels.map(|x| x.span),
             [(0, 1).into(), (1, 1).into(), (2, 1).into()]
         );
     }
 
     #[test]
     fn sort_labels_nested() {
+        use owo_colors::Style;
+
+        use super::Label;
+
         let mut labels = [
-            Label::new_literal(None, "c", (2, 4)),
-            Label::new_literal(None, "c", (2, 3)),
-            Label::new_literal(None, "a", (0, 1)),
-            Label::new_literal(None, "b", (1, 1)),
-            Label::new_literal(None, "b", (2, 1)),
+            Label {
+                message: "c".into(),
+                span: (2, 4).into(),
+                style: Style::new(),
+            },
+            Label {
+                message: "c".into(),
+                span: (2, 3).into(),
+                style: Style::new(),
+            },
+            Label {
+                message: "a".into(),
+                span: (0, 1).into(),
+                style: Style::new(),
+            },
+            Label {
+                message: "b".into(),
+                span: (1, 1).into(),
+                style: Style::new(),
+            },
+            Label {
+                message: "b".into(),
+                span: (2, 1).into(),
+                style: Style::new(),
+            },
         ];
 
         sort_labels(&mut labels);
 
         assert_eq!(
-            labels.map(|x| x.span()),
+            labels.map(|x| x.span),
             [
                 (0, 1).into(),
                 (1, 1).into(),
@@ -895,7 +939,8 @@ mod test {
     fn highlight_simple() {
         let source_code = "hello, world!";
 
-        let output = Highlighter { source_code }.render_spans(
+        let output = super::render_spans(
+            source_code,
             vec![
                 make_label(source_code, "hello, world!", "outer"),
                 make_label(source_code, "hello", "inner"),
@@ -923,7 +968,8 @@ mod test {
     fn highlight_simple_nested() {
         let source_code = "hello, world!";
 
-        let output = Highlighter { source_code }.render_spans(
+        let output = super::render_spans(
+            source_code,
             vec![
                 make_label(source_code, "hello, world!", "outer"),
                 make_label(source_code, "hello", "inner2"),
@@ -954,7 +1000,8 @@ mod test {
     fn highlight_separated_1() {
         let source_code = "hello, world!";
 
-        let output = Highlighter { source_code }.render_spans(
+        let output = super::render_spans(
+            source_code,
             vec![
                 make_label(source_code, "hello, world!", "outer"),
                 make_label(source_code, "hello", "inner1"),
@@ -988,7 +1035,8 @@ mod test {
     fn highlight_separated_nested() {
         let source_code = "xhello, world!x";
 
-        let output = Highlighter { source_code }.render_spans(
+        let output = super::render_spans(
+            source_code,
             vec![
                 make_label(source_code, "xhello, world!x", "outer"),
                 make_label(source_code, "hello", "inner1"),
@@ -1175,7 +1223,7 @@ mod test {
     }
 
     #[test]
-    fn whole_line() {
+    fn multi_line() {
         let source_code = "\
         hello,\nworld!\n\
         ";

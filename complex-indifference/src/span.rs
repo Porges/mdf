@@ -20,12 +20,26 @@ impl<T: ?Sized> From<(usize, usize)> for Span<T> {
     }
 }
 
+impl<T: ?Sized> From<(Index<T>, Count<T>)> for Span<T> {
+    fn from(value: (Index<T>, Count<T>)) -> Self {
+        Self::new(value.0, value.1)
+    }
+}
+
+// TODO: this is really try-from
+impl<T: ?Sized> From<(Index<T>, Index<T>)> for Span<T> {
+    fn from(value: (Index<T>, Index<T>)) -> Self {
+        Self::from_indices(value.0, value.1)
+    }
+}
+
 impl<T: ?Sized> Span<T> {
     pub const fn new(start: Index<T>, len: Count<T>) -> Self {
         Self { start, len }
     }
 
-    pub fn new_index(start: Index<T>, end: Index<T>) -> Self {
+    pub fn from_indices(start: Index<T>, end: Index<T>) -> Self {
+        debug_assert!(start <= end, "indices are in the wrong order");
         Self {
             start,
             len: end - start,

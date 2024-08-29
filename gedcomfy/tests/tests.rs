@@ -1,23 +1,9 @@
-use std::{path::PathBuf, sync::Once};
+use std::path::PathBuf;
 
 use gedcomfy::parser::{encodings::detect_external_encoding, options::ParseOptions, Parser};
 
-static INIT: Once = Once::new();
-fn ensure_hook() {
-    INIT.call_once(|| {
-        miette::set_hook(Box::new(|_diag| {
-            Box::new(
-                miette::MietteHandlerOpts::new()
-                    .terminal_links(false)
-                    .unicode(true)
-                    .color(false)
-                    .width(132)
-                    .build(),
-            )
-        }))
-        .unwrap();
-    });
-}
+mod shared;
+use shared::ensure_hook;
 
 #[test]
 fn can_parse_allged_lines() -> miette::Result<()> {
@@ -66,26 +52,6 @@ fn torture_test_valid() {
 #[test]
 fn golden_files() -> miette::Result<()> {
     ensure_hook();
-
-    insta::glob!("syntax_inputs/*.ged", |path| {
-        let data = std::fs::read(path).unwrap();
-        let filename = path.file_name().unwrap();
-        insta::with_settings!({
-            // provide GEDCOM source alongside output
-            description => String::from_utf8_lossy(&data),
-        }, {
-            let mut parser = Parser::read_bytes(data, ParseOptions::default()).with_path(filename);
-            match parser.parse_kdl() {
-                Ok(kdl) => {
-                    insta::assert_snapshot!(kdl);
-                }
-                Err(err) => {
-                    insta::assert_snapshot!(format!("{:?}", miette::Report::new(err)));
-                },
-            };
-        });
-    });
-
     insta::glob!("format_inputs/*.ged", |path| {
         let data = std::fs::read(path).unwrap();
         let filename = path.file_name().unwrap();
