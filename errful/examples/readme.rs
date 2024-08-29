@@ -1,16 +1,15 @@
 #![feature(error_generic_member_access)] // required, see Compatibility below
 #![feature(try_trait_v2)]
 
-use complex_indifference::Span;
-use errful::{Error, MainResult};
+use errful::{Error, MainResult, Span};
 
 #[derive(Debug, Error)]
 #[error(
-    display = "an error happened", // (optional) very basic formatting, see below 
+    display = "something unexpected happened", // (optional) very basic formatting, see below 
     exit_code = 123, // (optional) custom exit code if this is returned from `main` 
-    url = "https://example.com", // (optional) a URL to a page with more information
+    url = "https://example.com/my-error", // (optional) a URL to a page with more information
     code = "MY_ERROR", // (optional) a unique code for the error
-    severity = errful::Severity::Error, // (optional) the severity of the error
+    severity = errful::Severity::Warning, // (optional) the severity of the error
 )]
 struct MyError {
     #[error(source)]

@@ -59,7 +59,7 @@ impl PrettyDisplay<'_> {
             } else {
                 let message = textwrap::indent(
                     "! errful issue: no source code provided to render labels\n\
-                     !               (use #[source_code] to mark an appropriate field)",
+                     !               (use #[error(source_code)] to mark an appropriate field)",
                     prefix,
                 );
 
@@ -153,6 +153,10 @@ impl<'e> Display for PrettyDisplay<'e> {
             writeln!(f, " [{}]", code)?;
         } else {
             writeln!(f)?;
+        }
+
+        if let Some(url) = err.url() {
+            writeln!(f, "{} {}", only_bold.style("See:"), url)?;
         }
 
         writeln!(f)?;

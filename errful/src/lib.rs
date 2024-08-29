@@ -11,6 +11,7 @@ pub mod protocol;
 pub mod result;
 mod snippets;
 
+pub use complex_indifference::Span;
 pub use errful_derive::Error;
 pub use formatting::PrettyDisplay;
 pub use protocol::Errful;

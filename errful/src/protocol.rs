@@ -52,7 +52,7 @@ pub trait Errful: Error {
     where
         Self: Sized,
     {
-        self.display_errful::<PrettyDisplay>().with_color(false)
+        self.display_pretty().with_color(false)
     }
 }
 
