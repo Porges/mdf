@@ -6,10 +6,16 @@ use crate::formatting::{PluralFormatter, PluralString};
 ///
 /// Use the [`Countable`](crate::Countable) trait to obtain a `Count` for a supported type,
 /// or use [`Count::from`](Count::from) or [`Count::new`](Count::new) to create a `Count` directly.
-#[derive(Default, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Count<T: ?Sized> {
     count: usize,
     _phantom: PhantomData<T>,
+}
+
+impl<T: ?Sized> Default for Count<T> {
+    fn default() -> Self {
+        Self::zero()
+    }
 }
 
 impl<T: ?Sized> Clone for Count<T> {

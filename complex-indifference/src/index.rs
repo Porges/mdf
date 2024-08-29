@@ -9,10 +9,18 @@ use crate::{Count, Span};
 // TODO: distringuish between indices which are "inclusive" and "exclusive"?
 // e.g. the end index of a span is exclusive
 
-#[derive(Default, Debug)]
-pub struct Index<T: ?Sized, const REAL: bool = true> {
+/// An index into a sequence of things of type `T`
+/// (i.e. a finite [Ordinal number](https://en.wikipedia.org/wiki/Ordinal_number)).
+#[derive(Debug)]
+pub struct Index<T: ?Sized> {
     index: usize,
     _phantom: PhantomData<T>,
+}
+
+impl<T: ?Sized> Default for Index<T> {
+    fn default() -> Self {
+        Self::new(0)
+    }
 }
 
 impl<T: ?Sized> Index<T> {

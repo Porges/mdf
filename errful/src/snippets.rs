@@ -518,6 +518,7 @@ struct LitLine {
 
 #[cfg(test)]
 mod test {
+    use complex_indifference::{ByteCount, Span};
     use insta::assert_snapshot;
 
     use super::{render_spans, sort_labels};
@@ -532,9 +533,9 @@ mod test {
         render_spans(source_code, vec![label], highlight, display)
     }
 
-    fn span_of(source: &str, word: &str) -> (usize, usize) {
+    fn span_of(source: &str, word: &str) -> Span<u8> {
         let start = source.find(word).unwrap();
-        (start, word.len())
+        Span::new(start.into(), word.byte_count())
     }
 
     fn make_label(source: &str, target: &str, message: &'static str) -> Label {
@@ -786,17 +787,17 @@ mod test {
         let mut labels = [
             Label {
                 message: "c".into(),
-                span: (2, 1).into(),
+                span: Span::new(2.into(), 1.into()),
                 style: Style::new(),
             },
             Label {
                 message: "a".into(),
-                span: (0, 1).into(),
+                span: Span::new(0.into(), 1.into()),
                 style: Style::new(),
             },
             Label {
                 message: "b".into(),
-                span: (1, 1).into(),
+                span: Span::new(1.into(), 1.into()),
                 style: Style::new(),
             },
         ];
@@ -805,7 +806,11 @@ mod test {
 
         assert_eq!(
             labels.map(|x| x.span),
-            [(0, 1).into(), (1, 1).into(), (2, 1).into()]
+            [
+                Span::new(0.into(), 1.into()),
+                Span::new(1.into(), 1.into()),
+                Span::new(2.into(), 1.into()),
+            ]
         );
     }
 
@@ -818,27 +823,27 @@ mod test {
         let mut labels = [
             Label {
                 message: "c".into(),
-                span: (2, 4).into(),
+                span: Span::new(2.into(), 4.into()),
                 style: Style::new(),
             },
             Label {
                 message: "c".into(),
-                span: (2, 3).into(),
+                span: Span::new(2.into(), 3.into()),
                 style: Style::new(),
             },
             Label {
                 message: "a".into(),
-                span: (0, 1).into(),
+                span: Span::new(0.into(), 1.into()),
                 style: Style::new(),
             },
             Label {
                 message: "b".into(),
-                span: (1, 1).into(),
+                span: Span::new(1.into(), 1.into()),
                 style: Style::new(),
             },
             Label {
                 message: "b".into(),
-                span: (2, 1).into(),
+                span: Span::new(2.into(), 1.into()),
                 style: Style::new(),
             },
         ];
@@ -848,11 +853,11 @@ mod test {
         assert_eq!(
             labels.map(|x| x.span),
             [
-                (0, 1).into(),
-                (1, 1).into(),
-                (2, 4).into(),
-                (2, 3).into(),
-                (2, 1).into()
+                Span::new(0.into(), 1.into()),
+                Span::new(1.into(), 1.into()),
+                Span::new(2.into(), 4.into()),
+                Span::new(2.into(), 3.into()),
+                Span::new(2.into(), 1.into())
             ]
         );
     }

@@ -1,9 +1,19 @@
 use crate::{Count, Index};
 
+/// A range of [`Index`]es.
 #[derive(Debug, PartialEq, Eq)]
 pub struct Span<T: ?Sized> {
     start: Index<T>,
     len: Count<T>,
+}
+
+impl<T: ?Sized> Default for Span<T> {
+    fn default() -> Self {
+        Self {
+            start: Index::default(),
+            len: Count::default(),
+        }
+    }
 }
 
 impl<T: ?Sized> Copy for Span<T> {}
@@ -11,12 +21,6 @@ impl<T: ?Sized> Copy for Span<T> {}
 impl<T: ?Sized> Clone for Span<T> {
     fn clone(&self) -> Self {
         *self
-    }
-}
-
-impl<T: ?Sized> From<(usize, usize)> for Span<T> {
-    fn from(value: (usize, usize)) -> Self {
-        Self::new(Index::new(value.0), Count::new(value.1))
     }
 }
 

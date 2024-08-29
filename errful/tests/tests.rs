@@ -2,6 +2,7 @@
 
 use std::num::ParseIntError;
 
+use complex_indifference::Span;
 use errful::Errful;
 use insta::assert_snapshot;
 
@@ -90,10 +91,12 @@ fn label() {
     #[error(display = "label-haver")]
     struct E {
         #[error(label = "hi there")]
-        span: (usize, usize),
+        span: Span<u8>,
     }
 
-    let value = E { span: (0, 1) };
+    let value = E {
+        span: Span::new(0.into(), 1.into()),
+    };
 
     assert_snapshot!(value.display_pretty_nocolor(), @r###"
     Error: label-haver
@@ -112,7 +115,7 @@ fn label_with_field() {
     #[error(display = "labelled-with-source")]
     struct E {
         #[error(label = source)]
-        span: (usize, usize),
+        span: Span<u8>,
 
         source: ParseIntError,
 
@@ -123,7 +126,7 @@ fn label_with_field() {
     let code = "abc".to_string();
 
     let value = E {
-        span: (0, 1),
+        span: Span::new(0.into(), 1.into()),
         source: code.parse::<usize>().unwrap_err(),
         code,
     };
