@@ -22,8 +22,6 @@ struct MyError {
     whole_location: Span<u8>, // label a location within the input
 
     #[error(label = inner)]
-    // can also use the inner error field as a label
-    // note that this requires Clone
     error_location: Span<u8>,
 }
 
