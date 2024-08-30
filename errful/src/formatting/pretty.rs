@@ -6,7 +6,7 @@ use std::{
 use crate::{
     colors::ColorGenerator,
     protocol::{Errful, Label, LabelMessage},
-    snippets, Severity,
+    Severity,
 };
 
 pub struct PrettyDisplay<'e> {
@@ -47,14 +47,27 @@ impl PrettyDisplay<'_> {
     ) -> std::fmt::Result {
         if let Some(labels) = err.labels() {
             if let Some(source_code) = err.source_code() {
-                let rendered =
-                    snippets::render_spans(source_code, labels, highlight, |l: &LabelMessage| {
-                        match l {
-                            // TODO: inner errors
-                            LabelMessage::Error(e) => format!("{}", e),
-                            LabelMessage::Literal(l) => l.to_string(),
-                        }
-                    });
+                let labels = labels
+                    .into_iter()
+                    .map(|label| {
+                        snippets::Label::new(
+                            label.span(),
+                            match label.message() {
+                                // TODO: inner errors
+                                LabelMessage::Error(e_ix) => {
+                                    let e = err
+                                        .request_field::<dyn Error>(*e_ix)
+                                        .expect(&format!("bug in errful: wanted {e_ix}"));
+                                    format!("{}", e).into()
+                                }
+                                LabelMessage::Literal(l) => (*l).into(),
+                            },
+                            highlight(&label),
+                        )
+                    })
+                    .collect();
+
+                let rendered = snippets::render(source_code, labels);
                 write!(f, "{}", textwrap::indent(&rendered, prefix))?;
             } else {
                 let message = textwrap::indent(

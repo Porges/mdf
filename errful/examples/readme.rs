@@ -1,7 +1,7 @@
 #![feature(error_generic_member_access)] // required, see Compatibility below
 #![feature(try_trait_v2)]
 
-use errful::{Error, MainResult, Span};
+use errful::{Errful, Error, MainResult, Span};
 
 #[derive(Debug, Error)]
 #[error(
@@ -13,7 +13,7 @@ use errful::{Error, MainResult, Span};
 )]
 struct MyError {
     #[error(source)]
-    inner: std::num::ParseIntError, // any std::error::Error will do
+    inner: Box<dyn std::error::Error>, // any std::error::Error will do
 
     #[error(source_code)]
     input: String, // the input which caused the error
@@ -21,12 +21,16 @@ struct MyError {
     #[error(label = "this should be a number")]
     whole_location: Span<u8>, // label a location within the input
 
-    #[error(label = inner)] // can also use the inner error field as a label
+    #[error(label = inner)]
+    // can also use the inner error field as a label
+    // note that this requires Clone
     error_location: Span<u8>,
 }
 
 fn main() -> MainResult<MyError> {
-    failing_function()?;
+    let err = failing_function().unwrap_err();
+    let it = err.request_field::<dyn std::error::Error>(0);
+    println!("{:?}", it);
 
     MainResult::success()
 }
@@ -35,7 +39,7 @@ fn failing_function() -> Result<(), MyError> {
     let input = "123x5".to_string();
     let inner = input.parse::<i32>().unwrap_err();
     let err = MyError {
-        inner,
+        inner: Box::new(inner),
         input,
         error_location: Span::new(3.into(), 1.into()),
         whole_location: Span::new(0.into(), 5.into()),

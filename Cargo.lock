@@ -671,9 +671,11 @@ dependencies = [
  "ansi-to-html",
  "complex-indifference",
  "errful-derive",
+ "impls",
  "insta",
  "mappable-rc",
  "owo-colors",
+ "snippets",
  "textwrap",
  "thiserror",
  "unicode-width",
@@ -1043,6 +1045,12 @@ dependencies = [
  "unicode-bidi",
  "unicode-normalization",
 ]
+
+[[package]]
+name = "impls"
+version = "1.0.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7a46645bbd70538861a90d0f26c31537cdf1e44aae99a794fb75a664b70951bc"
 
 [[package]]
 name = "indexmap"
@@ -2097,6 +2105,16 @@ name = "smawk"
 version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b7c388c1b5e93756d0c740965c41e8822f866621d41acbdf6336a6a168f8840c"
+
+[[package]]
+name = "snippets"
+version = "0.1.0"
+dependencies = [
+ "complex-indifference",
+ "insta",
+ "owo-colors",
+ "unicode-width",
+]
 
 [[package]]
 name = "socket2"

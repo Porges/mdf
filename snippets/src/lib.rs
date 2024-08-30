@@ -4,8 +4,6 @@ use complex_indifference::{Index, Sliceable, Span};
 use owo_colors::{Style, Styled, StyledList};
 use unicode_width::UnicodeWidthStr;
 
-use crate::protocol::{Label as ProtocolLabel, LabelMessage};
-
 // sorts labels by increasing order
 // if there are overlapping labels, the longest one comes first
 fn sort_labels(labels: &mut [Label]) {
@@ -17,35 +15,33 @@ fn sort_labels(labels: &mut [Label]) {
     });
 }
 
-pub(crate) fn render_spans(
-    source_code: &str,
-    labels: Vec<ProtocolLabel>,
-    mut highlight: impl FnMut(&ProtocolLabel) -> Style,
-    display: impl Fn(&LabelMessage) -> String,
-) -> String {
-    Highlighter { source_code }.render_spans(
-        labels
-            .into_iter()
-            .map(|label| Label {
-                span: label.span(),
-                message: display(label.message()),
-                style: highlight(&label),
-            })
-            .collect(),
-    )
+pub fn render(source_code: &str, labels: Vec<Label>) -> String {
+    Highlighter { source_code }.render_spans(labels)
 }
 
 struct Highlighter<'a> {
     source_code: &'a str,
 }
 
-struct Label {
+pub struct Label {
     span: Span<u8>,
-    message: String,
+    message: Cow<'static, str>,
     style: Style,
 }
 
 impl Label {
+    pub fn new(span: Span<u8>, message: Cow<'static, str>, style: Style) -> Self {
+        Self {
+            span,
+            message,
+            style,
+        }
+    }
+
+    pub fn with_style(self, style: Style) -> Self {
+        Self { style, ..self }
+    }
+
     fn start(&self) -> Index<u8> {
         self.span.start()
     }
@@ -520,18 +516,9 @@ struct LitLine {
 mod test {
     use complex_indifference::{ByteCount, Span};
     use insta::assert_snapshot;
+    use owo_colors::Style;
 
-    use super::{render_spans, sort_labels};
-    use crate::{protocol::Label, snippets::LabelMessage};
-
-    fn render_span(
-        source_code: &str,
-        label: Label,
-        highlight: impl Fn(&Label) -> owo_colors::Style,
-        display: impl Fn(&LabelMessage) -> String,
-    ) -> String {
-        render_spans(source_code, vec![label], highlight, display)
-    }
+    use super::{render, sort_labels, Label};
 
     fn span_of(source: &str, word: &str) -> Span<u8> {
         let start = source.find(word).unwrap();
@@ -540,36 +527,19 @@ mod test {
 
     fn make_label(source: &str, target: &str, message: &'static str) -> Label {
         let span = span_of(source, target);
-        Label::new_literal(None, message, span)
+        Label::new(span, message.into(), Style::new())
     }
 
     fn highlight(source: &str, target: &str, message: &'static str) -> String {
-        render_span(
-            source,
-            make_label(source, target, message),
-            |_label: &Label| owo_colors::Style::new(),
-            |msg: &LabelMessage| match msg {
-                LabelMessage::Error(e) => format!("{}", e),
-                LabelMessage::Literal(l) => l.to_string(),
-            },
-        )
+        highlight_many(source, &[(target, message)])
     }
 
     fn highlight_many(source: &str, target_labels: &[(&str, &'static str)]) -> String {
-        let labels =
-            Vec::from_iter(target_labels.iter().map(|(target, message)| {
-                Label::new_literal(None, message, span_of(source, target))
-            }));
+        let labels = Vec::from_iter(target_labels.iter().map(|&(target, message)| {
+            Label::new(span_of(source, target), message.into(), Style::new())
+        }));
 
-        render_spans(
-            source,
-            labels,
-            |_label: &Label| owo_colors::Style::new(),
-            |msg: &LabelMessage| match msg {
-                LabelMessage::Error(e) => format!("{}", e),
-                LabelMessage::Literal(l) => l.to_string(),
-            },
-        )
+        render(source, labels)
     }
 
     #[test]
@@ -944,18 +914,12 @@ mod test {
     fn highlight_simple() {
         let source_code = "hello, world!";
 
-        let output = super::render_spans(
+        let output = super::render(
             source_code,
             vec![
-                make_label(source_code, "hello, world!", "outer"),
-                make_label(source_code, "hello", "inner"),
+                make_label(source_code, "hello, world!", "outer").with_style(Style::new().red()),
+                make_label(source_code, "hello", "inner").with_style(Style::new().blue()),
             ],
-            |label| match label.message() {
-                LabelMessage::Literal("inner") => owo_colors::Style::new().blue(),
-                LabelMessage::Literal("outer") => owo_colors::Style::new().red(),
-                _ => unreachable!(),
-            },
-            |_: &LabelMessage| "".to_string(), // TODO
         );
 
         //let html = ansi_to_html::convert(&output).unwrap();
@@ -963,8 +927,8 @@ mod test {
           ┎
         1 ┃ [34mhello[31m, world![0m
           ╿ [34m├───┘[31m╶──────┘[0m
-          │ [34m└╴[0m
-          │ [31m└╴[0m
+          │ [34m└╴inner[0m
+          │ [31m└╴outer[0m
           ┖
         "###);
     }
@@ -973,20 +937,13 @@ mod test {
     fn highlight_simple_nested() {
         let source_code = "hello, world!";
 
-        let output = super::render_spans(
+        let output = super::render(
             source_code,
             vec![
-                make_label(source_code, "hello, world!", "outer"),
-                make_label(source_code, "hello", "inner2"),
-                make_label(source_code, "hel", "inner1"),
+                make_label(source_code, "hello, world!", "outer").with_style(Style::new().red()),
+                make_label(source_code, "hello", "inner2").with_style(Style::new().yellow()),
+                make_label(source_code, "hel", "inner1").with_style(Style::new().blue()),
             ],
-            |label| match label.message() {
-                LabelMessage::Literal("inner1") => owo_colors::Style::new().blue(),
-                LabelMessage::Literal("inner2") => owo_colors::Style::new().yellow(),
-                LabelMessage::Literal("outer") => owo_colors::Style::new().red(),
-                _ => unreachable!(),
-            },
-            |_: &LabelMessage| "".to_string(), // TODO
         );
 
         //let html = ansi_to_html::convert(&output).unwrap();
@@ -994,9 +951,9 @@ mod test {
           ┎
         1 ┃ [34mhel[33mlo[31m, world![0m
           ╿ [34m├─┘[33m╶┘[31m╶──────┘[0m
-          │ [34m└╴[0m
-          │ [33m└╴[0m
-          │ [31m└╴[0m
+          │ [34m└╴inner1[0m
+          │ [33m└╴inner2[0m
+          │ [31m└╴outer[0m
           ┖
         "###);
     }
@@ -1005,23 +962,13 @@ mod test {
     fn highlight_separated_1() {
         let source_code = "hello, world!";
 
-        let output = super::render_spans(
+        let output = super::render(
             source_code,
             vec![
-                make_label(source_code, "hello, world!", "outer"),
-                make_label(source_code, "hello", "inner1"),
-                make_label(source_code, "world", "inner2"),
+                make_label(source_code, "hello, world!", "outer").with_style(Style::new().red()),
+                make_label(source_code, "hello", "inner1").with_style(Style::new().blue()),
+                make_label(source_code, "world", "inner2").with_style(Style::new().yellow()),
             ],
-            |label| match label.message() {
-                LabelMessage::Literal("inner1") => owo_colors::Style::new().blue(),
-                LabelMessage::Literal("inner2") => owo_colors::Style::new().yellow(),
-                LabelMessage::Literal("outer") => owo_colors::Style::new().red(),
-                _ => unreachable!(),
-            },
-            |s: &LabelMessage| match s {
-                LabelMessage::Literal(l) => l.to_string(),
-                LabelMessage::Error(e) => e.to_string(),
-            },
         );
 
         //let html = ansi_to_html::convert(&output).unwrap();
@@ -1040,29 +987,16 @@ mod test {
     fn highlight_separated_nested() {
         let source_code = "xhello, world!x";
 
-        let output = super::render_spans(
+        let output = super::render(
             source_code,
             vec![
-                make_label(source_code, "xhello, world!x", "outer"),
-                make_label(source_code, "hello", "inner1"),
-                make_label(source_code, "ll", "inner2"),
-                make_label(source_code, "world!", "inner3"),
-                make_label(source_code, "wor", "inner4"),
-                make_label(source_code, "ld", "inner5"),
+                make_label(source_code, "xhello, world!x", "outer").with_style(Style::new().red()),
+                make_label(source_code, "hello", "inner1").with_style(Style::new().blue()),
+                make_label(source_code, "ll", "inner2").with_style(Style::new().yellow()),
+                make_label(source_code, "world!", "inner3").with_style(Style::new().green()),
+                make_label(source_code, "wor", "inner4").with_style(Style::new().magenta()),
+                make_label(source_code, "ld", "inner5").with_style(Style::new().cyan()),
             ],
-            |label| match label.message() {
-                LabelMessage::Literal("outer") => owo_colors::Style::new().red(),
-                LabelMessage::Literal("inner1") => owo_colors::Style::new().blue(),
-                LabelMessage::Literal("inner2") => owo_colors::Style::new().yellow(),
-                LabelMessage::Literal("inner3") => owo_colors::Style::new().green(),
-                LabelMessage::Literal("inner4") => owo_colors::Style::new().magenta(),
-                LabelMessage::Literal("inner5") => owo_colors::Style::new().cyan(),
-                _ => unreachable!(),
-            },
-            |s: &LabelMessage| match s {
-                LabelMessage::Literal(l) => l.to_string(),
-                LabelMessage::Error(e) => e.to_string(),
-            },
         );
 
         //let html = ansi_to_html::convert(&output).unwrap();

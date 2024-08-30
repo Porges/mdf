@@ -1,7 +1,7 @@
 use darling::{ast, FromDeriveInput, FromField, FromMeta};
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::{parse_macro_input, DeriveInput, Type};
+use syn::{parse_macro_input, DeriveInput, Ident, Type};
 
 #[derive(FromDeriveInput)]
 #[darling(attributes(error), supports(struct_any))]
@@ -25,6 +25,11 @@ pub fn derive_errful(input: proc_macro::TokenStream) -> proc_macro::TokenStream 
 
     let DeriveInput { ident, .. } = input;
 
+    let derefs = match provide_derefs(&opts.data) {
+        Ok(r) => r,
+        Err(e) => return e.write_errors().into(),
+    };
+
     let source_method = match generate_source(&opts.data) {
         Ok(r) => r,
         Err(e) => return e.write_errors().into(),
@@ -42,6 +47,7 @@ pub fn derive_errful(input: proc_macro::TokenStream) -> proc_macro::TokenStream 
 
     let display_impl = opts.display.map(|display| {
         quote! {
+            #[automatically_derived]
             impl ::core::fmt::Display for #ident {
                 fn fmt(&self, __formatter: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                     write!(__formatter, #display)
@@ -51,6 +57,10 @@ pub fn derive_errful(input: proc_macro::TokenStream) -> proc_macro::TokenStream 
     });
 
     let mut provisions = Vec::new();
+
+    for deref in derefs {
+        provisions.push(deref);
+    }
 
     if let Some(exit_code) = opts.exit_code {
         provisions.push(quote! {
@@ -85,10 +95,13 @@ pub fn derive_errful(input: proc_macro::TokenStream) -> proc_macro::TokenStream 
     }
 
     let output = quote! {
+        #[automatically_derived]
         impl ::core::error::Error for #ident {
             #source_method
 
             fn provide<'a>(&'a self, __request: &mut ::core::error::Request<'a>) {
+                use ::errful::{NoDeref, ViaDeref, CanBeError};
+
                 __request
                     #(#provisions)*
                 ;
@@ -149,6 +162,27 @@ impl FromMeta for LabelTarget {
     }
 }
 
+fn provide_derefs(data: &ast::Data<(), StructFields>) -> darling::Result<Vec<TokenStream>> {
+    let fields = data.as_ref().take_struct().expect("struct").fields;
+
+    let mut derefs = Vec::new();
+    for (ix, field) in fields.iter().enumerate() {
+        let fieldname = field
+            .ident
+            .as_ref()
+            .map(|s| quote! { #s })
+            .unwrap_or_else(|| quote! { #ix });
+        let ix = ix as u8;
+        derefs.push(quote! {
+            .provide_ref(::errful::protocol::Field::<_, #ix>::new(
+                (&&&errful::RefWrapper(&self.#fieldname)).maybe_deref()
+            ))
+        });
+    }
+
+    Ok(derefs)
+}
+
 fn generate_source(data: &ast::Data<(), StructFields>) -> darling::Result<TokenStream> {
     let mut sources = Vec::new();
 
@@ -170,13 +204,13 @@ fn generate_source(data: &ast::Data<(), StructFields>) -> darling::Result<TokenS
         {
             if is_optional(&field.ty) {
                 sources.push(quote! {
-                    if let Some(source) = &self.#fieldname {
-                        return Some(source);
+                    if let Some(source) = self.#fieldname {
+                        return Some(source.as_error_source());
                     }
                 });
             } else {
                 sources.push(quote! {
-                    return Some(&self.#fieldname);
+                    return Some(self.#fieldname.as_error_source());
                 });
             }
         }
@@ -185,6 +219,7 @@ fn generate_source(data: &ast::Data<(), StructFields>) -> darling::Result<TokenS
     Ok(quote! {
         #[allow(unreachable_code)]
         fn source(&self) -> Option<&(dyn ::core::error::Error + 'static)> {
+            use ::errful::error_source::AsErrorSource;
             #(#sources)*
             None
         }
@@ -195,6 +230,18 @@ fn find_labels(data: &ast::Data<(), StructFields>) -> darling::Result<Option<Tok
     let mut labels = Vec::new();
 
     let fields = data.as_ref().take_struct().expect("struct").fields;
+
+    let field_index = |target: &Ident| {
+        fields.iter().enumerate().find_map(|(ix, f)| {
+            if let Some(i) = &f.ident {
+                if i == target {
+                    return Some(ix);
+                }
+            }
+
+            None
+        })
+    };
 
     for (ix, field) in fields.iter().enumerate() {
         let Some(label) = &field.label else { continue };
@@ -208,10 +255,11 @@ fn find_labels(data: &ast::Data<(), StructFields>) -> darling::Result<Option<Tok
 
         let value = match label {
             LabelTarget::Field(ident) => {
+                let index = field_index(ident).expect("field not found") as u8;
                 quote! {
                    ::errful::protocol::Label::new_error(
                        #source_id,
-                       ::std::boxed::Box::new(self.#ident.clone()),
+                       #index,
                        self.#fieldname)
                 }
             }
@@ -266,13 +314,12 @@ fn name_for_field(field: (usize, &StructFields)) -> TokenStream {
 
 fn is_optional(ty: &Type) -> bool {
     // TODO: bad
-    if let Type::Path(p) = ty {
-        if let Some(last) = p.path.segments.last() {
-            if last.ident == "Option" {
-                return true;
-            }
-        }
-    }
+    // instead use a trait for source_code
+    // maybe also castaway
+    let Type::Path(p) = ty else { return false };
+    let Some(last) = p.path.segments.last() else {
+        return false;
+    };
 
-    false
+    last.ident == "Option"
 }

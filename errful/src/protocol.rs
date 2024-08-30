@@ -54,6 +54,31 @@ pub trait Errful: Error {
     {
         self.display_pretty().with_color(false)
     }
+
+    #[doc(hidden)]
+    fn request_field<E: ?Sized + 'static>(&self, value: u8) -> Option<&E> {
+        use std::error::request_ref;
+        Some(match value {
+            0 => request_ref::<Field<E, 0>>(self)?.get(),
+            1 => request_ref::<Field<E, 1>>(self)?.get(),
+            2 => request_ref::<Field<E, 2>>(self)?.get(),
+            3 => request_ref::<Field<E, 3>>(self)?.get(),
+            4 => request_ref::<Field<E, 4>>(self)?.get(),
+            5 => request_ref::<Field<E, 5>>(self)?.get(),
+            6 => request_ref::<Field<E, 6>>(self)?.get(),
+            7 => request_ref::<Field<E, 7>>(self)?.get(),
+            8 => request_ref::<Field<E, 8>>(self)?.get(),
+            9 => request_ref::<Field<E, 9>>(self)?.get(),
+            10 => request_ref::<Field<E, 10>>(self)?.get(),
+            11 => request_ref::<Field<E, 11>>(self)?.get(),
+            12 => request_ref::<Field<E, 12>>(self)?.get(),
+            13 => request_ref::<Field<E, 13>>(self)?.get(),
+            14 => request_ref::<Field<E, 14>>(self)?.get(),
+            15 => request_ref::<Field<E, 15>>(self)?.get(),
+            16 => request_ref::<Field<E, 16>>(self)?.get(),
+            _ => todo!("16 fields ought to be enough for anybody"),
+        })
+    }
 }
 
 impl<E: Error> Errful for E {}
@@ -79,14 +104,14 @@ pub struct Label {
 
 #[derive(Debug)]
 pub enum LabelMessage {
-    Error(Box<dyn Error>),
+    Error(u8),
     Literal(&'static str),
 }
 
 impl Label {
     pub fn new_error(
         _source_id: Option<&'static str>,
-        message: Box<dyn Error>,
+        message: u8,
         span: impl Into<Span<u8>>,
     ) -> Self {
         Label {
@@ -112,5 +137,20 @@ impl Label {
 
     pub fn message(&self) -> &LabelMessage {
         &self.message
+    }
+}
+
+#[doc(hidden)]
+#[repr(transparent)]
+pub struct Field<E: ?Sized, const INDEX: u8>(E);
+
+#[doc(hidden)]
+impl<E: ?Sized + 'static, const INDEX: u8> Field<E, INDEX> {
+    pub fn new(e: &E) -> &Self {
+        unsafe { &*(e as *const E as *const Self) }
+    }
+
+    pub fn get(&self) -> &E {
+        &self.0
     }
 }

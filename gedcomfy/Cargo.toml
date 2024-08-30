@@ -15,7 +15,7 @@ kdl = ["dep:kdl"]
 ascii = "1.1.0"
 encoding_rs = "0.8.34"
 complex-indifference = { path = "../complex-indifference" }
-# TODO: update once this is released https://github.com/zkat/miette/pull/393
+# TODO: update once this is released https://github.com/zkat/miette/pull/401
 miette = { git = "https://github.com/porges/miette", features = ["fancy-no-backtrace"], branch = "inherit-source-to-causes" }
 oem_cp = { version = "2.0.0", optional = true }
 owo-colors = { version = "4.0.0", features = ["supports-colors"] }

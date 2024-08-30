@@ -1,5 +1,5 @@
 [package]
-name = "errful"
+name = "snippets"
 version = "0.1.0"
 authors.workspace = true
 license.workspace = true
@@ -7,16 +7,8 @@ edition.workspace = true
 
 [dependencies]
 complex-indifference = { path = "../complex-indifference", features = ["unicode-width"] }
-errful-derive = { path = "../errful-derive" }
-impls = "1.0.3"
-mappable-rc = "0.1.1"
 owo-colors = { version = "4.0.0", features = ["alloc"] }
-snippets = { path = "../snippets" }
-textwrap = { version = "0.16.1", features = ["terminal_size"] }
-thiserror = "1.0.63"
 unicode-width = "0.1.13"
-yoke = "0.7.4"
 
 [dev-dependencies]
-ansi-to-html = "0.2.1"
 insta = "1.39.0"

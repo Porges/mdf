@@ -36,10 +36,11 @@ fn source_field_name() {
     #[derive(Debug, errful_derive::Error)]
     #[error(display = "outer")]
     struct Outer {
-        source: Inner,
+        #[error(source)]
+        src: Inner,
     }
 
-    let value = Outer { source: Inner {} };
+    let value = Outer { src: Inner {} };
 
     assert_snapshot!(value.display_pretty_nocolor(), @r###"
     Error: outer
@@ -78,6 +79,7 @@ fn url() {
 
     assert_snapshot!(value.display_pretty_nocolor(), @r###"
     Error: url-haver
+    See: http://example.com
 
     Details:
     × 0 ┐ url-haver
@@ -104,7 +106,7 @@ fn label() {
     Details:
     × 0 ┐ label-haver
         │ ! errful issue: no source code provided to render labels
-        │ !               (use #[source_code] to mark an appropriate field)
+        │ !               (use #[error(source_code)] to mark an appropriate field)
         ┷
     "###);
 }

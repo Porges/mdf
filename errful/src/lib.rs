@@ -6,14 +6,16 @@
 use owo_colors::AnsiColors;
 
 mod colors;
+pub mod error_source;
 mod formatting;
 pub mod protocol;
 pub mod result;
-mod snippets;
 
 pub use complex_indifference::Span;
 pub use errful_derive::Error;
 pub use formatting::PrettyDisplay;
+#[doc(hidden)]
+pub use impls::impls;
 pub use protocol::Errful;
 pub use result::MainResult;
 
@@ -52,5 +54,41 @@ impl PrintableSeverity for Severity {
             Severity::Warning => AnsiColors::Yellow,
             Severity::Error => AnsiColors::Red,
         }
+    }
+}
+
+pub struct RefWrapper<'a, T: ?Sized>(pub &'a T);
+
+pub trait CanBeError<'a> {
+    fn maybe_deref(self) -> &'a (dyn std::error::Error + 'static);
+}
+
+impl<'a, T: std::error::Error + 'static> CanBeError<'a> for &&&RefWrapper<'a, T> {
+    fn maybe_deref(self) -> &'a (dyn std::error::Error + 'static) {
+        self.0
+    }
+}
+
+pub trait ViaDeref<'a> {
+    type Output: ?Sized;
+    fn maybe_deref(self) -> &'a Self::Output;
+}
+
+impl<'a, T: std::ops::Deref + ?Sized> ViaDeref<'a> for &&RefWrapper<'a, T> {
+    type Output = T::Target;
+    fn maybe_deref(self) -> &'a Self::Output {
+        self.0.deref()
+    }
+}
+
+pub trait NoDeref<'a> {
+    type Output: ?Sized;
+    fn maybe_deref(self) -> &'a Self::Output;
+}
+
+impl<'a, T> NoDeref<'a> for &RefWrapper<'a, T> {
+    type Output = T;
+    fn maybe_deref(self) -> &'a Self::Output {
+        self.0
     }
 }
