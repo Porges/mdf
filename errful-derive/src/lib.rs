@@ -1,6 +1,8 @@
+use std::collections::BTreeMap;
+
 use darling::{ast, FromDeriveInput, FromField, FromMeta};
 use proc_macro2::TokenStream;
-use quote::quote;
+use quote::{format_ident, quote};
 use syn::{parse_macro_input, DeriveInput, Ident, Type};
 
 #[derive(FromDeriveInput)]
@@ -25,17 +27,22 @@ pub fn derive_errful(input: proc_macro::TokenStream) -> proc_macro::TokenStream 
 
     let DeriveInput { ident, .. } = input;
 
-    let derefs = match provide_derefs(&opts.data) {
+    let (source_fields_to_provide, source_method) = match generate_source(&opts.data) {
         Ok(r) => r,
         Err(e) => return e.write_errors().into(),
     };
 
-    let source_method = match generate_source(&opts.data) {
+    let (label_fields_to_provide, labels) = match find_labels(&opts.data) {
         Ok(r) => r,
         Err(e) => return e.write_errors().into(),
     };
 
-    let labels = match find_labels(&opts.data) {
+    let mut fields_to_provide = source_fields_to_provide;
+    for (ix, field) in label_fields_to_provide {
+        fields_to_provide.insert(ix, field);
+    }
+
+    let (field_names, field_provides) = match provide_fields(fields_to_provide, &opts.data) {
         Ok(r) => r,
         Err(e) => return e.write_errors().into(),
     };
@@ -58,9 +65,7 @@ pub fn derive_errful(input: proc_macro::TokenStream) -> proc_macro::TokenStream 
 
     let mut provisions = Vec::new();
 
-    for deref in derefs {
-        provisions.push(deref);
-    }
+    provisions.extend(field_provides);
 
     if let Some(exit_code) = opts.exit_code {
         provisions.push(quote! {
@@ -99,8 +104,11 @@ pub fn derive_errful(input: proc_macro::TokenStream) -> proc_macro::TokenStream 
         impl ::core::error::Error for #ident {
             #source_method
 
+            #[allow(non_camel_case_types)]
             fn provide<'a>(&'a self, __request: &mut ::core::error::Request<'a>) {
-                use ::errful::{NoDeref, ViaDeref, CanBeError};
+                use ::std::borrow::Borrow;
+
+                #(#field_names)*
 
                 __request
                     #(#provisions)*
@@ -162,38 +170,60 @@ impl FromMeta for LabelTarget {
     }
 }
 
-fn provide_derefs(data: &ast::Data<(), StructFields>) -> darling::Result<Vec<TokenStream>> {
+fn provide_fields(
+    fields_to_provide: BTreeMap<Ident, TokenStream>,
+    data: &ast::Data<(), StructFields>,
+) -> darling::Result<(Vec<TokenStream>, Vec<TokenStream>)> {
     let fields = data.as_ref().take_struct().expect("struct").fields;
 
-    let mut derefs = Vec::new();
+    let mut field_names = Vec::new();
+    let mut provides = Vec::new();
+
     for (ix, field) in fields.iter().enumerate() {
         let fieldname = field
             .ident
             .as_ref()
-            .map(|s| quote! { #s })
-            .unwrap_or_else(|| quote! { #ix });
-        let ix = ix as u8;
-        derefs.push(quote! {
-            .provide_ref(::errful::protocol::Field::<_, #ix>::new(
-                (&&&errful::RefWrapper(&self.#fieldname)).maybe_deref()
+            .cloned()
+            .unwrap_or_else(|| format_ident!("{}", ix));
+
+        let Some(type_to_provide) = fields_to_provide.get(&fieldname) else {
+            continue;
+        };
+
+        let field_struct = format_ident!("__Field__{}", fieldname);
+        field_names.push(quote! {
+            // access the field #fieldname
+            struct #field_struct {}
+            impl ::errful::protocol::ErrField for #field_struct {
+                type T = #type_to_provide;
+            }
+        });
+
+        provides.push(quote! {
+            .provide_ref(::errful::protocol::Field::<#field_struct, #type_to_provide>::new(
+                self.#fieldname.borrow()
+                //(&&&::errful::RefWrapper(&self.#fieldname)).maybe_deref()
             ))
         });
     }
 
-    Ok(derefs)
+    Ok((field_names, provides))
 }
 
-fn generate_source(data: &ast::Data<(), StructFields>) -> darling::Result<TokenStream> {
-    let mut sources = Vec::new();
-
+fn generate_source(
+    data: &ast::Data<(), StructFields>,
+) -> darling::Result<(BTreeMap<Ident, TokenStream>, TokenStream)> {
     let fields = data.as_ref().take_struct().expect("struct").fields;
+
+    let mut sources = Vec::new();
+    let mut fields_to_provide = BTreeMap::new();
 
     for (ix, field) in fields.iter().enumerate() {
         let fieldname = field
             .ident
             .as_ref()
-            .map(|s| quote! { #s })
-            .unwrap_or_else(|| quote! { #ix });
+            .cloned()
+            .unwrap_or_else(|| format_ident!("{}", ix));
 
         if field.source
             || field
@@ -202,46 +232,45 @@ fn generate_source(data: &ast::Data<(), StructFields>) -> darling::Result<TokenS
                 .map(|i| i == "source")
                 .unwrap_or_default()
         {
+            fields_to_provide.insert(
+                fieldname.clone(),
+                quote! { dyn ::core::error::Error + 'static },
+            );
+
             if is_optional(&field.ty) {
                 sources.push(quote! {
                     if let Some(source) = self.#fieldname {
-                        return Some(source.as_error_source());
+                        use std::borrow::Borrow;
+                        return Some(source.borrow());
                     }
                 });
             } else {
                 sources.push(quote! {
-                    return Some(self.#fieldname.as_error_source());
+                    use std::borrow::Borrow;
+                    return Some(self.#fieldname.borrow());
                 });
             }
         }
     }
 
-    Ok(quote! {
+    let result = quote! {
         #[allow(unreachable_code)]
         fn source(&self) -> Option<&(dyn ::core::error::Error + 'static)> {
-            use ::errful::error_source::AsErrorSource;
             #(#sources)*
             None
         }
-    })
+    };
+
+    Ok((fields_to_provide, result))
 }
 
-fn find_labels(data: &ast::Data<(), StructFields>) -> darling::Result<Option<TokenStream>> {
-    let mut labels = Vec::new();
-
+fn find_labels(
+    data: &ast::Data<(), StructFields>,
+) -> darling::Result<(BTreeMap<Ident, TokenStream>, Option<TokenStream>)> {
     let fields = data.as_ref().take_struct().expect("struct").fields;
 
-    let field_index = |target: &Ident| {
-        fields.iter().enumerate().find_map(|(ix, f)| {
-            if let Some(i) = &f.ident {
-                if i == target {
-                    return Some(ix);
-                }
-            }
-
-            None
-        })
-    };
+    let mut fields_to_provide = BTreeMap::new();
+    let mut labels = Vec::new();
 
     for (ix, field) in fields.iter().enumerate() {
         let Some(label) = &field.label else { continue };
@@ -255,17 +284,20 @@ fn find_labels(data: &ast::Data<(), StructFields>) -> darling::Result<Option<Tok
 
         let value = match label {
             LabelTarget::Field(ident) => {
-                let index = field_index(ident).expect("field not found") as u8;
+                fields_to_provide
+                    .insert(ident.clone(), quote! { dyn ::core::error::Error + 'static });
+
+                let field_struct = format_ident!("__Field__{}", ident);
                 quote! {
-                   ::errful::protocol::Label::new_error(
+                   ::errful::protocol::RawLabel::new_error(
                        #source_id,
-                       #index,
+                       Box::new(#field_struct {}),
                        self.#fieldname)
                 }
             }
             LabelTarget::Literal(label) => {
                 quote! {
-                    ::errful::protocol::Label::new_literal(#source_id, #label, self.#fieldname)
+                    ::errful::protocol::RawLabel::new_literal(#source_id, #label, self.#fieldname)
                 }
             }
         };
@@ -274,16 +306,18 @@ fn find_labels(data: &ast::Data<(), StructFields>) -> darling::Result<Option<Tok
     }
 
     if labels.is_empty() {
-        return Ok(None);
+        return Ok((fields_to_provide, None));
     }
 
-    Ok(Some(quote! {
-        .provide_value_with::<::std::vec::Vec<::errful::protocol::Label>>(|| {
+    let result = Some(quote! {
+        .provide_value_with::<::std::vec::Vec<::errful::protocol::RawLabel>>(|| {
             vec![
                 #(#labels),*
             ]
         })
-    }))
+    });
+
+    Ok((fields_to_provide, result))
 }
 
 fn find_source_code(data: &ast::Data<(), StructFields>) -> darling::Result<Option<TokenStream>> {

@@ -52,14 +52,9 @@ impl PrettyDisplay<'_> {
                     .map(|label| {
                         snippets::Label::new(
                             label.span(),
-                            match label.message() {
+                            match label.message {
                                 // TODO: inner errors
-                                LabelMessage::Error(e_ix) => {
-                                    let e = err
-                                        .request_field::<dyn Error>(*e_ix)
-                                        .expect(&format!("bug in errful: wanted {e_ix}"));
-                                    format!("{}", e).into()
-                                }
+                                LabelMessage::Error(e) => format!("{}", e).into(),
                                 LabelMessage::Literal(l) => (*l).into(),
                             },
                             highlight(&label),

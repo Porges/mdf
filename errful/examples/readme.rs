@@ -1,7 +1,7 @@
 #![feature(error_generic_member_access)] // required, see Compatibility below
 #![feature(try_trait_v2)]
 
-use errful::{Errful, Error, MainResult, Span};
+use errful::{Error, MainResult, Span};
 
 #[derive(Debug, Error)]
 #[error(
@@ -28,9 +28,7 @@ struct MyError {
 }
 
 fn main() -> MainResult<MyError> {
-    let err = failing_function().unwrap_err();
-    let it = err.request_field::<dyn std::error::Error>(0);
-    println!("{:?}", it);
+    failing_function()?;
 
     MainResult::success()
 }

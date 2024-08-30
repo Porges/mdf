@@ -1,10 +1,14 @@
-use std::{error::Error, fmt::Display, process::ExitCode};
+use std::{
+    error::{request_ref, Error},
+    fmt::Display,
+    process::ExitCode,
+};
 
 use complex_indifference::Span;
 
 use crate::{PrettyDisplay, PrintableSeverity};
 
-pub trait Errful: Error {
+pub trait Errful: Error + Sized {
     // request helpers
 
     fn exit_code(&self) -> Option<ExitCode> {
@@ -23,8 +27,24 @@ pub trait Errful: Error {
         std::error::request_ref(self)
     }
 
-    fn labels(&self) -> Option<Vec<Label>> {
-        std::error::request_value(self)
+    fn labels<'a>(&'a self) -> Option<Vec<Label<'a>>> {
+        let labels: Vec<RawLabel> = std::error::request_value(self)?;
+
+        let mut result: Vec<Label<'a>> = Vec::with_capacity(labels.len());
+        for label in labels {
+            let lbl = Label {
+                message: match label.message {
+                    RawLabelMessage::Error(field) => {
+                        LabelMessage::Error(field.try_get(self).expect("bug in errful"))
+                    }
+                    RawLabelMessage::Literal(lit) => LabelMessage::Literal(lit),
+                },
+                span: label.span,
+            };
+            result.push(lbl);
+        }
+
+        Some(result)
     }
 
     fn source_code(&self) -> Option<&str> {
@@ -54,31 +74,6 @@ pub trait Errful: Error {
     {
         self.display_pretty().with_color(false)
     }
-
-    #[doc(hidden)]
-    fn request_field<E: ?Sized + 'static>(&self, value: u8) -> Option<&E> {
-        use std::error::request_ref;
-        Some(match value {
-            0 => request_ref::<Field<E, 0>>(self)?.get(),
-            1 => request_ref::<Field<E, 1>>(self)?.get(),
-            2 => request_ref::<Field<E, 2>>(self)?.get(),
-            3 => request_ref::<Field<E, 3>>(self)?.get(),
-            4 => request_ref::<Field<E, 4>>(self)?.get(),
-            5 => request_ref::<Field<E, 5>>(self)?.get(),
-            6 => request_ref::<Field<E, 6>>(self)?.get(),
-            7 => request_ref::<Field<E, 7>>(self)?.get(),
-            8 => request_ref::<Field<E, 8>>(self)?.get(),
-            9 => request_ref::<Field<E, 9>>(self)?.get(),
-            10 => request_ref::<Field<E, 10>>(self)?.get(),
-            11 => request_ref::<Field<E, 11>>(self)?.get(),
-            12 => request_ref::<Field<E, 12>>(self)?.get(),
-            13 => request_ref::<Field<E, 13>>(self)?.get(),
-            14 => request_ref::<Field<E, 14>>(self)?.get(),
-            15 => request_ref::<Field<E, 15>>(self)?.get(),
-            16 => request_ref::<Field<E, 16>>(self)?.get(),
-            _ => todo!("16 fields ought to be enough for anybody"),
-        })
-    }
 }
 
 impl<E: Error> Errful for E {}
@@ -96,26 +91,33 @@ impl SourceCode {
     }
 }
 
-#[derive(Debug)]
-pub struct Label {
-    message: LabelMessage,
+pub struct Label<'a> {
+    pub(crate) message: LabelMessage<'a>,
     span: Span<u8>,
 }
 
-#[derive(Debug)]
-pub enum LabelMessage {
-    Error(u8),
+pub enum LabelMessage<'a> {
+    Error(&'a dyn Error),
     Literal(&'static str),
 }
 
-impl Label {
+pub struct RawLabel {
+    message: RawLabelMessage,
+    span: Span<u8>,
+}
+
+pub enum RawLabelMessage {
+    Error(Box<dyn ErrField<T = dyn Error>>),
+    Literal(&'static str),
+}
+impl RawLabel {
     pub fn new_error(
         _source_id: Option<&'static str>,
-        message: u8,
+        message: Box<dyn ErrField<T = dyn Error>>,
         span: impl Into<Span<u8>>,
     ) -> Self {
-        Label {
-            message: LabelMessage::Error(message),
+        RawLabel {
+            message: RawLabelMessage::Error(message),
             span: span.into(),
         }
     }
@@ -125,9 +127,33 @@ impl Label {
         message: &'static str,
         span: impl Into<Span<u8>>,
     ) -> Self {
+        RawLabel {
+            message: RawLabelMessage::Literal(message),
+            span: span.into(),
+        }
+    }
+}
+
+impl<'a> Label<'a> {
+    pub fn new_error(
+        _source_id: Option<&'static str>,
+        message: &'a dyn Error,
+        span: Span<u8>,
+    ) -> Self {
+        Label {
+            message: LabelMessage::Error(message),
+            span,
+        }
+    }
+
+    pub fn new_literal(
+        _source_id: Option<&'static str>,
+        message: &'static str,
+        span: Span<u8>,
+    ) -> Self {
         Label {
             message: LabelMessage::Literal(message),
-            span: span.into(),
+            span,
         }
     }
 
@@ -140,17 +166,36 @@ impl Label {
     }
 }
 
+pub trait ErrField {
+    type T: ?Sized + 'static;
+    fn try_get<'a>(&self, error: &'a dyn Error) -> Option<&'a Self::T>
+    where
+        Self: 'static,
+    {
+        request_ref::<Field<Self, Self::T>>(error).map(|f| f.get())
+    }
+}
+
 #[doc(hidden)]
 #[repr(transparent)]
-pub struct Field<E: ?Sized, const INDEX: u8>(E);
+pub struct Field<N: ?Sized, T: ?Sized>
+where
+    N: ErrField<T = T>,
+{
+    _phantom: std::marker::PhantomData<N>,
+    value: T,
+}
 
 #[doc(hidden)]
-impl<E: ?Sized + 'static, const INDEX: u8> Field<E, INDEX> {
-    pub fn new(e: &E) -> &Self {
-        unsafe { &*(e as *const E as *const Self) }
+impl<N: ?Sized, T: ?Sized + 'static> Field<N, T>
+where
+    N: ErrField<T = T>,
+{
+    pub fn new(value: &T) -> &Self {
+        unsafe { &*(value as *const T as *const Self) }
     }
 
-    pub fn get(&self) -> &E {
-        &self.0
+    pub fn get(&self) -> &T {
+        &self.value
     }
 }
