@@ -43,14 +43,11 @@ use crate::{PrettyDisplay, PrintableSeverity};
 
 pub trait AsErrful: Error + Sized {
     fn errful(&self) -> &dyn Errful {
+        use ref_cast::RefCast;
+
+        #[derive(RefCast)]
         #[repr(transparent)]
         struct DefaultErrful<E: ?Sized>(E);
-
-        impl<E: Error + Sized> DefaultErrful<E> {
-            fn wrap(error: &E) -> &dyn Errful {
-                unsafe { &*(error as *const E as *const Self) }
-            }
-        }
 
         impl<E: Error> std::fmt::Debug for DefaultErrful<E> {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -91,7 +88,7 @@ pub trait AsErrful: Error + Sized {
 
         match request_ref::<dyn Errful>(self) {
             Some(errful) => errful,
-            None => DefaultErrful::wrap(self),
+            None => DefaultErrful::ref_cast(self),
         }
     }
 

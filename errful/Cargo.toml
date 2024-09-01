@@ -11,6 +11,7 @@ errful-derive = { path = "../errful-derive" }
 impls = "1.0.3"
 mappable-rc = "0.1.1"
 owo-colors = { version = "4.0.0", features = ["alloc"] }
+ref-cast = "1.0.23"
 snippets = { path = "../snippets" }
 textwrap = { version = "0.16.1", features = ["terminal_size"] }
 thiserror = "1.0.63"
