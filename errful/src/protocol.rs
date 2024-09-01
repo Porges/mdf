@@ -67,24 +67,14 @@ pub trait AsErrful: Error + Sized {
             }
 
             fn provide<'a>(&'a self, request: &mut std::error::Request<'a>) {
-                self.0.provide(request)
+                self.0.provide(request);
             }
         }
 
         // A default implementation for Errful, if the error
         // does not give us one. In this case, only the "external"
         // types will be provided.
-        impl<E: Error> Errful for DefaultErrful<E> {
-            // See docs at top – “external” types can be provided by
-            // existing Errors, so we check them here.
-            fn exit_code(&self) -> Option<ExitCode> {
-                request_value(&self.0)
-            }
-
-            fn backtrace(&self) -> Option<&Backtrace> {
-                request_ref(&self.0)
-            }
-        }
+        impl<E: Error> Errful for DefaultErrful<E> {}
 
         match request_ref::<dyn Errful>(self) {
             Some(errful) => errful,
@@ -119,11 +109,11 @@ impl<E: Error> AsErrful for E {}
 
 pub trait Errful: Error {
     fn exit_code(&self) -> Option<ExitCode> {
-        None
+        request_value(self)
     }
 
     fn backtrace(&self) -> Option<&Backtrace> {
-        None
+        request_ref(self)
     }
 
     fn code(&self) -> Option<&'static str> {
