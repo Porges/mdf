@@ -47,14 +47,15 @@ impl PrettyDisplay<'_> {
                 let labels = labels
                     .into_iter()
                     .map(|label| {
+                        let highlight = highlight(&label);
                         snippets::Label::new(
                             label.span(),
                             match label.message {
                                 // TODO: inner errors
                                 LabelMessage::Error(e) => format!("{}", e).into(),
-                                LabelMessage::Literal(l) => (*l).into(),
+                                LabelMessage::String(l) => l,
                             },
-                            highlight(&label),
+                            highlight,
                         )
                     })
                     .collect();

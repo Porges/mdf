@@ -23,14 +23,14 @@ struct Highlighter<'a> {
     source_code: &'a str,
 }
 
-pub struct Label {
+pub struct Label<'a> {
     span: Span<u8>,
-    message: Cow<'static, str>,
+    message: Cow<'a, str>,
     style: Style,
 }
 
-impl Label {
-    pub fn new(span: Span<u8>, message: Cow<'static, str>, style: Style) -> Self {
+impl<'a> Label<'a> {
+    pub fn new(span: Span<u8>, message: Cow<'a, str>, style: Style) -> Self {
         Self {
             span,
             message,
@@ -240,7 +240,6 @@ impl Highlighter<'_> {
             result.push('\n');
         }
 
-        // TODO: need indent width here as well
         // TODO: need last_heavy here as well
         writeln!(
             result,
@@ -525,7 +524,7 @@ mod test {
         Span::new(start.into(), word.byte_count())
     }
 
-    fn make_label(source: &str, target: &str, message: &'static str) -> Label {
+    fn make_label<'a>(source: &str, target: &str, message: &'a str) -> Label<'a> {
         let span = span_of(source, target);
         Label::new(span, message.into(), Style::new())
     }

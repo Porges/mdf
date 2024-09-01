@@ -31,6 +31,7 @@
 
 use std::{
     backtrace::Backtrace,
+    borrow::Cow,
     error::{request_ref, request_value, Error},
     fmt::Display,
     process::ExitCode,
@@ -149,19 +150,6 @@ pub trait Errful: Error {
     }
 }
 
-pub struct Url(pub &'static str);
-
-pub struct Code(pub &'static str);
-
-#[repr(transparent)]
-pub struct SourceCode(str);
-
-impl SourceCode {
-    pub fn new(s: &str) -> &Self {
-        unsafe { &*(s as *const str as *const Self) }
-    }
-}
-
 pub struct Label<'a> {
     pub(crate) message: LabelMessage<'a>,
     span: Span<u8>,
@@ -169,7 +157,7 @@ pub struct Label<'a> {
 
 pub enum LabelMessage<'a> {
     Error(&'a dyn Error),
-    Literal(&'static str),
+    String(Cow<'a, str>),
 }
 
 impl<'a> Label<'a> {
@@ -190,7 +178,7 @@ impl<'a> Label<'a> {
         span: Span<u8>,
     ) -> Self {
         Label {
-            message: LabelMessage::Literal(message),
+            message: LabelMessage::String(message.into()),
             span,
         }
     }
@@ -201,39 +189,5 @@ impl<'a> Label<'a> {
 
     pub fn message(&self) -> &LabelMessage {
         &self.message
-    }
-}
-
-pub trait ErrField {
-    type T: ?Sized + 'static;
-    fn try_get<'a>(&self, error: &'a dyn Error) -> Option<&'a Self::T>
-    where
-        Self: 'static,
-    {
-        request_ref::<Field<Self, Self::T>>(error).map(|f| f.get())
-    }
-}
-
-#[doc(hidden)]
-#[repr(transparent)]
-pub struct Field<N: ?Sized, T: ?Sized>
-where
-    N: ErrField<T = T>,
-{
-    _phantom: std::marker::PhantomData<N>,
-    value: T,
-}
-
-#[doc(hidden)]
-impl<N: ?Sized, T: ?Sized + 'static> Field<N, T>
-where
-    N: ErrField<T = T>,
-{
-    pub fn new(value: &T) -> &Self {
-        unsafe { &*(value as *const T as *const Self) }
-    }
-
-    pub fn get(&self) -> &T {
-        &self.value
     }
 }
