@@ -16,6 +16,8 @@ snippets = { path = "../snippets" }
 textwrap = { version = "0.16.1", features = ["terminal_size"] }
 thiserror = "1.0.63"
 unicode-width = "0.1.13"
+url = "2.5.2"
+url-macro = "0.1.8"
 yoke = "0.7.4"
 
 [dev-dependencies]

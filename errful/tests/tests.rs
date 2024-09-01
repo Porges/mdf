@@ -79,7 +79,7 @@ fn url() {
 
     assert_snapshot!(value.display_pretty_nocolor(), @r###"
     Error: url-haver
-    See: http://example.com
+    See: http://example.com/
 
     Details:
     × 0 ┐ url-haver

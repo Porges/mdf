@@ -680,6 +680,8 @@ dependencies = [
  "textwrap",
  "thiserror",
  "unicode-width",
+ "url",
+ "url-macro",
  "yoke",
 ]
 
@@ -2818,6 +2820,15 @@ dependencies = [
  "form_urlencoded",
  "idna",
  "percent-encoding",
+]
+
+[[package]]
+name = "url-macro"
+version = "0.1.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7dcea4a00cc1ce0820eb8e86bd741d7f81d5f0cb694b9c20d3a4e911c72a6953"
+dependencies = [
+ "url",
 ]
 
 [[package]]

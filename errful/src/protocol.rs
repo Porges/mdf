@@ -38,6 +38,7 @@ use std::{
 };
 
 use complex_indifference::Span;
+pub use url_macro::url;
 
 use crate::{PrettyDisplay, PrintableSeverity};
 
@@ -118,13 +119,13 @@ pub trait Errful: Error {
         request_ref(self)
     }
 
+    fn url(&self) -> Option<url::Url> {
+        request_value(self)
+    }
+
     // internal types: if these were to be provided by someone else,
     // they would have to be via the Errful trait
     fn code(&self) -> Option<&str> {
-        None
-    }
-
-    fn url(&self) -> Option<&str> {
         None
     }
 

@@ -64,8 +64,8 @@ pub fn derive_errful(input: proc_macro::TokenStream) -> proc_macro::TokenStream 
 
     let url = opts.url.map(|url| {
         quote! {
-            fn url(&self) -> Option<&'static str> {
-                Some(#url)
+            fn url(&self) -> Option<::url::Url> {
+                Some(::errful::protocol::url!(#url))
             }
         }
     });
