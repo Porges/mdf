@@ -1,16 +1,13 @@
-use std::{
-    error::Error,
-    fmt::{Display, Formatter},
-};
+use std::fmt::{Display, Formatter};
 
 use crate::{
     colors::ColorGenerator,
-    protocol::{Errful, Label, LabelMessage},
+    protocol::{AsErrful, Errful, Label, LabelMessage},
     Severity,
 };
 
 pub struct PrettyDisplay<'e> {
-    err: &'e dyn Error,
+    err: &'e dyn Errful,
     color: bool,
     width: Option<usize>, // None = use termwidth
 }
@@ -41,7 +38,7 @@ impl PrettyDisplay<'_> {
     fn render_sourcelabels(
         &self,
         prefix: &str,
-        err: &dyn Error,
+        err: &dyn Errful,
         highlight: &mut impl FnMut(&Label) -> owo_colors::Style,
         f: &mut Formatter<'_>,
     ) -> std::fmt::Result {
@@ -83,7 +80,7 @@ impl PrettyDisplay<'_> {
         f: &mut Formatter<'_>,
         message_wrap_opts: textwrap::Options,
         body_indent: &str,
-        err: &dyn Error,
+        err: &dyn Errful,
         colors: &mut impl FnMut(&Label) -> owo_colors::Style,
     ) -> std::fmt::Result {
         // output the message for the error
@@ -93,15 +90,17 @@ impl PrettyDisplay<'_> {
             writeln!(f, "{}", line)?;
         }
 
+        let errful = err.errful();
+
         // output any additional information
-        self.render_sourcelabels(body_indent, err, colors, f)?;
+        self.render_sourcelabels(body_indent, errful, colors, f)?;
 
         Ok(())
     }
 }
 
-impl<'e> From<&'e dyn Error> for PrettyDisplay<'e> {
-    fn from(err: &'e dyn Error) -> Self {
+impl<'e> From<&'e dyn Errful> for PrettyDisplay<'e> {
+    fn from(err: &'e dyn Errful) -> Self {
         Self {
             err,
             color: true,
@@ -121,7 +120,7 @@ impl<'e> Display for PrettyDisplay<'e> {
             }
         };
 
-        let err = self.err;
+        let err = self.err.errful();
 
         let severity = err.severity().unwrap_or(&Severity::Error);
 
@@ -208,7 +207,7 @@ impl<'e> Display for PrettyDisplay<'e> {
                     .initial_indent(&first_indent)
                     .subsequent_indent(&message_indent),
                 &body_indent,
-                err,
+                err.errful(),
                 &mut colors,
             )?;
 

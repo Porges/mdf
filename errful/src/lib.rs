@@ -15,7 +15,7 @@ pub use errful_derive::Error;
 pub use formatting::PrettyDisplay;
 #[doc(hidden)]
 pub use impls::impls;
-pub use protocol::Errful;
+pub use protocol::{AsErrful, Errful};
 pub use result::MainResult;
 
 pub trait PrintableSeverity {

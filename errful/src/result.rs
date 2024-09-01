@@ -43,7 +43,7 @@ impl<E: Error> Termination for MainResult<E> {
         match self {
             MainResult::Code(exit_code) => exit_code,
             MainResult::Err(err) => {
-                use crate::Errful;
+                use crate::AsErrful;
                 _ = write!(
                     std::io::stderr(),
                     "{}",

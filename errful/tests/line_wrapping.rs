@@ -1,6 +1,6 @@
 #![feature(error_generic_member_access)]
 
-use errful::Errful;
+use errful::AsErrful;
 use insta::assert_snapshot;
 
 #[test]

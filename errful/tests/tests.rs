@@ -3,7 +3,7 @@
 use std::num::ParseIntError;
 
 use complex_indifference::Span;
-use errful::Errful;
+use errful::AsErrful;
 use insta::assert_snapshot;
 
 #[derive(Debug, errful_derive::Error)]
