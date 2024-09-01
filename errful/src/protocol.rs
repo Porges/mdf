@@ -108,6 +108,8 @@ pub trait AsErrful: Error + Sized {
 impl<E: Error> AsErrful for E {}
 
 pub trait Errful: Error {
+    // external types: request through the normal provide API,
+    // since they might be provided by something that isn't an Errful
     fn exit_code(&self) -> Option<ExitCode> {
         request_value(self)
     }
@@ -116,11 +118,13 @@ pub trait Errful: Error {
         request_ref(self)
     }
 
-    fn code(&self) -> Option<&'static str> {
+    // internal types: if these were to be provided by someone else,
+    // they would have to be via the Errful trait
+    fn code(&self) -> Option<&str> {
         None
     }
 
-    fn url(&self) -> Option<&'static str> {
+    fn url(&self) -> Option<&str> {
         None
     }
 
