@@ -16,11 +16,12 @@ fn sort_labels(labels: &mut [Label]) {
 }
 
 pub fn render(source_code: &str, labels: Vec<Label>) -> String {
-    Highlighter { source_code }.render_spans(labels)
+    Highlighter::new(source_code).render_spans(labels)
 }
 
 struct Highlighter<'a> {
     source_code: &'a str,
+    context_lines: usize,
 }
 
 pub struct Label<'a> {
@@ -52,6 +53,13 @@ impl<'a> Label<'a> {
 }
 
 impl Highlighter<'_> {
+    fn new(source_code: &str) -> Highlighter {
+        Highlighter {
+            source_code,
+            context_lines: 2,
+        }
+    }
+
     fn line_containing(&self, index: Index<u8>) -> Span<u8> {
         // start of line is after the last newline, or at start of string
         let start_of_line: Index<u8> = self
@@ -81,8 +89,6 @@ impl Highlighter<'_> {
     fn render_spans(&self, mut labels: Vec<Label>) -> String {
         sort_labels(labels.as_mut_slice());
 
-        let context_lines = 2;
-
         let mut last_line = None;
         let mut iter = labels.into_iter().peekable();
         let mut output_lines: Vec<(usize, Cow<str>)> = Vec::new();
@@ -110,12 +116,12 @@ impl Highlighter<'_> {
 
             let before_context_lines;
             if let Some(last_line) = last_line {
-                before_context_lines = min(context_lines, line_number - last_line - 1);
-                if line_number > last_line + context_lines {
+                before_context_lines = min(self.context_lines, line_number - last_line - 1);
+                if line_number > last_line + self.context_lines {
                     output_lines.push((usize::MAX, Cow::Borrowed("…\n")));
                 }
             } else {
-                before_context_lines = context_lines;
+                before_context_lines = self.context_lines;
             }
 
             last_line = Some(line_number);
@@ -147,7 +153,7 @@ impl Highlighter<'_> {
                 self.source_code
                     .slice_from(line_span.end())
                     .split_inclusive('\n')
-                    .take(context_lines)
+                    .take(self.context_lines)
                     .enumerate()
                     .map(|(i, line)| (line_number + i + 1, Cow::Borrowed(line))),
             );
