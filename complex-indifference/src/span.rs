@@ -4,14 +4,14 @@ use crate::{Count, Index};
 #[derive(Debug, PartialEq, Eq)]
 pub struct Span<T: ?Sized> {
     start: Index<T>,
-    len: Count<T>,
+    end: Index<T>,
 }
 
 impl<T: ?Sized> Default for Span<T> {
     fn default() -> Self {
         Self {
             start: Index::default(),
-            len: Count::default(),
+            end: Index::default(),
         }
     }
 }
@@ -38,16 +38,16 @@ impl<T: ?Sized> From<(Index<T>, Index<T>)> for Span<T> {
 }
 
 impl<T: ?Sized> Span<T> {
-    pub const fn new(start: Index<T>, len: Count<T>) -> Self {
-        Self { start, len }
+    pub fn new(start: Index<T>, len: Count<T>) -> Self {
+        Self {
+            start,
+            end: start + len,
+        }
     }
 
     pub fn from_indices(start: Index<T>, end: Index<T>) -> Self {
         debug_assert!(start <= end, "indices are in the wrong order");
-        Self {
-            start,
-            len: end - start,
-        }
+        Self { start, end }
     }
 
     /// Where the span starts (inclusive).
@@ -58,13 +58,13 @@ impl<T: ?Sized> Span<T> {
 
     /// Where the span ends (exclusive).
     #[inline]
-    pub fn end(&self) -> Index<T> {
-        self.start + self.len
+    pub const fn end(&self) -> Index<T> {
+        self.end
     }
 
     #[inline]
-    pub const fn len(&self) -> Count<T> {
-        self.len
+    pub fn len(&self) -> Count<T> {
+        self.end - self.start
     }
 
     #[inline]
@@ -84,15 +84,16 @@ impl<T: ?Sized> Span<T> {
         &data[self.start().index()..self.end().index()]
     }
 
-    pub const fn with_len(self, len: Count<T>) -> Self {
-        Self { len, ..self }
+    pub fn with_len(self, len: Count<T>) -> Self {
+        Self {
+            end: self.start + len,
+            ..self
+        }
     }
 
     pub fn with_end(self, end: Index<T>) -> Self {
-        Self {
-            len: end - self.start,
-            ..self
-        }
+        debug_assert!(end >= self.start);
+        Self { end, ..self }
     }
 }
 
@@ -106,7 +107,7 @@ impl<T> std::ops::Index<Span<T>> for [T] {
     type Output = [T];
 
     fn index(&self, index: Span<T>) -> &[T] {
-        &self[index.start.index()..(index.start.index() + index.len.count())]
+        &self[index.start.index()..index.end.index()]
     }
 }
 
@@ -114,7 +115,7 @@ impl std::ops::Index<Span<u8>> for str {
     type Output = str;
 
     fn index(&self, index: Span<u8>) -> &str {
-        &self[index.start.index()..(index.start.index() + index.len.count())]
+        &self[index.start.index()..index.end.index()]
     }
 }
 
