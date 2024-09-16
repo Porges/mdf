@@ -6,9 +6,15 @@ license.workspace = true
 authors.workspace = true
 
 [dependencies]
-sea-orm = {version = "1.0.0", features = ["sqlx-sqlite", "macros", "runtime-tokio"] }
+sea-orm = { version = "1.0.0", features = [
+    "sqlx-sqlite",
+    "macros",
+    "runtime-tokio",
+] }
 
 [dev-dependencies]
-miette = { git = "https://github.com/Porges/miette", features = ["fancy-no-backtrace"], branch = "inherit-source-to-causes" }
+miette = { git = "https://github.com/Porges/miette", features = [
+    "fancy-no-backtrace",
+], branch = "inherit-source-to-causes" }
 tokio = { version = "1.39.2", features = ["rt", "macros"] }
 gedcomfy = { path = "../gedcomfy" }

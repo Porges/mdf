@@ -15,7 +15,6 @@ The various crates are:
 ```mermaid
 graph TD;
     mdf --> gedcomfy;
-    mdf --> complex-indifference;
     gedcomfy --> errful;
     gedcomfy --> complex-indifference;
     errful --> errful-derive;
