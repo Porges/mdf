@@ -1,10 +1,12 @@
+#![feature(vec_pop_if)]
+
 use std::{borrow::Cow, cmp::min, fmt::Write, mem::take};
 
 use complex_indifference::{Index, Sliceable, Span};
 use owo_colors::{Style, Styled, StyledList};
 use unicode_width::UnicodeWidthStr;
 
-// sorts labels by increasing order
+// sorts labels by increasing order (in reverse for popping)
 // if there are overlapping labels, the longest one comes first
 fn sort_labels(labels: &mut [Label]) {
     labels.sort_by(|a, b| {
@@ -12,6 +14,7 @@ fn sort_labels(labels: &mut [Label]) {
             .start()
             .cmp(&b.span.start())
             .then(b.span.len().cmp(&a.span.len()))
+            .reverse()
     });
 }
 
@@ -28,6 +31,7 @@ pub struct Label<'a> {
     span: Span<u8>,
     message: Cow<'a, str>,
     style: Style,
+    is_multiline_end: bool,
 }
 
 impl<'a> Label<'a> {
@@ -36,6 +40,7 @@ impl<'a> Label<'a> {
             span,
             message,
             style,
+            is_multiline_end: false,
         }
     }
 
@@ -49,6 +54,12 @@ impl<'a> Label<'a> {
 
     fn end(&self) -> Index<u8> {
         self.span.end()
+    }
+
+    fn into_multiline_end(mut self) -> Self {
+        self.span = self.span.with_start(self.span.end());
+        self.is_multiline_end = true;
+        self
     }
 }
 
@@ -89,17 +100,33 @@ impl Highlighter<'_> {
     fn render_spans(&self, mut labels: Vec<Label>) -> String {
         sort_labels(labels.as_mut_slice());
 
-        let mut last_line = None;
-        let mut iter = labels.into_iter().peekable();
-        let mut output_lines: Vec<(usize, Cow<str>)> = Vec::new();
-        let mut context_after = Vec::new();
+        let mut multi_count = 0; // active spans which cover multiple lines
 
-        while let Some(label) = iter.next() {
-            let line_span = self.line_containing(label.start());
-            if label.end() > line_span.end() {
-                todo!("this Span spans multiple lines");
+        let mut last_line: Option<usize> = None; // the last line number we rendered
+        let mut output_lines: Vec<(usize, Cow<str>, usize)> = Vec::new(); // lines we've rendered
+        let mut context_after = Vec::new(); // the context lines after the last line we rendered
+
+        while let Some(label) = labels.pop() {
+            let line_span: Span<u8>;
+            let mut line_labels = vec![];
+            let mut ending_multis = Vec::new();
+
+            if label.is_multiline_end {
+                line_span = self.line_containing(label.start());
+                ending_multis.push(label);
+            } else {
+                line_span = self.line_containing(label.start());
+                let is_multiline = label.end() > line_span.end();
+                if is_multiline {
+                    multi_count += 1;
+                    labels.push(label.into_multiline_end());
+                    sort_labels(labels.as_mut_slice());
+                } else {
+                    line_labels.push(label);
+                }
             }
 
+            // TODO(PERF): count only since last line
             let line_number = self
                 .source_code
                 .slice_to(line_span.start())
@@ -107,9 +134,9 @@ impl Highlighter<'_> {
                 .filter(|c| *c == b'\n')
                 .count();
 
-            for (num, line) in context_after.drain(..) {
+            for (num, line, multi_count) in context_after.drain(..) {
                 if num < line_number {
-                    output_lines.push((num, line));
+                    output_lines.push((num, line, multi_count));
                     last_line = Some(num);
                 }
             }
@@ -118,7 +145,7 @@ impl Highlighter<'_> {
             if let Some(last_line) = last_line {
                 before_context_lines = min(self.context_lines, line_number - last_line - 1);
                 if line_number > last_line + self.context_lines {
-                    output_lines.push((usize::MAX, Cow::Borrowed("…\n")));
+                    output_lines.push((usize::MAX, Cow::Borrowed("…"), multi_count));
                 }
             } else {
                 before_context_lines = self.context_lines;
@@ -127,12 +154,18 @@ impl Highlighter<'_> {
             last_line = Some(line_number);
 
             // find all labels that start on this line
-            let mut line_labels = vec![label];
-            while let Some(line_label) = iter.next_if(|l| line_span.contains_offset(l.start())) {
-                line_labels.push(line_label);
+            while let Some(line_label) = labels.pop_if(|l| line_span.contains_offset(l.start())) {
+                if line_label.end() > line_span.end() {
+                    debug_assert!(!line_label.is_multiline_end);
+                    multi_count += 1;
+                    labels.push(line_label.into_multiline_end());
+                    sort_labels(labels.as_mut_slice());
+                } else if line_label.is_multiline_end {
+                    ending_multis.push(line_label);
+                } else {
+                    line_labels.push(line_label);
+                }
             }
-
-            // TODO: handle labels that span multiple lines
 
             // N lines before the current line
             let mut context_before = Vec::from_iter(
@@ -142,114 +175,135 @@ impl Highlighter<'_> {
                     .rev()
                     .take(before_context_lines)
                     .enumerate()
-                    .map(|(i, line)| (line_number - i - 1, Cow::Borrowed(line))),
+                    .map(|(i, line)| {
+                        (
+                            line_number - i - 1,
+                            Cow::Borrowed(line.trim_ascii_end()),
+                            multi_count,
+                        )
+                    }),
             );
 
             context_before.reverse();
             output_lines.extend(context_before);
 
             // N lines after the current line
+            let multis_after = multi_count - ending_multis.len();
             context_after.extend(
                 self.source_code
                     .slice_from(line_span.end())
                     .split_inclusive('\n')
                     .take(self.context_lines)
                     .enumerate()
-                    .map(|(i, line)| (line_number + i + 1, Cow::Borrowed(line))),
+                    .map(|(i, line)| {
+                        (
+                            line_number + i + 1,
+                            Cow::Borrowed(line.trim_ascii_end()),
+                            multis_after,
+                        )
+                    }),
             );
 
             // indicate the portion of the line that the labels are pointing at
             let LitLine {
-                mut line,
+                line,
                 indicator_line,
                 messages,
             } = LineHighlighter::new(self.source_code).highlight_line(line_span, &line_labels);
 
-            if !line.ends_with('\n') {
-                line.push('\n');
+            // 0. context-before
+            // 1. line
+            // 2. indicator_line
+            // 3. label messages
+            // 4. multiline label messages
+            // 5. (context-after - to come)
+
+            output_lines.push((line_number, Cow::Owned(line), multi_count));
+
+            // line number can 'never' be usize::MAX (since it must be offset by 1, which would overflow)
+            // so we reuse it here to mark augmented lines
+
+            if !indicator_line.is_empty() {
+                output_lines.push((usize::MAX, Cow::Owned(indicator_line), multi_count));
             }
 
-            output_lines.push((line_number, Cow::Owned(line)));
-
-            // line value can never be usize::MAX (since it must offset by 1)
-            // so we reuse it here to mark augmented lines
-            output_lines.push((usize::MAX, Cow::Owned(indicator_line)));
             for message in messages {
-                output_lines.push((usize::MAX, message.into()));
+                output_lines.push((usize::MAX, message.into(), multi_count));
+            }
+
+            // we need to render all multi-line labels that end on or before this line
+            // TODO: those that end before need to be rendered before the line
+            for ending_multi in ending_multis {
+                multi_count -= 1;
+                output_lines.push((usize::MAX, ending_multi.message, multi_count));
             }
         }
 
         output_lines.extend(context_after);
 
-        // TODO: switch to https://commaok.xyz/post/lookup_tables/
-        let indent_width = match output_lines
+        let indent_width = output_lines
+            // find highest line number, which is the last non-MAX one
             .iter()
             .rev()
-            .find(|(n, _)| *n != usize::MAX)
+            .find(|(n, _, _)| *n != usize::MAX)
             .unwrap()
             .0
-        {
-            0..=9 => 1,
-            10..=99 => 2,
-            100..=999 => 3,
-            1000..=9999 => 4,
-            10000..=99999 => 5,
-            100000..=999999 => 6,
-            1000000..=9999999 => 7,
-            10000000..=99999999 => 8,
-            100000000..=999999999 => 9,
-            1000000000..=9999999999 => 10,
-            10000000000..=99999999999 => 11,
-            100000000000..=999999999999 => 12,
-            1000000000000..=9999999999999 => 13,
-            _ => 0, // at this point you have too many lines in your file
-        };
+            // count digits
+            .checked_ilog10()
+            .unwrap_or_default() // 0 when 0
+            as usize
+            + 1;
 
         let mut result = String::new();
 
         writeln!(
             result,
-            "{:>indent_width$} ┎",
+            "{:>indent_width$} ┌",
             " ", // no line number - this is a supplementary line
         )
         .unwrap();
 
-        let mut last_line_heavy = true;
+        let mut last_multi_count = 0;
+        for (ix, line, multi_count) in output_lines {
+            let ruler = match (last_multi_count, multi_count) {
+                (0, 0) => "│ ",
+                (0, _) => "┢╸",
+                (_, 0) => "┡━╸",
+                (x, y) => match x.cmp(&y) {
+                    std::cmp::Ordering::Less => "┣╸",
+                    std::cmp::Ordering::Equal => "┃ ",
+                    std::cmp::Ordering::Greater => "┣━╸",
+                },
+            };
 
-        for (ix, line) in output_lines {
+            last_multi_count = multi_count;
+
             if ix == usize::MAX {
-                write!(
+                writeln!(
                     result,
-                    "{:>indent_width$} {} {}",
+                    "{:>indent_width$} {}{}",
                     " ", // no line number - this is a supplementary line
-                    if last_line_heavy { "╿" } else { "│" },
+                    ruler,
                     line,
                     indent_width = indent_width
                 )
                 .unwrap();
-                last_line_heavy = false;
             } else {
-                write!(
+                writeln!(
                     result,
-                    "{:indent_width$} {} {}",
+                    "{:indent_width$} {}{}",
                     ix + 1, // line numbers are 1-based but we use 0-based up to this point for ease
-                    if last_line_heavy { "┃" } else { "╽" },
+                    ruler,
                     line,
                     indent_width = indent_width
                 )
                 .unwrap();
-                last_line_heavy = true;
             }
         }
 
-        if !result.ends_with('\n') {
-            result.push('\n');
-        }
-
-        // TODO: need last_heavy here as well
         writeln!(
             result,
-            "{:>indent_width$} ┖",
+            "{:>indent_width$} └",
             " ", // no line number - this is a supplementary line
             indent_width = indent_width
         )
@@ -484,7 +538,7 @@ impl LineHighlighter<'_> {
         // if we didn't reach the end, we nee to emit the rest
         if up_to < line_span.end() {
             // emit unhighlighted characters
-            let value = &self.source_code[up_to.up_to(line_span.end())];
+            let value = self.source_code[up_to.up_to(line_span.end())].trim_ascii_end();
             self.line.push(no_style.style(value.into()));
             // indicator line doesn't need spacing
         }
@@ -501,11 +555,11 @@ impl LineHighlighter<'_> {
     fn result(self) -> LitLine {
         LitLine {
             line: format!("{}", StyledList::from(self.line)),
-            indicator_line: format!("{}\n", StyledList::from(self.indicator_line)),
+            indicator_line: format!("{}", StyledList::from(self.indicator_line)),
             messages: self
                 .messages
                 .into_iter()
-                .map(|m| format!("{}\n", StyledList::from(m)))
+                .map(|m| format!("{}", StyledList::from(m)))
                 .collect(),
         }
     }
@@ -553,13 +607,13 @@ mod test {
 
         let result = highlight(source_code, "hello", "here");
 
-        assert_snapshot!(result, @r###"
-          ┎
-        1 ┃ hello, world!
-          ╿ ├───┘
+        assert_snapshot!(result, @r#"
+          ┌
+        1 │ hello, world!
+          │ ├───┘
           │ └╴here
-          ┖
-        "###);
+          └
+        "#);
     }
 
     #[test]
@@ -568,13 +622,13 @@ mod test {
 
         let result = highlight(source_code, "world!", "here");
 
-        assert_snapshot!(result, @r###"
-          ┎
-        1 ┃ hello, world!
-          ╿        ├────┘
+        assert_snapshot!(result, @r#"
+          ┌
+        1 │ hello, world!
+          │        ├────┘
           │        └╴here
-          ┖
-        "###);
+          └
+        "#);
     }
 
     #[test]
@@ -583,13 +637,13 @@ mod test {
 
         let result = highlight(source_code, "hello, world!", "here");
 
-        assert_snapshot!(result, @r###"
-          ┎
-        1 ┃ hello, world!
-          ╿ ├───────────┘
+        assert_snapshot!(result, @r#"
+          ┌
+        1 │ hello, world!
+          │ ├───────────┘
           │ └╴here
-          ┖
-        "###);
+          └
+        "#);
     }
 
     #[test]
@@ -601,15 +655,15 @@ mod test {
 
         let result = highlight(source_code, "hello", "here");
 
-        assert_snapshot!(result, @r###"
-          ┎
-        1 ┃ line 1
-        2 ┃ hello, world!
-          ╿ ├───┘
+        assert_snapshot!(result, @r#"
+          ┌
+        1 │ line 1
+        2 │ hello, world!
+          │ ├───┘
           │ └╴here
-        3 ╽ line 3
-          ┖
-        "###);
+        3 │ line 3
+          └
+        "#);
     }
 
     #[test]
@@ -621,15 +675,15 @@ mod test {
 
         let result = highlight(source_code, "world!", "here");
 
-        assert_snapshot!(result, @r###"
-          ┎
-        1 ┃ line 1
-        2 ┃ hello, world!
-          ╿        ├────┘
+        assert_snapshot!(result, @r#"
+          ┌
+        1 │ line 1
+        2 │ hello, world!
+          │        ├────┘
           │        └╴here
-        3 ╽ line 3
-          ┖
-        "###);
+        3 │ line 3
+          └
+        "#);
     }
 
     #[test]
@@ -642,16 +696,16 @@ mod test {
 
         let result = highlight(source_code, "hello, world!", "here");
 
-        assert_snapshot!(result, @r###"
-          ┎
-        1 ┃ line 1
-        2 ┃ hello, world!
-          ╿ ├───────────┘
+        assert_snapshot!(result, @r#"
+          ┌
+        1 │ line 1
+        2 │ hello, world!
+          │ ├───────────┘
           │ └╴here
-        3 ╽ line 3
-        4 ┃ line 4
-          ┖
-        "###);
+        3 │ line 3
+        4 │ line 4
+          └
+        "#);
     }
 
     #[test]
@@ -665,17 +719,17 @@ mod test {
 
         let result = highlight(source_code, "hello", "here");
 
-        assert_snapshot!(result, @r###"
-          ┎
-        1 ┃ line 1
-        2 ┃ line 2
-        3 ┃ hello, world!
-          ╿ ├───┘
+        assert_snapshot!(result, @r#"
+          ┌
+        1 │ line 1
+        2 │ line 2
+        3 │ hello, world!
+          │ ├───┘
           │ └╴here
-        4 ╽ line 4
-        5 ┃ line 5
-          ┖
-        "###);
+        4 │ line 4
+        5 │ line 5
+          └
+        "#);
     }
 
     #[test]
@@ -689,17 +743,17 @@ mod test {
 
         let result = highlight(source_code, "world!", "here");
 
-        assert_snapshot!(result, @r###"
-          ┎
-        1 ┃ line 1
-        2 ┃ line 2
-        3 ┃ hello, world!
-          ╿        ├────┘
+        assert_snapshot!(result, @r#"
+          ┌
+        1 │ line 1
+        2 │ line 2
+        3 │ hello, world!
+          │        ├────┘
           │        └╴here
-        4 ╽ line 4
-        5 ┃ line 5
-          ┖
-        "###);
+        4 │ line 4
+        5 │ line 5
+          └
+        "#);
     }
 
     #[test]
@@ -713,17 +767,17 @@ mod test {
 
         let result = highlight(source_code, "hello, world!", "here");
 
-        assert_snapshot!(result, @r###"
-          ┎
-        1 ┃ line 1
-        2 ┃ line 2
-        3 ┃ hello, world!
-          ╿ ├───────────┘
+        assert_snapshot!(result, @r#"
+          ┌
+        1 │ line 1
+        2 │ line 2
+        3 │ hello, world!
+          │ ├───────────┘
           │ └╴here
-        4 ╽ line 4
-        5 ┃ line 5
-          ┖
-        "###);
+        4 │ line 4
+        5 │ line 5
+          └
+        "#);
     }
 
     #[test]
@@ -743,15 +797,15 @@ mod test {
 
         let result = highlight(source_code, "question", "here");
 
-        assert_snapshot!(result, @r###"
-           ┎
-         9 ┃ line9
-        10 ┃ line10
-        11 ┃ line in question
-           ╿         ├──────┘
+        assert_snapshot!(result, @r#"
+           ┌
+         9 │ line9
+        10 │ line10
+        11 │ line in question
+           │         ├──────┘
            │         └╴here
-           ┖
-        "###);
+           └
+        "#);
     }
 
     #[test]
@@ -760,21 +814,9 @@ mod test {
 
         use super::Label;
         let mut labels = [
-            Label {
-                message: "c".into(),
-                span: Span::new(2.into(), 1.into()),
-                style: Style::new(),
-            },
-            Label {
-                message: "a".into(),
-                span: Span::new(0.into(), 1.into()),
-                style: Style::new(),
-            },
-            Label {
-                message: "b".into(),
-                span: Span::new(1.into(), 1.into()),
-                style: Style::new(),
-            },
+            Label::new(Span::new(2.into(), 1.into()), "c".into(), Style::new()),
+            Label::new(Span::new(0.into(), 1.into()), "a".into(), Style::new()),
+            Label::new(Span::new(1.into(), 1.into()), "b".into(), Style::new()),
         ];
 
         sort_labels(&mut labels);
@@ -782,9 +824,9 @@ mod test {
         assert_eq!(
             labels.map(|x| x.span),
             [
-                Span::new(0.into(), 1.into()),
-                Span::new(1.into(), 1.into()),
                 Span::new(2.into(), 1.into()),
+                Span::new(1.into(), 1.into()),
+                Span::new(0.into(), 1.into()),
             ]
         );
     }
@@ -796,31 +838,11 @@ mod test {
         use super::Label;
 
         let mut labels = [
-            Label {
-                message: "c".into(),
-                span: Span::new(2.into(), 4.into()),
-                style: Style::new(),
-            },
-            Label {
-                message: "c".into(),
-                span: Span::new(2.into(), 3.into()),
-                style: Style::new(),
-            },
-            Label {
-                message: "a".into(),
-                span: Span::new(0.into(), 1.into()),
-                style: Style::new(),
-            },
-            Label {
-                message: "b".into(),
-                span: Span::new(1.into(), 1.into()),
-                style: Style::new(),
-            },
-            Label {
-                message: "b".into(),
-                span: Span::new(2.into(), 1.into()),
-                style: Style::new(),
-            },
+            Label::new(Span::new(2.into(), 4.into()), "c".into(), Style::new()),
+            Label::new(Span::new(2.into(), 3.into()), "c".into(), Style::new()),
+            Label::new(Span::new(0.into(), 1.into()), "a".into(), Style::new()),
+            Label::new(Span::new(1.into(), 1.into()), "b".into(), Style::new()),
+            Label::new(Span::new(2.into(), 1.into()), "b".into(), Style::new()),
         ];
 
         sort_labels(&mut labels);
@@ -828,11 +850,11 @@ mod test {
         assert_eq!(
             labels.map(|x| x.span),
             [
-                Span::new(0.into(), 1.into()),
-                Span::new(1.into(), 1.into()),
-                Span::new(2.into(), 4.into()),
+                Span::new(2.into(), 1.into()),
                 Span::new(2.into(), 3.into()),
-                Span::new(2.into(), 1.into())
+                Span::new(2.into(), 4.into()),
+                Span::new(1.into(), 1.into()),
+                Span::new(0.into(), 1.into()),
             ]
         );
     }
@@ -843,14 +865,14 @@ mod test {
 
         let result = highlight_many(source_code, &[("hello, wo", "outer"), ("llo", "inner")]);
 
-        assert_snapshot!(result, @r###"
-          ┎
-        1 ┃ hello, world!
-          ╿ ├╴├─┘╶──┘
+        assert_snapshot!(result, @r#"
+          ┌
+        1 │ hello, world!
+          │ ├╴├─┘╶──┘
           │ │ └╴inner
           │ └╴outer
-          ┖
-        "###);
+          └
+        "#);
     }
 
     #[test]
@@ -862,15 +884,15 @@ mod test {
             &[("hello, wo", " uter"), ("llo", "i ner"), (",", "skipping")],
         );
 
-        assert_snapshot!(result, @r###"
-          ┎
-        1 ┃ hello, world!
-          ╿ ├╴├─┘╿╶─┘
+        assert_snapshot!(result, @r#"
+          ┌
+        1 │ hello, world!
+          │ ├╴├─┘╿╶─┘
           │ │ └╴i╵ner
           │ │    └╴skipping
           │ └╴ uter
-          ┖
-        "###);
+          └
+        "#);
     }
 
     #[test]
@@ -880,13 +902,13 @@ mod test {
 
         let result = highlight(source_code, "llo", "here");
 
-        assert_snapshot!(result, @r###"
-          ┎
-        1 ┃ héllo, world!
-          ╿   ├─┘
+        assert_snapshot!(result, @r#"
+          ┌
+        1 │ héllo, world!
+          │   ├─┘
           │   └╴here
-          ┖
-        "###);
+          └
+        "#);
     }
 
     #[test]
@@ -904,15 +926,15 @@ mod test {
         );
 
         // checks alignment of the parts here:
-        assert_snapshot!(result, @r###"
-          ┎
-        1 ┃ héllo, world!
-          ╿ ╿╿├─┘
+        assert_snapshot!(result, @r#"
+          ┌
+        1 │ héllo, world!
+          │ ╿╿├─┘
           │ └╴whole
           │  └╴part
           │   └╴part
-          ┖
-        "###);
+          └
+        "#);
     }
 
     #[test]
@@ -928,14 +950,14 @@ mod test {
         );
 
         //let html = ansi_to_html::convert(&output).unwrap();
-        assert_snapshot!(output, @r###"
-          ┎
-        1 ┃ [34mhello[31m, world![0m
-          ╿ [34m├───┘[31m╶──────┘[0m
+        assert_snapshot!(output, @r#"
+          ┌
+        1 │ [34mhello[31m, world![0m
+          │ [34m├───┘[31m╶──────┘[0m
           │ [34m└╴inner[0m
           │ [31m└╴outer[0m
-          ┖
-        "###);
+          └
+        "#);
     }
 
     #[test]
@@ -952,15 +974,15 @@ mod test {
         );
 
         //let html = ansi_to_html::convert(&output).unwrap();
-        assert_snapshot!(output, @r###"
-          ┎
-        1 ┃ [34mhel[33mlo[31m, world![0m
-          ╿ [34m├─┘[33m╶┘[31m╶──────┘[0m
+        assert_snapshot!(output, @r#"
+          ┌
+        1 │ [34mhel[33mlo[31m, world![0m
+          │ [34m├─┘[33m╶┘[31m╶──────┘[0m
           │ [34m└╴inner1[0m
           │ [33m└╴inner2[0m
           │ [31m└╴outer[0m
-          ┖
-        "###);
+          └
+        "#);
     }
 
     #[test]
@@ -977,15 +999,15 @@ mod test {
         );
 
         //let html = ansi_to_html::convert(&output).unwrap();
-        assert_snapshot!(output, @r###"
-          ┎
-        1 ┃ [34mhello[31m, [33mworld[31m![0m
-          ╿ [34m├───┘[31m╶╴[33m├───┘[31m┘[0m
+        assert_snapshot!(output, @r#"
+          ┌
+        1 │ [34mhello[31m, [33mworld[31m![0m
+          │ [34m├───┘[31m╶╴[33m├───┘[31m┘[0m
           │ [34m└╴inner1[0m
           │ [33m[31m│[33m      └╴inner2[0m
           │ [31m└╴outer[0m
-          ┖
-        "###);
+          └
+        "#);
     }
 
     #[test]
@@ -1006,18 +1028,18 @@ mod test {
 
         //let html = ansi_to_html::convert(&output).unwrap();
 
-        assert_snapshot!(output, @r###"
-          ┎
-        1 ┃ [31mx[34mhe[33mll[34mo[31m, [35mwor[36mld[32m![31mx[0m
-          ╿ [31m├[34m├╴[33m├┘[34m┘[31m╶╴[35m├─┘[36m├┘[32m┘[31m┘[0m
+        assert_snapshot!(output, @r#"
+          ┌
+        1 │ [31mx[34mhe[33mll[34mo[31m, [35mwor[36mld[32m![31mx[0m
+          │ [31m├[34m├╴[33m├┘[34m┘[31m╶╴[35m├─┘[36m├┘[32m┘[31m┘[0m
           │ [33m[31m│[33m[34m│[33m └╴inner2[36m│[0m
           │ [34m[31m│[34m└╴inner1[0m  [36m│[0m
           │ [35m[31m│[35m       └╴inner4[0m
           │ [36m[31m│[36m       [32m│[36m  └╴inner5[0m
           │ [32m[31m│[32m       └╴inner3[0m
           │ [31m└╴outer[0m
-          ┖
-        "###);
+          └
+        "#);
     }
 
     #[test]
@@ -1026,14 +1048,14 @@ mod test {
 
         let result = highlight_many(source_code, &[("world!", "2"), ("hello, ", "1")]);
 
-        assert_snapshot!(result, @r###"
-          ┎
-        1 ┃ hello, world!
-          ╿ ├─────┘├────┘
+        assert_snapshot!(result, @r#"
+          ┌
+        1 │ hello, world!
+          │ ├─────┘├────┘
           │ └╴1    │
           │        └╴2
-          ┖
-        "###);
+          └
+        "#);
     }
 
     #[test]
@@ -1042,14 +1064,14 @@ mod test {
 
         let result = highlight_many(source_code, &[("world!", "2"), ("hello", "1")]);
 
-        assert_snapshot!(result, @r###"
-          ┎
-        1 ┃ hello, world!
-          ╿ ├───┘  ├────┘
+        assert_snapshot!(result, @r#"
+          ┌
+        1 │ hello, world!
+          │ ├───┘  ├────┘
           │ └╴1    │
           │        └╴2
-          ┖
-        "###);
+          └
+        "#);
     }
 
     #[test]
@@ -1061,15 +1083,15 @@ mod test {
             &[("lo, wor", "2"), ("hello", "1"), ("rld!", "3")],
         );
 
-        assert_snapshot!(result, @r###"
-          ┎
-        1 ┃ hello, world!
-          ╿ ├─┘├────┘├──┘
+        assert_snapshot!(result, @r#"
+          ┌
+        1 │ hello, world!
+          │ ├─┘├────┘├──┘
           │ └╴1│     │
           │    └╴2   │
           │          └╴3
-          ┖
-        "###);
+          └
+        "#);
     }
 
     #[test]
@@ -1078,16 +1100,16 @@ mod test {
 
         let result = highlight_many(source_code, &[("hello,", "1"), ("world!", "2")]);
 
-        assert_snapshot!(result, @r###"
-          ┎
-        1 ┃ hello,
-          ╿ ├────┘
+        assert_snapshot!(result, @r#"
+          ┌
+        1 │ hello,
+          │ ├────┘
           │ └╴1
-        2 ╽ world!
-          ╿ ├────┘
+        2 │ world!
+          │ ├────┘
           │ └╴2
-          ┖
-        "###);
+          └
+        "#);
     }
 
     #[test]
@@ -1099,17 +1121,17 @@ mod test {
 
         let result = highlight_many(source_code, &[("hello,", "1"), ("world!", "2")]);
 
-        assert_snapshot!(result, @r###"
-          ┎
-        1 ┃ hello,
-          ╿ ├────┘
+        assert_snapshot!(result, @r#"
+          ┌
+        1 │ hello,
+          │ ├────┘
           │ └╴1
-        2 ╽ ctx 1
-        3 ┃ world!
-          ╿ ├────┘
+        2 │ ctx 1
+        3 │ world!
+          │ ├────┘
           │ └╴2
-          ┖
-        "###);
+          └
+        "#);
     }
 
     #[test]
@@ -1122,18 +1144,18 @@ mod test {
 
         let result = highlight_many(source_code, &[("hello,", "1"), ("world!", "2")]);
 
-        assert_snapshot!(result, @r###"
-          ┎
-        1 ┃ hello,
-          ╿ ├────┘
+        assert_snapshot!(result, @r#"
+          ┌
+        1 │ hello,
+          │ ├────┘
           │ └╴1
-        2 ╽ ctx 1
-        3 ┃ ctx 2
-        4 ┃ world!
-          ╿ ├────┘
+        2 │ ctx 1
+        3 │ ctx 2
+        4 │ world!
+          │ ├────┘
           │ └╴2
-          ┖
-        "###);
+          └
+        "#);
     }
 
     #[test]
@@ -1149,21 +1171,21 @@ mod test {
 
         let result = highlight_many(source_code, &[("hello,", "1"), ("world!", "2")]);
 
-        assert_snapshot!(result, @r###"
-          ┎
-        1 ┃ hello,
-          ╿ ├────┘
+        assert_snapshot!(result, @r#"
+          ┌
+        1 │ hello,
+          │ ├────┘
           │ └╴1
-        2 ╽ ctx 1
-        3 ┃ ctx 2
-          ╿ …
-        5 ╽ ctx 4
-        6 ┃ ctx 5
-        7 ┃ world!
-          ╿ ├────┘
+        2 │ ctx 1
+        3 │ ctx 2
+          │ …
+        5 │ ctx 4
+        6 │ ctx 5
+        7 │ world!
+          │ ├────┘
           │ └╴2
-          ┖
-        "###);
+          └
+        "#);
     }
 
     #[test]
@@ -1174,15 +1196,137 @@ mod test {
 
         let result = highlight_many(
             source_code,
-            &[("hello,\nworld!\n", "this here thing is a full line")],
+            &[("hello,\nworld!", "this here thing is a full line")],
         );
 
-        assert_snapshot!(result, @r###"
-          ┎
-        1 ┃ hello, world!
-          ╿ ├────────────┘
-          │ └╴this here thing is a full line
-          ┖
-        "###);
+        assert_snapshot!(result, @r#"
+          ┌
+        1 ┢╸hello,
+        2 ┃ world!
+          ┡━╸this here thing is a full line
+          └
+        "#);
+    }
+
+    #[test]
+    fn multi_line_wrapped() {
+        let source_code = "\
+        hello,\nworld!\n\
+        ";
+
+        let result = highlight_many(
+            source_code,
+            &[(
+                "hello,\nworld!",
+                "the text here is very long and\nwraps onto the next line",
+            )],
+        );
+
+        assert_snapshot!(result, @r#"
+          ┌
+        1 ┢╸hello,
+        2 ┃ world!
+          ┡━╸this here thing is a full line
+          └
+        "#);
+    }
+
+    #[test]
+    fn partway_multi() {
+        let source_code = "\
+        hello,\nworld!\n\
+        ";
+
+        let result = highlight_many(source_code, &[("lo,\nwor", "cross boundaries")]);
+
+        assert_snapshot!(result, @r#"
+          ┌
+        1 ┢╸hello,
+        2 ┃ world!
+          ┡━╸cross boundaries
+          └
+        "#);
+    }
+
+    #[test]
+    fn multi_and_inner() {
+        let source_code = "\
+        hello,\nworld!\n\
+        ";
+
+        let result = highlight_many(
+            source_code,
+            &[
+                ("hello,\nworld!", "this here thing is a full message"),
+                ("ll", "some Ls here"),
+                ("or", "OR or AND?"),
+            ],
+        );
+
+        assert_snapshot!(result, @r#"
+          ┌
+        1 ┢╸hello,
+          ┃   ├┘
+          ┃   └╴some Ls here
+        2 ┃ world!
+          ┃  ├┘
+          ┃  └╴OR or AND?
+          ┡━╸this here thing is a full message
+          └
+        "#);
+    }
+
+    #[test]
+    fn multi_line_nested() {
+        let source_code = "\
+        line1\n\
+        line2\n\
+        line3\n\
+        ";
+
+        let result = highlight_many(
+            source_code,
+            &[
+                ("line1\nline2", "lines one and two"),
+                ("line1\nline2\nline3", "lines one and two and three"),
+            ],
+        );
+
+        assert_snapshot!(result, @r#"
+          ┌
+        1 ┢╸line1
+        2 ┃ line2
+          ┣━╸lines one and two
+        3 ┃ line3
+          ┡━╸lines one and two and three
+          └
+        "#);
+    }
+
+    #[test]
+    fn multi_line_overlapped() {
+        let source_code = "\
+        line1\n\
+        line2\n\
+        line3\n\
+        ";
+
+        let result = highlight_many(
+            source_code,
+            &[
+                ("line1\nline2", "lines one and two"),
+                ("line2\nline3", "lines two and three"),
+            ],
+        );
+
+        assert_snapshot!(result, @r#"
+          ┌
+        1 ┢╸line1
+        2 ┣╸line2
+          ┣━╸lines one and two
+        3 ┃ line3
+          ┡━╸lines two and three
+          └
+        "#);
     }
 }

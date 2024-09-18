@@ -91,6 +91,11 @@ impl<T: ?Sized> Span<T> {
         }
     }
 
+    pub fn with_start(self, start: Index<T>) -> Self {
+        debug_assert!(self.end >= start);
+        Self { start, ..self }
+    }
+
     pub fn with_end(self, end: Index<T>) -> Self {
         debug_assert!(end >= self.start);
         Self { end, ..self }

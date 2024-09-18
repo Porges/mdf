@@ -14,7 +14,7 @@ pub struct Count<T: ?Sized> {
 
 impl<T: ?Sized> Default for Count<T> {
     fn default() -> Self {
-        Self::zero()
+        Self::ZERO
     }
 }
 
@@ -27,13 +27,8 @@ impl<T: ?Sized> Clone for Count<T> {
 impl<T: ?Sized> Copy for Count<T> {}
 
 impl<T: ?Sized> Count<T> {
-    pub const fn zero() -> Self {
-        Self::new(0)
-    }
-
-    pub const fn one() -> Self {
-        Self::new(1)
-    }
+    pub const ZERO: Self = Self::new(0);
+    pub const ONE: Self = Self::new(1);
 
     pub const fn new(count: usize) -> Self {
         Self {
