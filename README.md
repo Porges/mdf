@@ -10,7 +10,7 @@ The various crates are:
 - `snippets`: rendering source code with labels attached
 - `complex-indifference`: typed numeric types
 
-### Dependency Graph
+### Dependency graph
 
 ```mermaid
 graph TD;
