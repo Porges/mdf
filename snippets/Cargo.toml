@@ -8,7 +8,7 @@ edition.workspace = true
 [dependencies]
 complex-indifference = { path = "../complex-indifference", features = ["unicode-width"] }
 owo-colors = { version = "4.0.0", features = ["alloc"] }
-unicode-width = "0.1.13"
+unicode-width = "0.2.0"
 
 [dev-dependencies]
 insta = "1.39.0"
