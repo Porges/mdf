@@ -133,17 +133,17 @@ fn label_with_field() {
         code,
     };
 
-    assert_snapshot!(value.display_pretty_nocolor(), @r###"
+    assert_snapshot!(value.display_pretty_nocolor(), @r#"
     Error: labelled-with-source
 
     Details:
     × 0 ┐ labelled-with-source
-        │   ┎
-        │ 1 ┃ abc
-        │   ╿ ╿
+        │   ┌
+        │ 1 │ abc
+        │   │ ╿
         │   │ └╴invalid digit found in string
-        │   ┖
+        │   └
       1 ├▷ invalid digit found in string
         ┷
-    "###);
+    "#);
 }
