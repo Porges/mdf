@@ -5,6 +5,7 @@
 	"build": {
 		"dockerfile": "Dockerfile"
 	},
+	"updateContentCommand": "cargo chef prepare --recipe-path .recipe.json && cargo chef cook --profile test --recipe-path .recipe.json && rm .recipe.json",
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	"features": {
 	}
