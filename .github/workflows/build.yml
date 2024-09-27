@@ -8,6 +8,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      packages: write
     steps:
       - uses: actions/checkout@v4
       - name: Login to GitHub Container Registry
@@ -19,6 +21,6 @@ jobs:
       - uses: devcontainers/ci@v0.3
         name: Build devcontainer (if needed) & run tests
         with:
-          imageName: ghcr.io/porges/mdf-devcontainer
+          imageName: ghcr.io/porges/mdf/devcontainer
           runCmd: |
             cargo nextest run
