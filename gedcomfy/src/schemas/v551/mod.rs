@@ -444,6 +444,8 @@ pub enum TopLevelRecord {
     Individual(Individual),
     Submitter(Submitter),
     Submission(Submission),
+    Family(Family),
+    Source(Source),
 }
 
 impl TryFrom<Sourced<RawRecord<'_>>> for TopLevelRecord {
@@ -454,11 +456,13 @@ impl TryFrom<Sourced<RawRecord<'_>>> for TopLevelRecord {
             "INDI" => Individual::try_from(source)?.into(),
             "SUBM" => Submitter::try_from(source)?.into(),
             "SUBN" => Submission::try_from(source)?.into(),
+            "FAM" => Family::try_from(source)?.into(),
+            "SOUR" => Source::try_from(source)?.into(),
             tag => {
                 return Err(SchemaError::UnknownTopLevelRecord {
                     tag: tag.to_string(),
                     span: source.line.tag.span,
-                })
+                });
             }
         };
 
@@ -487,8 +491,10 @@ impl File {
                 "TRLR" => break,
                 _ => match TopLevelRecord::try_from(record) {
                     Ok(r) => records.push(r),
+                    Err(SchemaError::UnknownTopLevelRecord { tag, .. }) if tag.starts_with('_') => {
+                        tracing::warn!(?tag, "Ignoring user-defined top-level record");
+                    }
                     Err(error) => return Err(error),
-                    //tracing::warn!(?error, "skipping record error"),
                 },
             }
         }
@@ -531,6 +537,20 @@ pub struct XRef {
     xref: Option<String>,
 }
 
+impl<'a> TryFrom<Sourced<RawRecord<'a, str>>> for Option<XRef> {
+    type Error = SchemaError;
+
+    fn try_from(rec: Sourced<RawRecord<'a, str>>) -> Result<Self, Self::Error> {
+        let tag = rec.line.tag.as_str();
+        Option::<XRef>::try_from(rec.value.line.value.line_value).map_err(|source| {
+            SchemaError::DataError {
+                tag: tag.to_string(),
+                source,
+            }
+        })
+    }
+}
+
 impl<'a> TryFrom<Sourced<RawRecord<'a, str>>> for XRef {
     type Error = SchemaError;
 
@@ -541,6 +561,20 @@ impl<'a> TryFrom<Sourced<RawRecord<'a, str>>> for XRef {
             tag: tag.to_string(),
             source,
         })
+    }
+}
+
+impl<'a> TryFrom<Sourced<LineValue<'a, str>>> for Option<XRef> {
+    type Error = DataError;
+
+    fn try_from(source: Sourced<LineValue<'a, str>>) -> Result<Self, Self::Error> {
+        match source.value {
+            LineValue::None => Ok(None),
+            LineValue::Ptr(xref) => Ok(Some(XRef {
+                xref: xref.map(|x| x.to_string()),
+            })),
+            LineValue::Str(_) => todo!("proper error for string"),
+        }
     }
 }
 
@@ -640,6 +674,25 @@ define_record!(
 );
 
 define_record!(
+    "FAM" Family {
+        enum events: FamilyEvent {0:N},
+        "RESN" restriction_notice: String {0:1},
+        "HUSB" husband: XRef {0:1},
+        "WIFE" wife: XRef {0:1},
+        "CHIL" children: XRef {0:N},
+        "NCHI" count_of_children: String {0:1},
+        "SUBM" submitter: XRef {0:N},
+        // TODO: LDS_SPOUSE_SEALING
+        "REFN" user_reference_number: UserReferenceNumber {0:N},
+        "RIN" automated_record_id: String {0:1},
+        "CHAN" change_date: ChangeDate {0:1},
+        "NOTE" notes: String {0:N},
+        "SOUR" source_citations: SourceCitation {0:N},
+        "OBJE" multimedia_links: MultimediaLink55 {0:N},
+    }
+);
+
+define_record!(
     "REFN" UserReferenceNumber (user_reference_number: String) {
         "TYPE" user_reference_type: String {0:1},
     }
@@ -678,12 +731,29 @@ define_enum!(
         Naturalization,
         Emmigration,
         Immigration,
-        Census,
+        CensusIndividual,
         Probate,
         Will,
         Graduation,
         Retirement,
-        Event,
+        EventIndividual,
+    }
+);
+
+define_enum!(
+    enum FamilyEvent {
+        Anulment,
+        CensusFamily,
+        Divorce,
+        DivorceFiled,
+        Engagement,
+        MarriageBann,
+        MarriageContract,
+        Marriage,
+        MarriageLicense,
+        MarriageSettlement,
+        ResidenceFamily,
+        EventFamily,
     }
 );
 
@@ -699,7 +769,7 @@ define_enum!(
         Occupation,
         Possessions,
         ReligiousAffiliation,
-        Residence,
+        ResidenceIndividual,
         SocialSecurityNumber,
         NobilityTypeTitle,
         Fact,
@@ -763,7 +833,7 @@ indi_attribute!("SSN" SocialSecurityNumber social_security_number);
 indi_attribute!("TITL" NobilityTypeTitle nobility_type_title);
 indi_attribute!("FACT" Fact attribute_descriptor);
 define_record!(
-    "RESI" Residence {
+    "RESI" ResidenceIndividual {
         .. detail: IndividualEventDetail {0:1},
     }
 );
@@ -771,22 +841,28 @@ define_record!(
 // Note that the standard omits the line value here
 // https://genealogytools.com/the-event-structure-in-gedcom-files/
 define_record!(
-    "EVEN" Event (event_type: Option<String>) {
+    "EVEN" EventIndividual (event_type: Option<String>) {
         .. detail: IndividualEventDetail {0:1},
     }
 );
 
 define_record!(
-    "BIRT" Birth {
+    "BIRT" Birth (y: Option<String>) {
         .. detail: IndividualEventDetail {0:1},
         "FAMC" family: XRef {0:1},
     }
 );
 
 define_record!(
-    "CHR" Christening {
+    "CHR" Christening (y: Option<String>) {
         .. detail: IndividualEventDetail {0:1},
         "FAMC" family: XRef {0:1},
+    }
+);
+
+define_record!(
+    "DEAT" Death (y: Option<String>) {
+        .. detail: IndividualEventDetail {0:1},
     }
 );
 
@@ -813,7 +889,6 @@ macro_rules! indi_event {
     }
 }
 
-indi_event!("DEAT" Death);
 indi_event!("BURI" Burial);
 indi_event!("CREM" Cremation);
 indi_event!("BAPM" Baptism);
@@ -827,11 +902,43 @@ indi_event!("ORDN" Ordination);
 indi_event!("NATU" Naturalization);
 indi_event!("EMIG" Emmigration);
 indi_event!("IMMI" Immigration);
-indi_event!("CENS" Census);
+indi_event!("CENS" CensusIndividual);
 indi_event!("PROB" Probate);
 indi_event!("WILL" Will);
 indi_event!("GRAD" Graduation);
 indi_event!("RETI" Retirement);
+
+macro_rules! fam_event {
+    ($tag:literal $name:ident) => {
+        define_record!(
+            $tag $name {
+                .. detail: FamilyEventDetail {0:1},
+            }
+        );
+    }
+}
+
+define_record!(
+    "MARR" Marriage (y: Option<String>) {
+        .. detail: FamilyEventDetail {0:1},
+    }
+);
+
+fam_event!("ANUL" Anulment);
+fam_event!("CENS" CensusFamily);
+fam_event!("DIV" Divorce);
+fam_event!("DIVF" DivorceFiled);
+fam_event!("ENGA" Engagement);
+fam_event!("MARB" MarriageBann);
+fam_event!("MARC" MarriageContract);
+fam_event!("MARL" MarriageLicense);
+fam_event!("MARS" MarriageSettlement);
+fam_event!("RESI" ResidenceFamily);
+define_record!(
+    "EVEN" EventFamily (event_type: Option<String>) {
+        .. detail: FamilyEventDetail {0:1},
+    }
+);
 
 define_structure!(
     EventDetail {
@@ -853,6 +960,26 @@ define_structure!(
     IndividualEventDetail {
         .. detail: EventDetail {1:1},
         "AGE" age_at_event: String {0:1},
+    }
+);
+
+define_structure!(
+    FamilyEventDetail {
+        .. detail: EventDetail {0:1},
+        "HUSB" husband: HusbandEventDetail {0:1},
+        "WIFE" wife: WifeEventDetail {0:1},
+    }
+);
+
+define_record!(
+    "HUSB" HusbandEventDetail {
+        "AGE" age: String {1:1},
+    }
+);
+
+define_record!(
+    "WIFE" WifeEventDetail {
+        "AGE" age: String {1:1},
     }
 );
 
@@ -977,6 +1104,51 @@ pub enum RestrictionNotice {
     Locked,
     Privacy,
 }
+
+define_record!(
+    "SOUR" Source {
+        "DATA" data: SourceData {0:1},
+        "AUTH" originator: String {0:1},
+        "TITL" descriptive_title: String {0:1},
+        "ABBR" filed_by_entry: String {0:1},
+        "PUBL" publication_facts: String {0:1},
+        "TEXT" text_from_source: String {0:1},
+        // SOURCE_REPOSITORY_CITATION
+        "REFN" user_reference_number: UserReferenceNumber {0:N},
+        "RIN" automated_record_id: String {0:1},
+        "CHAN" change_date: ChangeDate {0:1},
+        "NOTE" notes: String {0:N},
+        "OBJE" multimedia_links: MultimediaLink55 {0:N},
+    }
+);
+
+define_record!(
+    "DATA" SourceData {
+        "EVEN" events_recorded: SourceDataEvent {0:N},
+        "AGNC" responsible_agency: String {0:1},
+        "NOTE" note: String {0:N},
+    }
+);
+
+define_record!(
+    "EVEN" SourceDataEvent {
+        "DATE" date: String {0:1},
+        "PLAC" source_jurisdiction_place: String {0:1},
+    }
+);
+
+define_record!(
+    "REPO" SourceRepository (xref: Option<XRef>) {
+        "NOTE" notes: String {0:N},
+        "CALN" call_number: SourceCallNumber {0:N},
+    }
+);
+
+define_record!(
+    "CALN" SourceCallNumber (call_number: String) {
+        "MEDI" media_type: String {0:1},
+    }
+);
 
 /*
 struct Source {}

@@ -16,7 +16,6 @@ fn can_parse_allged_lines() -> miette::Result<()> {
 }
 
 #[test]
-#[ignore = "wip"]
 fn can_parse_allged_fully() -> miette::Result<()> {
     let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     path.push("tests/external/others/allged.ged");
