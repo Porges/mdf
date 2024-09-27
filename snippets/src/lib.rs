@@ -25,6 +25,7 @@ pub fn render(source_code: &str, labels: Vec<Label>) -> String {
 struct Highlighter<'a> {
     source_code: &'a str,
     context_lines: usize,
+    max_width: usize,
 }
 
 pub struct Label<'a> {
@@ -68,6 +69,7 @@ impl Highlighter<'_> {
         Highlighter {
             source_code,
             context_lines: 2,
+            max_width: usize::MAX,
         }
     }
 
@@ -265,39 +267,48 @@ impl Highlighter<'_> {
 
         let mut last_multi_count = 0;
         for (ix, line, multi_count) in output_lines {
-            let ruler = match (last_multi_count, multi_count) {
-                (0, 0) => "│ ",
-                (0, _) => "┢╸",
-                (_, 0) => "┡━╸",
+            let (ruler, continuation) = match (last_multi_count, multi_count) {
+                (0, 0) => ("│ ", "│ "),
+                (0, _) => ("┢╸", "┃ "),
+                (_, 0) => ("┡━╸", "│  "),
                 (x, y) => match x.cmp(&y) {
-                    std::cmp::Ordering::Less => "┣╸",
-                    std::cmp::Ordering::Equal => "┃ ",
-                    std::cmp::Ordering::Greater => "┣━╸",
+                    std::cmp::Ordering::Less => ("┣╸", "┃ "),
+                    std::cmp::Ordering::Equal => ("┃ ", "┃ "),
+                    std::cmp::Ordering::Greater => ("┣━╸", "┃  "),
                 },
             };
 
             last_multi_count = multi_count;
 
-            if ix == usize::MAX {
-                writeln!(
-                    result,
-                    "{:>indent_width$} {}{}",
+            let initial_indent = if ix == usize::MAX {
+                format!(
+                    "{:>indent_width$} {}",
                     " ", // no line number - this is a supplementary line
                     ruler,
-                    line,
                     indent_width = indent_width
                 )
-                .unwrap();
             } else {
-                writeln!(
-                    result,
-                    "{:indent_width$} {}{}",
-                    ix + 1, // line numbers are 1-based but we use 0-based up to this point for ease
+                format!(
+                    "{:>indent_width$} {}",
+                    ix + 1,
                     ruler,
-                    line,
                     indent_width = indent_width
                 )
-                .unwrap();
+            };
+
+            let subsequent_indent = format!(
+                "{:>indent_width$} {}",
+                " ",
+                continuation,
+                indent_width = indent_width
+            );
+
+            let wrap_opts = textwrap::Options::new(self.max_width)
+                .initial_indent(&initial_indent)
+                .subsequent_indent(&subsequent_indent);
+
+            for wrapped_line in textwrap::wrap(&line, wrap_opts) {
+                writeln!(result, "{}", wrapped_line).unwrap();
             }
         }
 
@@ -1226,7 +1237,8 @@ mod test {
           ┌
         1 ┢╸hello,
         2 ┃ world!
-          ┡━╸this here thing is a full line
+          ┡━╸the text here is very long and
+          │  wraps onto the next line
           └
         "#);
     }
