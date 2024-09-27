@@ -1,0 +1,8 @@
+{
+    "recommendations": [
+        "rust-lang.rust-analyzer",
+        "tamasfe.even-better-toml",
+        "iliazeus.vscode-ansi",
+        "fill-labs.dependi"
+    ]
+}
