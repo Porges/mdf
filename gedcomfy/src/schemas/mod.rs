@@ -5,6 +5,8 @@ use crate::{
     versions::SupportedGEDCOMVersion,
 };
 
+mod conversions;
+mod macros;
 pub mod v551;
 pub mod v7;
 
@@ -81,4 +83,9 @@ pub enum DataError {
 
     #[error("Missing required data")]
     MissingData,
+}
+
+#[derive(Debug, Eq, PartialEq, Clone)]
+pub struct XRef {
+    xref: Option<String>,
 }
