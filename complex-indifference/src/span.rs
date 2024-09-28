@@ -46,7 +46,12 @@ impl<T: ?Sized> Span<T> {
     }
 
     pub fn from_indices(start: Index<T>, end: Index<T>) -> Self {
-        debug_assert!(start <= end, "indices are in the wrong order");
+        debug_assert!(
+            start <= end,
+            "indices are in the wrong order: {} > {}",
+            start.index(),
+            end.index()
+        );
         Self { start, end }
     }
 

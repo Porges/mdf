@@ -62,6 +62,10 @@ impl<'a> Label<'a> {
         Self { style, ..self }
     }
 
+    pub fn message(&self) -> &str {
+        &self.message
+    }
+
     fn start(&self) -> Index<u8> {
         self.span.start()
     }
@@ -448,6 +452,7 @@ impl LineHighlighter<'_> {
             }
         };
 
+        debug_assert!(line_start <= label.start());
         let indent_width = self.source_code[line_start.up_to(label.start())].width();
 
         // 2 chars at start of messages: "└╴"
@@ -556,16 +561,19 @@ impl LineHighlighter<'_> {
 
         while let Some(label) = stack.pop() {
             let end = label.end();
-            let value = &self.source_code[up_to.up_to(end)];
-            let continuing = label.start() < up_to;
-            self.fill_indicator(continuing, false, value, &label.style);
-            self.line.push(label.style.style(value.into()));
-            message_order.push(label);
-
-            up_to = end;
+            if up_to <= end {
+                // TODO: what are the effects of this check?
+                // it prevents a crash found by fuzzing but might skip a message?
+                let value = &self.source_code[up_to.up_to(end)];
+                let continuing = label.start() < up_to;
+                self.fill_indicator(continuing, false, value, &label.style);
+                self.line.push(label.style.style(value.into()));
+                message_order.push(label);
+                up_to = end;
+            }
         }
 
-        // if we didn't reach the end, we nee to emit the rest
+        // if we didn't reach the end, we need to emit the rest
         if up_to < line_span.end() {
             // emit unhighlighted characters
             let value = self.source_code[up_to.up_to(line_span.end())].trim_ascii_end();
@@ -1359,6 +1367,26 @@ mod test {
           ┣━╸lines one and two
         3 ┃ line3
           ┡━╸lines two and three
+          └
+        "#);
+    }
+
+    #[test]
+    fn zero_width_label() {
+        let source_code = "hi";
+        let labels = vec1::vec1![Label::new(
+            Span::new(0.into(), 0.into()),
+            "zero-width".into(),
+            Style::new()
+        )];
+
+        let result = render(source_code, labels);
+
+        assert_snapshot!(result, @r#"
+          ┌
+        1 │ hi
+          │ │
+          │ └╴zero-width
           └
         "#);
     }

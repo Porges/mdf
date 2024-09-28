@@ -36,6 +36,13 @@ impl<T: ?Sized> Index<T> {
     }
 
     pub fn up_to(&self, ix: Index<T>) -> Span<T> {
+        debug_assert!(
+            *self <= ix,
+            "cannot go up_to a lower index: {} > {}",
+            self.index,
+            ix.index
+        );
+
         Span::from_indices(*self, ix)
     }
 }
