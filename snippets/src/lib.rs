@@ -1,10 +1,12 @@
 #![feature(vec_pop_if)]
+#![feature(round_char_boundary)]
 
 use std::{borrow::Cow, cmp::min, fmt::Write, mem::take};
 
-use complex_indifference::{Index, Sliceable, Span};
+use complex_indifference::{Count, Index, Sliceable, Span};
 use owo_colors::{Style, Styled, StyledList};
 use unicode_width::UnicodeWidthStr;
+use vec1::Vec1;
 
 // sorts labels by increasing order (in reverse for popping)
 // if there are overlapping labels, the longest one comes first
@@ -18,8 +20,18 @@ fn sort_labels(labels: &mut [Label]) {
     });
 }
 
-pub fn render(source_code: &str, labels: Vec<Label>) -> String {
-    Highlighter::new(source_code).render_spans(labels)
+pub fn render(source_code: &str, mut labels: Vec1<Label>) -> String {
+    // ensure that all labels indices are valid
+    // - we do not want to panic because of a bug in the caller,
+    //   because snippets could be rendered during panic rendering
+    for label in &mut labels {
+        let span = label.span;
+        let start_ix = source_code.floor_char_boundary(span.start().index());
+        let end_ix = source_code.ceil_char_boundary(span.end().index());
+        label.span = Span::from_indices(start_ix.into(), end_ix.into());
+    }
+
+    Highlighter::new(source_code).render_spans(labels.into())
 }
 
 struct Highlighter<'a> {
@@ -28,6 +40,7 @@ struct Highlighter<'a> {
     max_width: usize,
 }
 
+#[derive(Debug, Clone)]
 pub struct Label<'a> {
     span: Span<u8>,
     message: Cow<'a, str>,
@@ -73,11 +86,11 @@ impl Highlighter<'_> {
         }
     }
 
-    fn line_containing(&self, index: Index<u8>) -> Span<u8> {
+    fn line_containing_start_of(&self, span: Span<u8>) -> Span<u8> {
         // start of line is after the last newline, or at start of string
         let start_of_line: Index<u8> = self
             .source_code
-            .slice_to(index)
+            .slice_to(span.start())
             .rfind('\n')
             .map(|x| x + 1)
             .unwrap_or(0)
@@ -86,15 +99,18 @@ impl Highlighter<'_> {
         // end of line is after the next newline, or at end of string
         let end_of_line: Index<u8> = self
             .source_code
-            .slice_from(index)
+            .slice_from(span.start())
             .find('\n')
-            .map(|x| x + index.index() + 1)
+            .map(|x| x + span.start().index() + 1)
             .unwrap_or(self.source_code.len())
             .into();
 
         let line_span = Span::from((start_of_line, end_of_line));
 
-        debug_assert!(line_span.contains_offset(index));
+        debug_assert!(
+            line_span.contains_offset(span.start())
+                || (span.len() == Count::ZERO && span.start() == line_span.end())
+        );
 
         line_span
     }
@@ -114,10 +130,10 @@ impl Highlighter<'_> {
             let mut ending_multis = Vec::new();
 
             if label.is_multiline_end {
-                line_span = self.line_containing(label.start());
+                line_span = self.line_containing_start_of(label.span);
                 ending_multis.push(label);
             } else {
-                line_span = self.line_containing(label.start());
+                line_span = self.line_containing_start_of(label.span);
                 let is_multiline = label.end() > line_span.end();
                 if is_multiline {
                     multi_count += 1;
@@ -145,7 +161,10 @@ impl Highlighter<'_> {
 
             let before_context_lines;
             if let Some(last_line) = last_line {
-                before_context_lines = min(self.context_lines, line_number - last_line - 1);
+                before_context_lines = min(
+                    self.context_lines,
+                    (line_number - last_line).saturating_sub(1),
+                );
                 if line_number > last_line + self.context_lines {
                     output_lines.push((usize::MAX, Cow::Borrowed("…"), multi_count));
                 }
@@ -607,7 +626,9 @@ mod test {
     fn highlight_many(source: &str, target_labels: &[(&str, &'static str)]) -> String {
         let labels = Vec::from_iter(target_labels.iter().map(|&(target, message)| {
             Label::new(span_of(source, target), message.into(), Style::new())
-        }));
+        }))
+        .try_into()
+        .unwrap(); // TODO
 
         render(source, labels)
     }
@@ -954,7 +975,7 @@ mod test {
 
         let output = super::render(
             source_code,
-            vec![
+            vec1::vec1![
                 make_label(source_code, "hello, world!", "outer").with_style(Style::new().red()),
                 make_label(source_code, "hello", "inner").with_style(Style::new().blue()),
             ],
@@ -977,7 +998,7 @@ mod test {
 
         let output = super::render(
             source_code,
-            vec![
+            vec1::vec1![
                 make_label(source_code, "hello, world!", "outer").with_style(Style::new().red()),
                 make_label(source_code, "hello", "inner2").with_style(Style::new().yellow()),
                 make_label(source_code, "hel", "inner1").with_style(Style::new().blue()),
@@ -1002,7 +1023,7 @@ mod test {
 
         let output = super::render(
             source_code,
-            vec![
+            vec1::vec1![
                 make_label(source_code, "hello, world!", "outer").with_style(Style::new().red()),
                 make_label(source_code, "hello", "inner1").with_style(Style::new().blue()),
                 make_label(source_code, "world", "inner2").with_style(Style::new().yellow()),
@@ -1027,7 +1048,7 @@ mod test {
 
         let output = super::render(
             source_code,
-            vec![
+            vec1::vec1![
                 make_label(source_code, "xhello, world!x", "outer").with_style(Style::new().red()),
                 make_label(source_code, "hello", "inner1").with_style(Style::new().blue()),
                 make_label(source_code, "ll", "inner2").with_style(Style::new().yellow()),

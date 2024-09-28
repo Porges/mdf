@@ -44,24 +44,23 @@ impl PrettyDisplay<'_> {
     ) -> std::fmt::Result {
         if let Some(labels) = err.labels() {
             if let Some(source_code) = err.source_code() {
-                let labels = labels
-                    .into_iter()
-                    .map(|label| {
-                        let highlight = highlight(&label);
-                        snippets::Label::new(
-                            label.span(),
-                            match label.message {
-                                // TODO: inner errors
-                                LabelMessage::Error(e) => format!("{}", e).into(),
-                                LabelMessage::String(l) => l,
-                            },
-                            highlight,
-                        )
-                    })
-                    .collect();
+                let labels = Vec::from_iter(labels.into_iter().map(|label| {
+                    let highlight = highlight(&label);
+                    snippets::Label::new(
+                        label.span(),
+                        match label.message {
+                            // TODO: inner errors
+                            LabelMessage::Error(e) => format!("{}", e).into(),
+                            LabelMessage::String(l) => l,
+                        },
+                        highlight,
+                    )
+                }));
 
-                let rendered = snippets::render(source_code, labels);
-                write!(f, "{}", textwrap::indent(&rendered, prefix))?;
+                if let Ok(labels) = labels.try_into() {
+                    let rendered = snippets::render(source_code, labels);
+                    write!(f, "{}", textwrap::indent(&rendered, prefix))?;
+                }
             } else {
                 let message = textwrap::indent(
                     "! errful issue: no source code provided to render labels\n\
