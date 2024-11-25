@@ -109,7 +109,7 @@ impl<'e> From<&'e dyn Errful> for PrettyDisplay<'e> {
     }
 }
 
-impl<'e> Display for PrettyDisplay<'e> {
+impl Display for PrettyDisplay<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let mut colorgen = ColorGenerator::new();
         let mut colors = |_: &Label| {

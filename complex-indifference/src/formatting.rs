@@ -49,7 +49,7 @@ impl<'a> TryFrom<&'a str> for PluralString<'a> {
     }
 }
 
-impl<'a> std::fmt::Display for PluralFormatter<'a> {
+impl std::fmt::Display for PluralFormatter<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,

@@ -23,7 +23,7 @@ pub enum LineValue<'a, S: GEDCOMSource + ?Sized> {
     None,
 }
 
-impl<'a, S: GEDCOMSource + ?Sized> LineValue<'a, S> {
+impl<S: GEDCOMSource + ?Sized> LineValue<'_, S> {
     pub fn is_none(&self) -> bool {
         matches!(self, LineValue::None)
     }

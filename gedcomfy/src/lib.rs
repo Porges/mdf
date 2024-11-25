@@ -34,7 +34,7 @@ pub enum ValidationError {
     },
 }
 
-impl<'a, S: GEDCOMSource + ?Sized> RawRecord<'a, S> {
+impl<S: GEDCOMSource + ?Sized> RawRecord<'_, S> {
     pub(crate) fn subrecord_optional(&self, subrecord_tag: &str) -> Option<&Sourced<RawRecord<S>>> {
         self.records
             .iter()

@@ -97,7 +97,7 @@ impl NonFatalHandler for Builder {
     }
 }
 
-impl<'i> ResultBuilder<'i> for Builder {
+impl ResultBuilder<'_> for Builder {
     type Result = ValidationResult;
 
     fn handle_record(&mut self, _record: Sourced<RawRecord<'_>>) -> Result<(), ParseError> {
