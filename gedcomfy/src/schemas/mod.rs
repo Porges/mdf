@@ -75,7 +75,7 @@ pub enum SchemaError {
 pub enum DataError {
     #[display("Invalid data")]
     InvalidData {
-        //        source: Box<dyn std::error::Error + Send + Sync + 'static>,
+        // source: Box<dyn std::error::Error + Send + Sync + 'static>,
     },
 
     #[display("Unexpected pointer")]
