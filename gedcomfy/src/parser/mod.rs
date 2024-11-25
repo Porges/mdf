@@ -277,15 +277,16 @@ trait ResultBuilder<'i>: NonFatalHandler {
     fn complete(self) -> Result<Self::Result, ParseError>;
 }
 
-#[derive(thiserror::Error, Debug, miette::Diagnostic)]
+#[derive(
+    derive_more::Error, derive_more::Display, derive_more::From, Debug, miette::Diagnostic,
+)]
+#[display("An error occurred while parsing the GEDCOM file")]
 pub enum ParseError {
-    #[error(transparent)]
     #[diagnostic(transparent)]
     Decoding {
         #[from]
         source: DecodingError,
     },
-    #[error(transparent)]
     #[diagnostic(transparent)]
     Schema {
         #[from]
@@ -293,10 +294,10 @@ pub enum ParseError {
     },
 }
 
-#[derive(thiserror::Error, Debug, miette::Diagnostic)]
-#[error("An error occurred while parsing the input")]
+#[derive(derive_more::Error, derive_more::Display, Debug, miette::Diagnostic)]
+#[display("An error occurred while parsing the input")]
 pub struct ParserError {
-    #[source]
+    #[error(source)]
     #[diagnostic_source]
     source: ParseError,
 

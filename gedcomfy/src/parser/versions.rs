@@ -2,29 +2,29 @@ use miette::SourceSpan;
 
 use crate::versions::{InvalidGEDCOMVersionError, UnsupportedGEDCOMVersionError};
 
-#[derive(thiserror::Error, Debug, miette::Diagnostic)]
+#[derive(derive_more::Error, derive_more::Display, Debug, miette::Diagnostic)]
 pub enum VersionError {
-    #[error("Invalid GEDCOM header")]
+    #[display("Invalid GEDCOM header")]
     Header {},
 
-    #[error("Unknown version specified in GEDCOM file")]
+    #[display("Unknown version specified in GEDCOM file")]
     Invalid {
         #[label("this is an invalid version")]
         span: SourceSpan,
 
-        #[source]
+        #[error(source)]
         source: InvalidGEDCOMVersionError,
     },
 
-    #[error("Unsupported version specified in GEDCOM file")]
+    #[display("Unsupported version specified in GEDCOM file")]
     Unsupported {
         #[label("this is an unsupported version")]
         span: SourceSpan,
 
-        #[source]
+        #[error(source)]
         source: UnsupportedGEDCOMVersionError,
     },
 
-    #[error("GEDCOM file appeared to be syntactically valid, but no version could be found")]
+    #[display("GEDCOM file appeared to be syntactically valid, but no version could be found")]
     NotFound {},
 }

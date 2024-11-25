@@ -31,19 +31,19 @@ impl<'a, S: GEDCOMSource + ?Sized> LineValue<'a, S> {
 
 /// The types of errors that can occur when parsing lines
 /// from a GEDCOM file.
-#[derive(thiserror::Error, Debug, miette::Diagnostic)]
+#[derive(derive_more::Error, derive_more::Display, Debug, miette::Diagnostic)]
 pub enum LineSyntaxError {
-    #[error("Invalid non-numeric level '{value}'")]
+    #[display("Invalid non-numeric level '{value}'")]
     #[diagnostic(code(gedcom::parse_error::invalid_level))]
     InvalidLevel {
         value: String,
-        #[source]
+        #[error(source)]
         source: Box<dyn std::error::Error + Send + Sync>,
         #[label("this is not a (positive) number")]
         span: SourceSpan,
     },
 
-    #[error("Reserved value '{reserved_value}' cannot be used as an XRef")]
+    #[display("Reserved value '{reserved_value}' cannot be used as an XRef")]
     #[diagnostic(code(gedcom::parse_error::reserved_xref))]
     ReservedXRef {
         reserved_value: String,
@@ -51,21 +51,21 @@ pub enum LineSyntaxError {
         span: SourceSpan,
     },
 
-    #[error("No tag found")]
+    #[display("No tag found")]
     #[diagnostic(code(gedcom::parse_error::no_tag))]
     NoTag {
         #[label("no tag in this line")]
         span: SourceSpan,
     },
 
-    #[error("A line should consist of at least two space-separated parts")]
+    #[display("A line should consist of at least two space-separated parts")]
     #[diagnostic(code(gedcom::parse_error::no_space))]
     NoSpace {
         #[label("no space in this line")]
         span: SourceSpan,
     },
 
-    #[error("Invalid character in tag")]
+    #[display("Invalid character in tag")]
     #[diagnostic(
         code(gedcom::parse_error::invalid_tag),
         help("tag names must begin with either an uppercase letter or underscore, followed by letters or numbers")
@@ -75,7 +75,7 @@ pub enum LineSyntaxError {
         span: SourceSpan,
     },
 
-    #[error("Incomplete pointer value")]
+    #[display("Incomplete pointer value")]
     #[diagnostic(code(gedcom::parse_error::incomplete_pointer))]
     IncompletePointer {
         #[label("this pointer value should end with '@'")]
@@ -286,9 +286,9 @@ fn parse_line<'a, S: GEDCOMSource + ?Sized>(
 
 #[cfg(test)]
 mod test {
-    use super::*;
-
     use miette::Result;
+
+    use super::*;
 
     #[test]
     fn basic_line() -> Result<()> {

@@ -21,8 +21,8 @@ pub(crate) struct GEDCOMVersion {
     patch: u8,
 }
 
-#[derive(thiserror::Error, Debug, miette::Diagnostic)]
-#[error("GEDCOM version {version} is unsupported")]
+#[derive(derive_more::Error, derive_more::Display, Debug, miette::Diagnostic)]
+#[display("GEDCOM version {version} is unsupported")]
 pub struct UnsupportedGEDCOMVersionError {
     version: GEDCOMVersion,
 }
@@ -204,8 +204,8 @@ impl Sourced<SupportedGEDCOMVersion> {
     }
 }
 
-#[derive(thiserror::Error, Debug)]
-#[error("invalid GEDCOM version")]
+#[derive(derive_more::Error, derive_more::Display, Debug)]
+#[display("invalid GEDCOM version")]
 pub struct InvalidGEDCOMVersionError {}
 
 pub(crate) fn parse_version_head_gedc_vers<S: GEDCOMSource + ?Sized>(

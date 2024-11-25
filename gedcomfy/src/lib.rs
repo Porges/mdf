@@ -16,16 +16,19 @@ pub mod parser;
 pub mod schemas;
 pub(crate) mod versions;
 
-#[derive(thiserror::Error, Debug, miette::Diagnostic)]
+#[derive(
+    derive_more::Error, derive_more::Display, derive_more::From, Debug, miette::Diagnostic,
+)]
 pub enum ValidationError {
-    #[error("{} syntax error{} detected", .errors.len(), if .errors.len() > 1 { "s" } else { "" })]
+    #[display("{} syntax error{} detected", errors.len(), if errors.len() > 1 { "s" } else { "" })]
     SyntaxErrorsDetected {
         #[related]
         errors: Vec1<LineSyntaxError>,
     },
-    #[error("Encoding error detected: further validation errors will not be found")]
+    #[display("Encoding error detected: further validation errors will not be found")]
     #[diagnostic(transparent)]
     EncodingErrorDetected {
+        #[error(source)]
         #[from]
         error: DecodingError,
     },
@@ -61,23 +64,23 @@ pub fn parse_file(
     Ok(parser.parse()?)
 }
 
-#[derive(thiserror::Error, Debug, miette::Diagnostic)]
+#[derive(derive_more::Error, derive_more::Display, Debug, miette::Diagnostic)]
 pub enum FileStructureError {
-    #[error("Missing HEAD record")]
+    #[display("Missing HEAD record")]
     #[diagnostic(code(gedcom::schema_error::missing_head_record))]
     MissingHeadRecord {
         #[label("this is the first record in the file; the HEAD record should appear before it")]
         span: Option<SourceSpan>,
     },
 
-    #[error("Missing trailer (TRLR) record")]
+    #[display("Missing trailer (TRLR) record")]
     #[diagnostic(
         code(gedcom::schema_error::missing_trailer_record),
         help("this record is always required at the end of the file – GEDCOM file might be truncated?")
     )]
     MissingTrailerRecord,
 
-    #[error("Records after trailer (TRLR) record")]
+    #[display("Records after trailer (TRLR) record")]
     #[diagnostic(
         code(gedcom::schema_error::records_after_trailer),
         help(

@@ -76,7 +76,9 @@ standard error types. You can wrap `errful` errors inside any other error type, 
 without losing any of the additional information that is provided by the implementation. (This is the key benefit for
 using this API over the way that other crates such as `miette` or `eyre` are implemented.)
 
-However, you cannot use the `errful` derive macro on the _same type_ as `thiserror`-based errors,
+## `thiserror` is incompatible
+
+You cannot use the `errful` derive macro on the _same type_ as `thiserror`-based errors,
 as `thiserror` does not support extending or augmenting the information which is returned from  `Error::provide`.
 
 If you would like to convert a `thiserror`-based error into an `errful` one, you can replace `#[derive(thiserror::Error)]`

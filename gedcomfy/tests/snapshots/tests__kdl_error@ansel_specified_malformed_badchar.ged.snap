@@ -6,6 +6,7 @@ input_file: gedcomfy/tests/encoding_inputs/ansel_specified_malformed_badchar.ged
 ---
 gedcom::parse_error::invalid_tag
 
-  × GEDCOM file contains a syntax error
+  × An error occurred while parsing the GEDCOM file
+  ├─▶ GEDCOM file contains a syntax error
   ╰─▶ Invalid character in tag
   help: tag names must begin with either an uppercase letter or underscore, followed by letters or numbers

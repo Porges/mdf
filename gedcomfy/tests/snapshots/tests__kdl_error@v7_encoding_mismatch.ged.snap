@@ -6,7 +6,8 @@ input_file: gedcomfy/tests/encoding_inputs/v7_encoding_mismatch.ged
 ---
 gedcom::encoding::version_encoding_mismatch
 
-  × Unable to determine encoding of GEDCOM file
+  × An error occurred while parsing the GEDCOM file
+  ├─▶ Unable to determine encoding of GEDCOM file
   ╰─▶ GEDCOM version 7.0 requires the encoding to be UTF-8, but the file encoding was determined to be UTF-16 (little-endian)
 
 Advice: gedcom::encoding_reason::bom

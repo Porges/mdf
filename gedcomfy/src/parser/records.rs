@@ -21,9 +21,9 @@ impl<'i, S: GEDCOMSource + ?Sized> RawRecord<'i, S> {
     }
 }
 
-#[derive(thiserror::Error, Debug, miette::Diagnostic)]
+#[derive(derive_more::Error, derive_more::Display, Debug, miette::Diagnostic)]
 pub enum RecordStructureError {
-    #[error("Invalid child level {level}, expected {expected_level} or less")]
+    #[display("Invalid child level {level}, expected {expected_level} or less")]
     #[diagnostic(code(gedcom::record_error::invalid_child_level))]
     InvalidChildLevel {
         level: usize,
@@ -32,7 +32,7 @@ pub enum RecordStructureError {
         span: SourceSpan,
     },
 
-    #[error("A record without subrecords should have a value")]
+    #[display("A record without subrecords should have a value")]
     #[diagnostic(severity(Warning), code(gedcom::record_error::value_missing))]
     MissingRecordValue {
         #[label("this record should contain a value, since it has no subrecords")]

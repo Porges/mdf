@@ -6,7 +6,8 @@ input_file: gedcomfy/tests/encoding_inputs/utf8_bom.ged
 ---
 gedcom::encoding::external_encoding_mismatch
 
-  × Unable to determine encoding of GEDCOM file
+  × An error occurred while parsing the GEDCOM file
+  ├─▶ Unable to determine encoding of GEDCOM file
   ╰─▶ The file’s GEDCOM header specifies the encoding to be UNICODE, but the file encoding was determined to be UTF-8
 
 Advice: gedcom::encoding_reason::bom

@@ -2,15 +2,15 @@ use std::borrow::Cow;
 
 use ascii::AsAsciiStr;
 
-#[derive(thiserror::Error, Debug, Clone, Copy)]
+#[derive(derive_more::Error, derive_more::Display, Debug, Clone, Copy)]
 pub(crate) enum AnselErr {
-    #[error("the byte at index {offset} (value 0x{value:x}) is not ANSEL")]
+    #[display("the byte at index {offset} (value 0x{value:x}) is not ANSEL")]
     Invalid { offset: usize, value: u8 },
 
-    #[error("stacked combining characters are not allowed")]
+    #[display("stacked combining characters are not allowed")]
     StackedCombiningChars { offset: usize },
 
-    #[error("combining character at end of input")]
+    #[display("combining character at end of input")]
     CombiningCharacterAtEnd { offset: usize },
 }
 

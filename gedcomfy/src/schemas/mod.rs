@@ -31,9 +31,9 @@ impl TryFrom<(SupportedGEDCOMVersion, Vec<Sourced<RawRecord<'_>>>)> for AnyFileV
     }
 }
 
-#[derive(Debug, thiserror::Error, miette::Diagnostic, PartialEq, Eq)]
+#[derive(Debug, derive_more::Error, derive_more::Display, miette::Diagnostic, PartialEq, Eq)]
 pub enum SchemaError {
-    #[error("Missing required subrecord {tag}")]
+    #[display("Missing required subrecord {tag}")]
     MissingRecord {
         tag: &'static str,
 
@@ -41,7 +41,7 @@ pub enum SchemaError {
         parent_span: SourceSpan,
     },
 
-    #[error("Unknown top-level record {tag}")]
+    #[display("Unknown top-level record {tag}")]
     UnknownTopLevelRecord {
         tag: String,
 
@@ -49,7 +49,7 @@ pub enum SchemaError {
         span: SourceSpan,
     },
 
-    #[error("Unexpected subrecord {tag}")]
+    #[display("Unexpected subrecord {tag}")]
     UnexpectedTag {
         tag: String,
 
@@ -60,10 +60,10 @@ pub enum SchemaError {
         parent_span: SourceSpan,
     },
 
-    #[error("Error reading data for record {tag}")]
+    #[display("Error reading data for record {tag}")]
     DataError { tag: String, source: DataError },
 
-    #[error("Too many values for subrecord {tag} (expected {expected}, received {received})")]
+    #[display("Too many values for subrecord {tag} (expected {expected}, received {received})")]
     TooManyRecords {
         tag: &'static str,
         expected: usize,
@@ -71,17 +71,17 @@ pub enum SchemaError {
     },
 }
 
-#[derive(Debug, thiserror::Error, PartialEq, Eq)]
+#[derive(Debug, derive_more::Error, derive_more::Display, PartialEq, Eq)]
 pub enum DataError {
-    #[error("Invalid data")]
+    #[display("Invalid data")]
     InvalidData {
         //        source: Box<dyn std::error::Error + Send + Sync + 'static>,
     },
 
-    #[error("Unexpected pointer")]
+    #[display("Unexpected pointer")]
     UnexpectedPointer,
 
-    #[error("Missing required data")]
+    #[display("Missing required data")]
     MissingData,
 }
 

@@ -1,4 +1,4 @@
-use std::borrow::Cow;
+use std::{borrow::Cow, ops::Deref};
 
 use ascii::AsAsciiStr;
 use miette::SourceSpan;
@@ -73,26 +73,28 @@ impl DetectedEncoding {
     }
 }
 
-#[derive(thiserror::Error, Debug, miette::Diagnostic, Copy, Clone)]
+#[derive(derive_more::Error, derive_more::Display, Debug, miette::Diagnostic, Copy, Clone)]
 pub enum EncodingReason {
-    #[error("this encoding was detected from the byte-order mark (BOM) at the start of the file")]
+    #[display(
+        "this encoding was detected from the byte-order mark (BOM) at the start of the file"
+    )]
     #[diagnostic(severity(Advice), code(gedcom::encoding_reason::bom))]
     BOMDetected { bom_length: usize },
 
-    #[error(
+    #[display(
         "this encoding was detected from start of file content (no byte-order mark was present)"
     )]
     #[diagnostic(severity(Advice), code(gedcom::encoding_reason::sniffed))]
     Sniffed {},
 
-    #[error("this encoding was specified in the GEDCOM header")]
+    #[display("this encoding was specified in the GEDCOM header")]
     #[diagnostic(severity(Advice), code(gedcom::encoding_reason::header))]
     SpecifiedInHeader {
         #[label("encoding was specified here")]
         span: SourceSpan,
     },
 
-    #[error("this encoding was used because it is required by GEDCOM version {version}")]
+    #[display("this encoding was used because it is required by GEDCOM version {version}")]
     #[diagnostic(severity(Advice))]
     DeterminedByVersion {
         version: SupportedGEDCOMVersion,
@@ -101,31 +103,31 @@ pub enum EncodingReason {
         span: SourceSpan,
     },
 
-    #[error(
+    #[display(
         "an encoding was not detected in the GEDCOM file, so was assumed based upon provided parsing options"
     )]
     #[diagnostic(severity(Advice), code(gedcom::encoding_reason::assumed))]
     Assumed {},
 
-    #[error("this encoding was selected explicitly in the parsing options")]
+    #[display("this encoding was selected explicitly in the parsing options")]
     #[diagnostic(severity(Advice), code(gedcom::encoding_reason::forced))]
     Forced {},
 }
 
-#[derive(thiserror::Error, Debug, miette::Diagnostic)]
+#[derive(derive_more::Error, derive_more::Display, Debug, miette::Diagnostic)]
 pub enum EncodingError {
-    #[error("Invalid HEADER")]
+    #[display("Invalid HEADER")]
     InvalidHeader {}, // TODO
 
-    #[error("Input does not appear to be a GEDCOM file")]
+    #[display("Input does not appear to be a GEDCOM file")]
     #[diagnostic(
         code(gedcom::encoding::not_gedcom),
         help("GEDCOM files must start with a '0 HEAD' record, but this was not found")
     )]
     NotGedcomFile {},
 
-    #[error(
-        "GEDCOM version {version} requires the encoding to be {version_encoding}, but the file encoding was determined to be {external_encoding}",
+    #[display(
+        "GEDCOM version {version} requires the encoding to be {version_encoding}, but the file encoding was determined to be {external_encoding}"
     )]
     #[diagnostic(code(gedcom::encoding::version_encoding_mismatch))]
     VersionEncodingMismatch {
@@ -140,8 +142,8 @@ pub enum EncodingError {
         reason: Vec1<EncodingReason>,
     },
 
-    #[error(
-        "The file’s GEDCOM header specifies the encoding to be {file_encoding}, but the file encoding was determined to be {external_encoding}",
+    #[display(
+        "The file’s GEDCOM header specifies the encoding to be {file_encoding}, but the file encoding was determined to be {external_encoding}"
     )]
     #[diagnostic(code(gedcom::encoding::external_encoding_mismatch))]
     ExternalEncodingMismatch {
@@ -155,8 +157,8 @@ pub enum EncodingError {
         reason: Vec1<EncodingReason>,
     },
 
-    #[error(
-        "The file’s GEDCOM header specifies the encoding to be {file_encoding}, but the file is in an unknown ASCII-compatible encoding ",
+    #[display(
+        "The file’s GEDCOM header specifies the encoding to be {file_encoding}, but the file is in an unknown ASCII-compatible encoding"
     )]
     #[diagnostic(code(gedcom::encoding::file_encoding_mismatch))]
     FileEncodingMismatch {
@@ -166,7 +168,7 @@ pub enum EncodingError {
         span: SourceSpan,
     },
 
-    #[error("Unknown encoding specified in GEDCOM file")]
+    #[display("Unknown encoding specified in GEDCOM file")]
     #[diagnostic(code(gedcom::encoding::invalid_encoding))]
     EncodingUnknown {
         #[diagnostic_source]
@@ -176,19 +178,18 @@ pub enum EncodingError {
         span: SourceSpan,
     },
 
-    #[error("Detected byte-order mark (BOM) for unsupported encoding {encoding}")]
+    #[display("Detected byte-order mark (BOM) for unsupported encoding {encoding}")]
     #[diagnostic(help("UTF-32 is not permitted as an encoding by any GEDCOM specification"))]
     #[diagnostic(code(gedcom::encoding::invalid_bom))]
     BOMInvalid { encoding: &'static str },
 }
 
-#[derive(thiserror::Error, Debug, miette::Diagnostic)]
-#[error("Invalid data for encoding {encoding}")]
+#[derive(derive_more::Display, Debug, miette::Diagnostic)]
+#[display("Invalid data for encoding {encoding}")]
 #[diagnostic(code(gedcom::encoding::invalid_data))]
 pub struct InvalidDataForEncodingError {
     encoding: SupportedEncoding,
 
-    #[source]
     source: Option<Box<dyn std::error::Error + Send + Sync + 'static>>,
 
     #[label("this is not valid data for the encoding {encoding}")]
@@ -198,11 +199,21 @@ pub struct InvalidDataForEncodingError {
     reason: Vec1<Box<dyn miette::Diagnostic + Send + Sync + 'static>>,
 }
 
-#[derive(thiserror::Error, Debug, miette::Diagnostic)]
-#[error("the invalid data appears to be valid in {}other encoding{}:{}",
-    if .possible_encodings.len() == 1 { "an" } else { "" },
-    if .possible_encodings.len() > 1 { "s" } else { "" },
-    .possible_encodings.iter().map(|e| format!("\n→ {}", e)).collect::<Vec<_>>().concat())]
+// TODO: https://github.com/JelteF/derive_more/issues/426
+impl std::error::Error for InvalidDataForEncodingError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match &self.source {
+            Some(source) => Some(source.deref()),
+            None => None,
+        }
+    }
+}
+
+#[derive(derive_more::Error, derive_more::Display, Debug, miette::Diagnostic)]
+#[display("the invalid data appears to be valid in {}other encoding{}:{}",
+    if possible_encodings.len() == 1 { "an" } else { "" },
+    if possible_encodings.len() > 1 { "s" } else { "" },
+    possible_encodings.iter().map(|e| format!("\n→ {}", e)).collect::<Vec<_>>().concat())]
 #[diagnostic(
     severity(Advice),
     code(gedcom::possible_encodings),
@@ -212,9 +223,9 @@ struct DetectedPossibleEncodings {
     possible_encodings: Vec1<PossibleEncoding>,
 }
 
-#[derive(thiserror::Error, Debug, miette::Diagnostic)]
-#[error("{} (using {encoding})",
-    .data_in_encoding.if_supports_color(Stream::Stderr, |e| e.bold()))] // TODO: hacky
+#[derive(derive_more::Error, derive_more::Display, Debug, miette::Diagnostic)]
+#[display("{} (using {encoding})",
+    data_in_encoding.if_supports_color(Stream::Stderr, |e| e.bold()))] // TODO: hacky
 struct PossibleEncoding {
     encoding: SupportedEncoding,
     data_in_encoding: String,

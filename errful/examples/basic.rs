@@ -37,8 +37,8 @@ struct Innest {
     source_code: String,
 }
 
-#[derive(Debug, thiserror::Error)]
-#[error("In between error")]
+#[derive(Debug, derive_more::Error, derive_more::Display)]
+#[display("In between error")]
 struct Inner {
     source: Innest,
 }

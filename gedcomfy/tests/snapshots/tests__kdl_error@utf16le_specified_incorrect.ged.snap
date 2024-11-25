@@ -6,5 +6,6 @@ input_file: gedcomfy/tests/encoding_inputs/utf16le_specified_incorrect.ged
 ---
 gedcom::encoding::file_encoding_mismatch
 
-  × Unable to determine encoding of GEDCOM file
+  × An error occurred while parsing the GEDCOM file
+  ├─▶ Unable to determine encoding of GEDCOM file
   ╰─▶ The file’s GEDCOM header specifies the encoding to be UNICODE, but the file is in an unknown ASCII-compatible encoding

@@ -1,7 +1,6 @@
 use std::fmt::Display;
 
 use miette::Diagnostic;
-use thiserror::Error;
 
 use crate::parser::{encodings::SupportedEncoding, GEDCOMSource};
 
@@ -26,8 +25,8 @@ impl Display for GEDCOMEncoding {
     }
 }
 
-#[derive(Error, Diagnostic, Debug)]
-#[error("GEDCOM encoding {encoding} is ambiguous")]
+#[derive(derive_more::Error, derive_more::Display, Diagnostic, Debug)]
+#[display("GEDCOM encoding {encoding} is ambiguous")]
 #[diagnostic(help("This value could imply any of the following encodings: {}",
     .possibilities.iter().map(|e| format!("{}", e)).collect::<Vec<_>>().join(", ")))]
 pub struct AmbiguousEncoding {
@@ -67,8 +66,8 @@ impl From<SupportedEncoding> for GEDCOMEncoding {
         }
     }
 }
-#[derive(Error, Diagnostic, Debug)]
-#[error("invalid GEDCOM encoding")]
+#[derive(derive_more::Error, derive_more::Display, Diagnostic, Debug)]
+#[display("invalid GEDCOM encoding")]
 pub struct InvalidGEDCOMEncoding {}
 
 pub(crate) fn parse_encoding_raw<S: GEDCOMSource + ?Sized>(

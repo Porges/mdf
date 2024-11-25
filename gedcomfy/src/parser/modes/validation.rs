@@ -14,8 +14,8 @@ pub(in crate::parser) struct Mode {
     non_fatals: Vec<ParseError>,
 }
 
-#[derive(thiserror::Error, Debug, miette::Diagnostic)]
-#[error(
+#[derive(derive_more::Error, derive_more::Display, Debug, miette::Diagnostic)]
+#[display(
     "Validation was {validity}: {} top-level records processed with {}, {}, and {}.",
     record_count,
     error_count.plural(plural!(error(s))),
