@@ -13,8 +13,6 @@ sea-orm = { version = "1.0.0", features = [
 ] }
 
 [dev-dependencies]
-miette = { git = "https://github.com/Porges/miette", features = [
-    "fancy-no-backtrace",
-], branch = "inherit-source-to-causes" }
+miette = { version = "7.4.0", features = ["fancy-no-backtrace"] }
 tokio = { version = "1.39.2", features = ["rt", "macros"] }
 gedcomfy = { path = "../gedcomfy" }
