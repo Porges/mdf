@@ -8,6 +8,8 @@ use fancy_duration::FancyDuration;
 use gedcomfy::parser::{encodings::SupportedEncoding, options::ParseOptions, Parser};
 use miette::{Context, IntoDiagnostic};
 
+mod components;
+
 #[derive(clap::Parser)]
 enum MdfArgs {
     Gedcom(GedcomArgs),
