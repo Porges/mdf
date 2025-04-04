@@ -1,4 +1,3 @@
-#![feature(vec_pop_if)]
 #![feature(round_char_boundary)]
 
 use std::{borrow::Cow, cmp::min, fmt::Write, mem::take};

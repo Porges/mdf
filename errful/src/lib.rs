@@ -1,6 +1,5 @@
 #![feature(error_generic_member_access)]
 #![feature(try_trait_v2)]
-#![feature(vec_pop_if)]
 #![doc = include_str!("../README.md")]
 
 use owo_colors::AnsiColors;
