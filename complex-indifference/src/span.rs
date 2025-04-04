@@ -1,6 +1,6 @@
 use crate::{Count, Index};
 
-/// A range of [`Index`]es.
+/// A non-empty range of [`Index`]es.
 #[derive(Debug, PartialEq, Eq)]
 pub struct Span<T: ?Sized> {
     start: Index<T>,
@@ -30,10 +30,10 @@ impl<T: ?Sized> From<(Index<T>, Count<T>)> for Span<T> {
     }
 }
 
-// TODO: this is really try-from
-impl<T: ?Sized> From<(Index<T>, Index<T>)> for Span<T> {
-    fn from(value: (Index<T>, Index<T>)) -> Self {
-        Self::from_indices(value.0, value.1)
+impl<T: ?Sized> TryFrom<(Index<T>, Index<T>)> for Span<T> {
+    type Error = ();
+    fn try_from(value: (Index<T>, Index<T>)) -> Result<Self, ()> {
+        Self::try_from_indices(value.0, value.1).ok_or(())
     }
 }
 
@@ -45,8 +45,16 @@ impl<T: ?Sized> Span<T> {
         }
     }
 
-    pub fn from_indices(start: Index<T>, end: Index<T>) -> Self {
-        debug_assert!(
+    pub fn try_from_indices(start: Index<T>, end: Index<T>) -> Option<Self> {
+        if start > end {
+            None
+        } else {
+            Some(Self { start, end })
+        }
+    }
+
+    pub fn unsafe_from_indices(start: Index<T>, end: Index<T>) -> Self {
+        assert!(
             start <= end,
             "indices are in the wrong order: {} > {}",
             start.index(),

@@ -12,8 +12,6 @@ pub mod result;
 pub use complex_indifference::Span;
 pub use errful_derive::Error;
 pub use formatting::PrettyDisplay;
-#[doc(hidden)]
-pub use impls::impls;
 pub use protocol::{AsErrful, Errful};
 pub use result::MainResult;
 

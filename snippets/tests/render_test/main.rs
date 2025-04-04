@@ -23,7 +23,11 @@ fn main() {
                 .iter()
                 .map(|l| {
                     Label::new(
-                        Span::from_indices(min(l.start, l.end).into(), max(l.start, l.end).into()),
+                        Span::try_from_indices(
+                            min(l.start, l.end).into(),
+                            max(l.start, l.end).into(),
+                        )
+                        .unwrap(),
                         l.label.deref().into(),
                         style,
                     )

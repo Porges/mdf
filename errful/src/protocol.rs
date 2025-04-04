@@ -11,7 +11,7 @@
 //! - Types which are specific to this crate are provided by providing a
 //!   reference to the [`Errful`] trait from this crate. This is used for non-specific
 //!   types such as labels, source code, etc.
-//!   
+//!
 //! The reason for this is that the `provide` method cannot distinguish between
 //! multiple values of the same type, so it would be necessary to define wrapper
 //! types anyway (e.g. `struct Code(str)` – this is how an earlier version of this
@@ -22,6 +22,8 @@
 //! something like a list of references to fields. You can only provide either a value
 //! (`T + 'static`) or a reference (`&'self (T + 'static)`), but something like
 //! `Vec<&'self (T + 'static)>` is not possible.
+//!
+//! ## Notes
 //!
 //! An earlier version of this trait returned a `Vec<Box<dyn ErrField>>` where `ErrField`
 //! is implemented by a zero-sized type representing the field. This then allowed reading

@@ -23,6 +23,24 @@ impl<E> MainResult<E> {
     }
 }
 
+impl<E> From<Result<(), E>> for MainResult<E> {
+    fn from(value: Result<(), E>) -> Self {
+        match value {
+            Ok(()) => MainResult::success(),
+            Err(err) => MainResult::error(err),
+        }
+    }
+}
+
+impl<E> From<Result<std::process::ExitCode, E>> for MainResult<E> {
+    fn from(value: Result<std::process::ExitCode, E>) -> Self {
+        match value {
+            Ok(code) => MainResult::exit_code(code),
+            Err(err) => MainResult::error(err),
+        }
+    }
+}
+
 impl<Err> std::ops::FromResidual<Result<Infallible, Err>> for MainResult<Err> {
     fn from_residual(residual: Result<Infallible, Err>) -> Self {
         match residual {
@@ -51,15 +69,6 @@ impl<E: Error> Termination for MainResult<E> {
                 );
                 request_value(&err).unwrap_or(ExitCode::FAILURE)
             }
-        }
-    }
-}
-
-impl<E> From<Result<(), E>> for MainResult<E> {
-    fn from(value: Result<(), E>) -> Self {
-        match value {
-            Ok(()) => MainResult::Code(ExitCode::SUCCESS),
-            Err(err) => MainResult::Err(err),
         }
     }
 }

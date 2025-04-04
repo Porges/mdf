@@ -9,8 +9,6 @@ edition.workspace = true
 complex-indifference = { path = "../complex-indifference", features = ["unicode-width"] }
 derive_more = { version = "1.0.0", features = ["from", "display", "error"] }
 errful-derive = { path = "../errful-derive" }
-impls = "1.0.3"
-mappable-rc = "0.1.1"
 owo-colors = { version = "4.0.0" }
 ref-cast = "1.0.23"
 snippets = { path = "../snippets" }
@@ -18,7 +16,6 @@ textwrap = { version = "0.16.1", features = ["terminal_size"] }
 unicode-width = "0.2.0"
 url = "2.5.2"
 url-macro = "0.2"
-yoke = "0.7.4"
 
 [dev-dependencies]
 ansi-to-html = "0.2.1"

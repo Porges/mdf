@@ -27,7 +27,8 @@ pub fn render(source_code: &str, mut labels: Vec1<Label>) -> String {
         let span = label.span;
         let start_ix = source_code.floor_char_boundary(span.start().index());
         let end_ix = source_code.ceil_char_boundary(span.end().index());
-        label.span = Span::from_indices(start_ix.into(), end_ix.into());
+        // UNWRAP: since span is already ordered, we know that start_ix <= end_ix
+        label.span = Span::try_from_indices(start_ix.into(), end_ix.into()).unwrap();
     }
 
     Highlighter::new(source_code).render_spans(labels.into())
@@ -108,8 +109,7 @@ impl Highlighter<'_> {
             .unwrap_or(self.source_code.len())
             .into();
 
-        let line_span = Span::from((start_of_line, end_of_line));
-
+        let line_span = Span::try_from((start_of_line, end_of_line)).unwrap();
         debug_assert!(
             line_span.contains_offset(span.start())
                 || (span.len() == Count::ZERO && span.start() == line_span.end())
@@ -421,8 +421,9 @@ impl LineHighlighter<'_> {
                         // |←   offset_to_space   →|
                         //                         [l.start]----
                         // |←  offset_from_start? →|
-                        let offset_from_start =
-                            self.source_code[line_start.up_to(l.start())].width();
+                        let offset_from_start = self.source_code
+                            [line_start.up_to(l.start()).expect("l.start >= line_start")]
+                        .width();
 
                         if offset_from_start == offset_to_space {
                             Some(&l.style)
@@ -452,7 +453,10 @@ impl LineHighlighter<'_> {
         };
 
         debug_assert!(line_start <= label.start());
-        let indent_width = self.source_code[line_start.up_to(label.start())].width();
+        let indent_width = self.source_code[line_start
+            .up_to(label.start())
+            .expect("label.start >= line_start")]
+        .width();
 
         // 2 chars at start of messages: "└╴"
         const MSG_PREFIX_WIDTH: usize = 2;
@@ -484,7 +488,9 @@ impl LineHighlighter<'_> {
             // |← total_width →|← len? →|
             //                          [l.start]-------
             // |←   offset_from_start  →|
-            let offset_from_start = self.source_code[line_start.up_to(l.start())].width();
+            let offset_from_start = self.source_code
+                [line_start.up_to(l.start()).expect("l.start >= line_start")]
+            .width();
             if let Some(len) = offset_from_start.checked_sub(total_width) {
                 if len > 0 {
                     out.push(no_style.style(" ".repeat(len).into()));
@@ -517,7 +523,10 @@ impl LineHighlighter<'_> {
                     let end = min(wanted_end, label.start());
 
                     // emit highlighted portion of line
-                    let value = Span::from_indices(up_to, end).str(self.source_code);
+                    // UNWRAP: since start is > up_to, end must be as well
+                    let value = Span::try_from_indices(up_to, end)
+                        .unwrap()
+                        .str(self.source_code);
                     self.line.push(outer_label.style.style(value.into()));
 
                     // emit indicator line
@@ -543,14 +552,17 @@ impl LineHighlighter<'_> {
                 // if we still didn’t get to the start of the next label
                 // then there is an unhighlighted gap
                 if label.start() > up_to {
-                    // emit unhighlighted characters
-                    let value = &self.source_code[up_to.up_to(label.start())];
-                    self.line.push(no_style.style(value.into()));
-                    // space indicator line wide enough
-                    self.indicator_line
-                        .push(no_style.style(" ".repeat(value.width()).into()));
+                    // the first check ensures that start > up_to, .up_to() will allow start >= up_to
+                    if let Some(slice) = up_to.up_to(label.start()) {
+                        // emit unhighlighted characters
+                        let value = &self.source_code[slice];
+                        self.line.push(no_style.style(value.into()));
+                        // space indicator line wide enough
+                        self.indicator_line
+                            .push(no_style.style(" ".repeat(value.width()).into()));
 
-                    up_to = label.start();
+                        up_to = label.start();
+                    }
                 }
             }
 
@@ -560,10 +572,11 @@ impl LineHighlighter<'_> {
 
         while let Some(label) = stack.pop() {
             let end = label.end();
-            if up_to <= end {
+
+            if let Some(slice) = up_to.up_to(end) {
                 // TODO: what are the effects of this check?
                 // it prevents a crash found by fuzzing but might skip a message?
-                let value = &self.source_code[up_to.up_to(end)];
+                let value = &self.source_code[slice];
                 let continuing = label.start() < up_to;
                 self.fill_indicator(continuing, false, value, &label.style);
                 self.line.push(label.style.style(value.into()));
@@ -574,10 +587,13 @@ impl LineHighlighter<'_> {
 
         // if we didn't reach the end, we need to emit the rest
         if up_to < line_span.end() {
-            // emit unhighlighted characters
-            let value = self.source_code[up_to.up_to(line_span.end())].trim_ascii_end();
-            self.line.push(no_style.style(value.into()));
-            // indicator line doesn't need spacing
+            // note that .up_to() would allow <= line_span.end()
+            if let Some(slice) = up_to.up_to(line_span.end()) {
+                // emit unhighlighted characters
+                let value = self.source_code[slice].trim_ascii_end();
+                self.line.push(no_style.style(value.into()));
+                // indicator line doesn't need spacing
+            }
         }
 
         // emit all messages now that we know the full order

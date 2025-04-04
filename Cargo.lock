@@ -787,9 +787,7 @@ dependencies = [
  "complex-indifference",
  "derive_more",
  "errful-derive",
- "impls",
  "insta",
- "mappable-rc",
  "owo-colors",
  "ref-cast",
  "snippets",
@@ -797,7 +795,6 @@ dependencies = [
  "unicode-width 0.2.0",
  "url",
  "url-macro",
- "yoke",
 ]
 
 [[package]]
@@ -1344,12 +1341,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "impls"
-version = "1.0.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7a46645bbd70538861a90d0f26c31537cdf1e44aae99a794fb75a664b70951bc"
-
-[[package]]
 name = "indexmap"
 version = "2.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1535,12 +1526,6 @@ name = "log"
 version = "0.4.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "13dc2df351e3202783a1fe0d44375f7295ffb4049267b0f3018346dc122a1d94"
-
-[[package]]
-name = "mappable-rc"
-version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "204651f31b0a6a7b2128d2b92c372cd94607b210c3a6b6e542c57a8cfd4db996"
 
 [[package]]
 name = "md-5"
