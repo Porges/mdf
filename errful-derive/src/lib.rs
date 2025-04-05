@@ -29,6 +29,10 @@ struct BasicOptions {
 
     /// The severity of the error
     severity: Option<syn::Path>,
+
+    /// Don’t show the error message for this error when printing a chain
+    #[darling(default)]
+    transparent: bool,
 }
 
 type Data = ast::Data<EnumVariant, StructField>;
@@ -91,6 +95,14 @@ pub fn derive_errful(input: proc_macro::TokenStream) -> proc_macro::TokenStream 
             |severity| quote! { &#severity },
         );
 
+        let transparent_fn = generate_required_value_function(
+            &opts,
+            Ident::new("transparent", Span::call_site()),
+            quote! { bool },
+            |o| o.transparent,
+            |transparent| quote! { #transparent },
+        );
+
         let source_code = find_source_code(&opts.data)?;
         let source_code = source_code.map(|source_code| {
             quote! {
@@ -117,6 +129,7 @@ pub fn derive_errful(input: proc_macro::TokenStream) -> proc_macro::TokenStream 
                 #url_fn
                 #code_fn
                 #severity_fn
+                #transparent_fn
                 #labels_fn
                 #source_code
             }
@@ -401,6 +414,45 @@ fn generate_value_function<'a, T: ?Sized + 'a>(
             }
         }
     })
+}
+
+fn generate_required_value_function<'a, T: 'a>(
+    opts: &'a Opts,
+    name: proc_macro2::Ident,
+    result_t: TokenStream,
+    proj: impl Fn(&'a BasicOptions) -> T,
+    quote_t: impl Fn(T) -> TokenStream,
+) -> TokenStream {
+    if let ast::Data::Enum(variants) = &opts.data {
+        let cases = Vec::from_iter(variants.iter().map(|v| {
+            let ident = &v.ident;
+            let quoted = quote_t(proj(&v.basic));
+            quote! { Self::#ident{..} => #quoted, }
+        }));
+
+        if !cases.is_empty() {
+            let base_case = {
+                let quoted = quote_t(proj(&opts.basic));
+                quote! { _ => #quoted, }
+            };
+
+            return quote! {
+                fn #name(&self) -> #result_t {
+                    match self {
+                        #(#cases)*
+                        #base_case
+                    }
+                }
+            };
+        }
+    }
+
+    let quoted = quote_t(proj(&opts.basic));
+    quote! {
+        fn #name(&self) -> #result_t {
+            #quoted
+        }
+    }
 }
 
 fn provide_value<'a, T: ?Sized + 'a>(

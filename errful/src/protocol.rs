@@ -142,6 +142,12 @@ pub trait Errful: Error {
     fn labels(&self) -> Option<Vec<Label>> {
         None
     }
+
+    /// Whether or not this error should be skipped when printing
+    /// cause chains.
+    fn transparent(&self) -> bool {
+        false
+    }
 }
 
 pub struct Label<'a> {

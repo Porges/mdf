@@ -90,10 +90,8 @@ impl PrettyDisplay<'_> {
             writeln!(f, "{}", line)?;
         }
 
-        let errful = err.errful();
-
         // output any additional information
-        self.render_sourcelabels(body_indent, errful, colors, f)?;
+        self.render_sourcelabels(body_indent, err, colors, f)?;
 
         Ok(())
     }
@@ -171,6 +169,7 @@ impl Display for PrettyDisplay<'_> {
 
         // TODO: termwidth
         let body_indent = format!("{}", base_color.style("    │ "));
+        let message_indent = format!("{}", base_color.style("    │  "));
         let wrap_opts = if let Some(width) = self.width {
             textwrap::Options::new(width)
         } else {
@@ -178,42 +177,42 @@ impl Display for PrettyDisplay<'_> {
         }
         .subsequent_indent(&body_indent);
 
-        let first_indent = format!(
-            "{} 0 {} ",
-            base_color.style(severity.symbol()),
-            base_color.style("┐")
-        );
-
-        self.print_chain_entry(
-            f,
-            wrap_opts.clone().initial_indent(&first_indent),
-            &body_indent,
-            err,
-            &mut colors,
-        )?;
-
-        // message must be indented one more level than the body
-        let message_indent = format!("{}", base_color.style("    │  "));
-
-        let mut index = 1;
-        let mut next = err.source();
+        let mut index = 0;
+        let mut next: Option<&dyn std::error::Error> = Some(self.err);
         while let Some(err) = next {
-            // `:3`: if someone has nested errors a thousand layers deep, i can’t save them
-            let first_indent = format!("{index:3} {} ", base_color.style("├▷"));
-            self.print_chain_entry(
-                f,
-                wrap_opts
-                    .clone()
-                    .initial_indent(&first_indent)
-                    .subsequent_indent(&message_indent),
-                &body_indent,
-                err.errful(),
-                &mut colors,
-            )?;
+            let enhanced = err.errful();
+            if !enhanced.transparent() {
+                let first_indent = if index == 0 {
+                    format!(
+                        "{} 0 {} ",
+                        base_color.style(severity.symbol()),
+                        base_color.style("┐")
+                    )
+                } else {
+                    format!("{index:3} {} ", base_color.style("├▷"))
+                };
+
+                self.print_chain_entry(
+                    f,
+                    if index == 0 {
+                        wrap_opts.clone().initial_indent(&first_indent)
+                    } else {
+                        // message must be indented one more level than the body
+                        wrap_opts
+                            .clone()
+                            .initial_indent(&first_indent)
+                            .subsequent_indent(&message_indent)
+                    },
+                    &body_indent,
+                    enhanced,
+                    &mut colors,
+                )?;
+
+                index += 1;
+            }
 
             // proceed
             next = err.source();
-            index += 1;
         }
 
         // terminate the chain
