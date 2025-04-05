@@ -90,7 +90,7 @@ pub fn derive_errful(input: proc_macro::TokenStream) -> proc_macro::TokenStream 
         let severity_fn = generate_value_function(
             &opts,
             Ident::new("severity", Span::call_site()),
-            quote! { &dyn ::errful::PrintableSeverity },
+            quote! { &dyn ::errful::protocol::PrintableSeverity },
             |o| o.severity.as_ref(),
             |severity| quote! { &#severity },
         );

@@ -20,3 +20,6 @@ url-macro = "0.2"
 [dev-dependencies]
 ansi-to-html = "0.2.1"
 insta = "1.39.0"
+
+[features]
+"exitresult_exit_now" = []

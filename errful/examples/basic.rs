@@ -2,9 +2,9 @@
 #![feature(try_trait_v2)]
 
 use complex_indifference::Span;
-use errful::MainResult;
+use errful::ExitResult;
 
-fn main() -> MainResult<SomeErr> {
+fn main() -> ExitResult<SomeErr> {
     "Hello, world!".to_string();
     Err(SomeErr {
         _value: 123,
@@ -18,7 +18,7 @@ fn main() -> MainResult<SomeErr> {
         },
     })?;
 
-    MainResult::success()
+    ExitResult::success()
 }
 
 #[derive(Debug, errful_derive::Error, Default)]

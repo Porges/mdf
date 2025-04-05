@@ -21,14 +21,14 @@ fn source_macro() {
 
     let value = Outer { inner: Inner {} };
 
-    assert_snapshot!(value.display_pretty_nocolor(), @r###"
-    Error: outer
+    assert_snapshot!(value.display_pretty_nocolor(), @r#"
+    × Error: outer
 
     Details:
-    × 0 ┐ outer
-      1 ├▷ inner
-        ┷
-    "###);
+     × ┐ outer
+     1 ├▷ inner
+       ┷
+    "#);
 }
 
 #[test]
@@ -42,14 +42,14 @@ fn source_field_name() {
 
     let value = Outer { src: Inner {} };
 
-    assert_snapshot!(value.display_pretty_nocolor(), @r###"
-    Error: outer
+    assert_snapshot!(value.display_pretty_nocolor(), @r#"
+    × Error: outer
 
     Details:
-    × 0 ┐ outer
-      1 ├▷ inner
-        ┷
-    "###);
+     × ┐ outer
+     1 ├▷ inner
+       ┷
+    "#);
 }
 
 #[test]
@@ -60,31 +60,33 @@ fn code() {
 
     let value = E {};
 
-    assert_snapshot!(value.display_pretty_nocolor(), @r###"
-    Error: code-haver [error-code]
+    assert_snapshot!(value.display_pretty_nocolor(), @r#"
+    × Error [error-code]
+    code-haver
 
     Details:
-    × 0 ┐ code-haver
-        ┷
-    "###);
+     × ┐ code-haver
+       ┷
+    "#);
 }
 
 #[test]
 fn url() {
     #[derive(Debug, errful_derive::Error)]
-    #[error(display = "url-haver", url = "http://example.com")]
+    #[error(display = "url-haver", url = "https://example.com")]
     struct E {}
 
     let value = E {};
 
-    assert_snapshot!(value.display_pretty_nocolor(), @r###"
-    Error: url-haver
-    See: http://example.com/
+    assert_snapshot!(value.display_pretty_nocolor(), @r#"
+    × Error: url-haver
+
+    See: https://example.com/
 
     Details:
-    × 0 ┐ url-haver
-        ┷
-    "###);
+     × ┐ url-haver
+       ┷
+    "#);
 }
 
 #[test]
@@ -100,15 +102,15 @@ fn label() {
         span: Span::new(0.into(), 1.into()),
     };
 
-    assert_snapshot!(value.display_pretty_nocolor(), @r###"
-    Error: label-haver
+    assert_snapshot!(value.display_pretty_nocolor(), @r##"
+    × Error: label-haver
 
     Details:
-    × 0 ┐ label-haver
-        │ ! errful issue: no source code provided to render labels
-        │ !               (use #[error(source_code)] to mark an appropriate field)
-        ┷
-    "###);
+     × ┐ label-haver
+       │ ! errful issue: no source code provided to render labels
+       │ !               (use #[error(source_code)] to mark an appropriate field)
+       ┷
+    "##);
 }
 
 #[test]
@@ -134,16 +136,16 @@ fn label_with_field() {
     };
 
     assert_snapshot!(value.display_pretty_nocolor(), @r#"
-    Error: labelled-with-source
+    × Error: labelled-with-source
 
     Details:
-    × 0 ┐ labelled-with-source
-        │   ┌
-        │ 1 │ abc
-        │   │ ╿
-        │   │ └╴invalid digit found in string
-        │   └
-      1 ├▷ invalid digit found in string
-        ┷
+     × ┐ labelled-with-source
+       │   ┌
+       │ 1 │ abc
+       │   │ ╿
+       │   │ └╴invalid digit found in string
+       │   └
+     1 ├▷ invalid digit found in string
+       ┷
     "#);
 }

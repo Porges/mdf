@@ -4,61 +4,69 @@ use std::{
     process::{ExitCode, Termination},
 };
 
-pub enum MainResult<E> {
+pub enum ExitResult<E> {
     Code(ExitCode),
     Err(E),
 }
 
-impl<E> MainResult<E> {
+impl<E> ExitResult<E> {
     pub fn success() -> Self {
-        MainResult::Code(ExitCode::SUCCESS)
+        ExitResult::Code(ExitCode::SUCCESS)
     }
 
     pub fn exit_code(exit_code: ExitCode) -> Self {
-        MainResult::Code(exit_code)
+        ExitResult::Code(exit_code)
     }
 
     pub fn error(err: E) -> Self {
-        MainResult::Err(err)
+        ExitResult::Err(err)
     }
 }
 
-impl<EIn, EOut> From<Result<(), EIn>> for MainResult<EOut>
+impl<E: Error> ExitResult<E> {
+    #[cfg(feature = "exitresult_exit_now")]
+    pub fn exit_now(self) -> ! {
+        let code = self.report();
+        code.exit_process();
+    }
+}
+
+impl<EIn, EOut> From<Result<(), EIn>> for ExitResult<EOut>
 where
     EOut: From<EIn>,
 {
     fn from(value: Result<(), EIn>) -> Self {
         match value {
-            Ok(()) => MainResult::success(),
-            Err(err) => MainResult::error(err.into()),
+            Ok(()) => ExitResult::success(),
+            Err(err) => ExitResult::error(err.into()),
         }
     }
 }
 
-impl<EIn, EOut> From<Result<std::process::ExitCode, EIn>> for MainResult<EOut>
+impl<EIn, EOut> From<Result<std::process::ExitCode, EIn>> for ExitResult<EOut>
 where
     EOut: From<EIn>,
 {
     fn from(value: Result<std::process::ExitCode, EIn>) -> Self {
         match value {
-            Ok(code) => MainResult::exit_code(code),
-            Err(err) => MainResult::error(err.into()),
+            Ok(code) => ExitResult::exit_code(code),
+            Err(err) => ExitResult::error(err.into()),
         }
     }
 }
 
-impl<EIn, EOut> std::ops::FromResidual<Result<Infallible, EIn>> for MainResult<EOut>
+impl<EIn, EOut> std::ops::FromResidual<Result<Infallible, EIn>> for ExitResult<EOut>
 where
     EOut: From<EIn>,
 {
     fn from_residual(residual: Result<Infallible, EIn>) -> Self {
         match residual {
-            Err(e) => MainResult::Err(e.into()),
+            Err(e) => ExitResult::Err(e.into()),
         }
     }
 }
 
-impl<EIn, EOut> std::ops::FromResidual<Result<(), EIn>> for MainResult<EOut>
+impl<EIn, EOut> std::ops::FromResidual<Result<(), EIn>> for ExitResult<EOut>
 where
     EOut: From<EIn>,
 {
@@ -67,12 +75,12 @@ where
     }
 }
 
-impl<E: Error> Termination for MainResult<E> {
+impl<E: Error> Termination for ExitResult<E> {
     fn report(self) -> ExitCode {
         use std::io::Write;
         match self {
-            MainResult::Code(exit_code) => exit_code,
-            MainResult::Err(err) => {
+            ExitResult::Code(exit_code) => exit_code,
+            ExitResult::Err(err) => {
                 use crate::AsErrful;
                 _ = write!(
                     std::io::stderr(),

@@ -40,9 +40,10 @@ use std::{
 };
 
 use complex_indifference::Span;
+use owo_colors::AnsiColors;
 pub use url_macro::url;
 
-use crate::{PrettyDisplay, PrintableSeverity};
+use crate::PrettyDisplay;
 
 pub trait AsErrful: Error + Sized {
     fn errful(&self) -> &dyn Errful {
@@ -190,4 +191,10 @@ impl<'a> Label<'a> {
     pub fn message(&self) -> &LabelMessage {
         &self.message
     }
+}
+
+pub trait PrintableSeverity {
+    fn symbol(&self) -> &'static str;
+    fn name(&self) -> &'static str;
+    fn base_colour(&self) -> AnsiColors;
 }

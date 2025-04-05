@@ -18,20 +18,20 @@ fn line_wrapping_in_err_names() {
 
     let value = Outer { inner: Inner {} };
 
-    assert_snapshot!(value.display_pretty_nocolor(), @r###"
-    Error: outer
+    assert_snapshot!(value.display_pretty_nocolor(), @r#"
+    × Error: outer
     name has 
     line breaks
 
     Details:
-    × 0 ┐ outer
-        │ name has
-        │ line breaks
-      1 ├▷ inner
-        │  name has
-        │  line breaks
-        ┷
-    "###);
+     × ┐ outer
+       │ name has
+       │ line breaks
+     1 ├▷ inner
+       │  name has
+       │  line breaks
+       ┷
+    "#);
 }
 
 #[test]
@@ -53,16 +53,16 @@ fn line_wrapping_for_long_err_names() {
 
     // first line probably doesn’t need to wrap because terminal will do it, but we
     // wrap it anyway to obey the limit set on the type
-    assert_snapshot!(value.display_pretty_nocolor().with_width(40), @r###"
-    Error: the outer name is also very long and extends over more than one line when wrapped
+    assert_snapshot!(value.display_pretty_nocolor().with_width(40), @r#"
+    × Error: the outer name is also very long and extends over more than one line when wrapped
 
     Details:
-    × 0 ┐ the outer name is also very long
-        │ and extends over more than one
-        │ line when wrapped
-      1 ├▷ inner name is very long and
-        │  extends over more than one line
-        │  when wrapped
-        ┷
-    "###);
+     × ┐ the outer name is also very long
+       │ and extends over more than one line
+       │ when wrapped
+     1 ├▷ inner name is very long and
+       │  extends over more than one line
+       │  when wrapped
+       ┷
+    "#);
 }
