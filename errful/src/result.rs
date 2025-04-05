@@ -23,34 +23,46 @@ impl<E> MainResult<E> {
     }
 }
 
-impl<E> From<Result<(), E>> for MainResult<E> {
-    fn from(value: Result<(), E>) -> Self {
+impl<EIn, EOut> From<Result<(), EIn>> for MainResult<EOut>
+where
+    EOut: From<EIn>,
+{
+    fn from(value: Result<(), EIn>) -> Self {
         match value {
             Ok(()) => MainResult::success(),
-            Err(err) => MainResult::error(err),
+            Err(err) => MainResult::error(err.into()),
         }
     }
 }
 
-impl<E> From<Result<std::process::ExitCode, E>> for MainResult<E> {
-    fn from(value: Result<std::process::ExitCode, E>) -> Self {
+impl<EIn, EOut> From<Result<std::process::ExitCode, EIn>> for MainResult<EOut>
+where
+    EOut: From<EIn>,
+{
+    fn from(value: Result<std::process::ExitCode, EIn>) -> Self {
         match value {
             Ok(code) => MainResult::exit_code(code),
-            Err(err) => MainResult::error(err),
+            Err(err) => MainResult::error(err.into()),
         }
     }
 }
 
-impl<Err> std::ops::FromResidual<Result<Infallible, Err>> for MainResult<Err> {
-    fn from_residual(residual: Result<Infallible, Err>) -> Self {
+impl<EIn, EOut> std::ops::FromResidual<Result<Infallible, EIn>> for MainResult<EOut>
+where
+    EOut: From<EIn>,
+{
+    fn from_residual(residual: Result<Infallible, EIn>) -> Self {
         match residual {
-            Err(e) => MainResult::Err(e),
+            Err(e) => MainResult::Err(e.into()),
         }
     }
 }
 
-impl<Err> std::ops::FromResidual<Result<(), Err>> for MainResult<Err> {
-    fn from_residual(residual: Result<(), Err>) -> Self {
+impl<EIn, EOut> std::ops::FromResidual<Result<(), EIn>> for MainResult<EOut>
+where
+    EOut: From<EIn>,
+{
+    fn from_residual(residual: Result<(), EIn>) -> Self {
         residual.into()
     }
 }

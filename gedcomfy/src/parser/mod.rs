@@ -459,13 +459,13 @@ impl Parser {
     ///    records:
     ///
     ///    a. We check for a Byte Order Mark (BOM) at the start of the file. If one of
-    ///       these is found (for UTF-8, or UTF-16 BE/LE), it most likely can be trusted.
+    ///    these is found (for UTF-8, or UTF-16 BE/LE), it most likely can be trusted.
     ///
     ///    b. Otherwise, it will try to determine the encoding by content-sniffing the first
-    ///       character in the file, which should always be a literal '0'. (The start of a
-    ///       legitimate file must always begin with `0 HEAD <newline>`). This can determine
-    ///       some non-ASCII-compatible encodings such as UTF-16.
-    ///    
+    ///    character in the file, which should always be a literal '0'. (The start of a
+    ///    legitimate file must always begin with `0 HEAD <newline>`). This can determine
+    ///    some non-ASCII-compatible encodings such as UTF-16.
+    ///
     ///    If one of those methods work, we then parse the file to double-check the encoding
     ///    is correct, and that the encoding agrees with what is specified in the file,
     ///    and extract the file version.
@@ -474,7 +474,7 @@ impl Parser {
     ///    we must parse the records to determine the encoding. In order to do this,
     ///    the file is parsed in a minimally-decoding mode which only decodes the record
     ///    levels and tag names (which both must consist of characters in the ASCII subset).
-    ///    
+    ///
     ///    The further tricky thing here is that different versions of the GEDCOM standard
     ///    specify the encoding differently. In version 5 files, the encoding is specified
     ///    in the `GEDC.VERS` record, while in version 7 files, the `GEDC.VERS` record is
