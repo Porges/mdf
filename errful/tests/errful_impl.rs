@@ -1,5 +1,7 @@
 #![feature(error_generic_member_access)]
 
+use std::error::Error;
+
 use errful::AsErrful;
 
 #[test]
@@ -56,4 +58,31 @@ fn variant_overrides_exit_code() {
 
     let over = SomeError::Override.errful();
     assert_eq!(over.exit_code(), Some(34.into()));
+}
+
+#[test]
+fn enum_source() {
+    #[derive(errful_derive::Error, Debug)]
+    #[error(display = "some error", exit_code = 12)]
+    enum SomeError {
+        NoSource {
+            _value: i32,
+        },
+
+        #[error(exit_code = 34)]
+        Override {
+            source: Box<dyn std::error::Error>,
+        },
+    }
+
+    let base = SomeError::NoSource { _value: 1 }.errful();
+    assert!(base.source().is_none());
+
+    let over = SomeError::Override {
+        source: Box::new(std::io::Error::other("something bad")),
+    };
+    assert_eq!(
+        over.source().map(|e| format!("{e:?}")).as_deref(),
+        Some("Custom { kind: Other, error: \"something bad\" }")
+    );
 }
