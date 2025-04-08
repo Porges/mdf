@@ -14,5 +14,5 @@ sea-orm = { version = "1.0.0", features = [
 
 [dev-dependencies]
 miette = { version = "7.4.0", features = ["fancy-no-backtrace"] }
-tokio = { version = "1.39.2", features = ["rt", "macros"] }
+tokio = { version = "1.44.2", features = ["rt", "macros"] }
 gedcomfy = { path = "../gedcomfy" }
