@@ -5,7 +5,10 @@ use std::{
 };
 
 use fancy_duration::FancyDuration;
-use gedcomfy::parser::{encodings::SupportedEncoding, options::ParseOptions, Parser};
+use gedcomfy::{
+    parser::{encodings::SupportedEncoding, options::ParseOptions, Parser},
+    versions::SupportedGEDCOMVersion,
+};
 use miette::{Context, IntoDiagnostic};
 
 mod components;
@@ -41,29 +44,55 @@ enum GedcomCommands {
 }
 
 #[derive(clap::Args)]
+#[clap(rename_all = "kebab-case")]
 struct ParseOptionsArgs {
-    #[arg(long, rename_all = "kebab-case")]
-    force_encoding: Option<Encoding>,
+    #[arg(long)]
+    force_encoding: Option<ForcedEncoding>,
+
+    #[arg(long)]
+    force_version: Option<ForcedVersion>,
 }
 
 impl From<ParseOptionsArgs> for ParseOptions {
     fn from(args: ParseOptionsArgs) -> ParseOptions {
-        ParseOptions::default().force_encoding(args.force_encoding.map(Into::into))
+        ParseOptions::default()
+            .force_encoding(args.force_encoding.map(Into::into))
+            .force_version(args.force_version.map(Into::into))
     }
 }
 
 #[derive(clap::ValueEnum, Clone, Copy, Debug)]
 #[allow(non_camel_case_types)] // want hyphens in these
-pub enum Encoding {
+pub enum ForcedEncoding {
     UTF_8,
     Windows_1252,
 }
 
-impl From<Encoding> for SupportedEncoding {
-    fn from(value: Encoding) -> SupportedEncoding {
+#[derive(clap::ValueEnum, Clone, Copy, Debug)]
+pub enum ForcedVersion {
+    #[clap(name = "5.5")]
+    V55,
+    #[clap(name = "5.5.1")]
+    V551,
+    #[clap(name = "7.0", alias = "7")]
+    V7,
+}
+
+impl From<ForcedEncoding> for SupportedEncoding {
+    fn from(value: ForcedEncoding) -> SupportedEncoding {
         match value {
-            Encoding::UTF_8 => SupportedEncoding::Utf8,
-            Encoding::Windows_1252 => SupportedEncoding::Windows1252,
+            ForcedEncoding::UTF_8 => SupportedEncoding::Utf8,
+            ForcedEncoding::Windows_1252 => SupportedEncoding::Windows1252,
+        }
+    }
+}
+
+impl From<ForcedVersion> for SupportedGEDCOMVersion {
+    fn from(value: ForcedVersion) -> SupportedGEDCOMVersion {
+        match value {
+            ForcedVersion::V55 => SupportedGEDCOMVersion::V5_5,
+            ForcedVersion::V551 => SupportedGEDCOMVersion::V5_5_1,
+            ForcedVersion::V7 => SupportedGEDCOMVersion::V7_0,
         }
     }
 }
@@ -97,7 +126,7 @@ fn main() -> miette::Result<()> {
                     .with_context(|| format!("Parsing file {}", path.display()))?;
 
                 let result = parser.parse_kdl()?;
-                println!("{}", result);
+                println!("{result}");
             }
             GedcomCommands::Parse {
                 path,

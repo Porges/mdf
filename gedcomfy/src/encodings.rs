@@ -1,5 +1,6 @@
 use std::fmt::Display;
 
+use itertools::Itertools;
 use miette::Diagnostic;
 
 use crate::parser::{encodings::SupportedEncoding, GEDCOMSource};
@@ -21,14 +22,14 @@ impl Display for GEDCOMEncoding {
             GEDCOMEncoding::Unicode => "UNICODE",
         };
 
-        write!(f, "{}", s)
+        write!(f, "{s}")
     }
 }
 
 #[derive(derive_more::Error, derive_more::Display, Diagnostic, Debug)]
 #[display("GEDCOM encoding {encoding} is ambiguous")]
 #[diagnostic(help("This value could imply any of the following encodings: {}",
-    .possibilities.iter().map(|e| format!("{}", e)).collect::<Vec<_>>().join(", ")))]
+    .possibilities.iter().join(", ")))]
 pub struct AmbiguousEncoding {
     encoding: GEDCOMEncoding,
     possibilities: &'static [SupportedEncoding],

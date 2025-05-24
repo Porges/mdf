@@ -94,13 +94,16 @@ pub enum EncodingReason {
         span: SourceSpan,
     },
 
-    #[display("this encoding was used because it is required by GEDCOM version {version}")]
+    #[display(
+        "this encoding was used because it is required by GEDCOM version {version}{}",
+        if span.is_none() { " (this version was forced by parsing options)" } else { "" }
+    )]
     #[diagnostic(severity(Advice))]
     DeterminedByVersion {
         version: SupportedGEDCOMVersion,
 
         #[label("version was specified here")]
-        span: SourceSpan,
+        span: Option<SourceSpan>,
     },
 
     #[display(
@@ -127,14 +130,16 @@ pub enum EncodingError {
     NotGedcomFile {},
 
     #[display(
-        "GEDCOM version {version} requires the encoding to be {version_encoding}, but the file encoding was determined to be {external_encoding}"
+        "GEDCOM version {version}{} requires the encoding to be {version_encoding}, but the file encoding was determined to be {external_encoding}",
+        if version_span.is_none() { " (this version was forced by parsing options)" } else { "" }
     )]
     #[diagnostic(code(gedcom::encoding::version_encoding_mismatch))]
     VersionEncodingMismatch {
         version: SupportedGEDCOMVersion,
         version_encoding: SupportedEncoding,
+
         #[label("file version was specified here")]
-        version_span: SourceSpan,
+        version_span: Option<SourceSpan>,
 
         external_encoding: SupportedEncoding,
 

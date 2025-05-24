@@ -10,7 +10,7 @@ use crate::{
         encodings::{DetectedEncoding, EncodingError, EncodingReason, SupportedEncoding},
         lines::LineValue,
         records::RawRecord,
-        GEDCOMSource, Sourced,
+        GEDCOMSource, MaybeSourced, Sourced,
     },
 };
 
@@ -108,7 +108,7 @@ impl SupportedGEDCOMVersion {
     */
 }
 
-impl Sourced<SupportedGEDCOMVersion> {
+impl MaybeSourced<SupportedGEDCOMVersion> {
     pub(crate) fn detect_encoding_from_head_record<S: GEDCOMSource + ?Sized>(
         &self,
         head: &Sourced<RawRecord<S>>,

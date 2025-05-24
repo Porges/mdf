@@ -634,7 +634,7 @@ mod test {
 
     fn span_of(source: &str, word: &str) -> Span<u8> {
         let start = source.find(word).unwrap();
-        Span::new(start.into(), word.byte_count())
+        Span::new(start.into(), word.count_bytes())
     }
 
     fn make_label<'a>(source: &str, target: &str, message: &'a str) -> Label<'a> {

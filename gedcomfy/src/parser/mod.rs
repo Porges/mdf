@@ -142,6 +142,21 @@ pub struct Sourced<T> {
     pub span: SourceSpan,
 }
 
+#[derive(Copy, Clone, PartialEq, Eq, Debug)]
+pub struct MaybeSourced<T> {
+    pub value: T,
+    pub span: Option<SourceSpan>,
+}
+
+impl<T> From<Sourced<T>> for MaybeSourced<T> {
+    fn from(value: Sourced<T>) -> Self {
+        Self {
+            value: value.value,
+            span: Some(value.span),
+        }
+    }
+}
+
 impl<T> Sourced<T> {
     pub(crate) fn try_map<U, E>(self, f: impl FnOnce(T) -> Result<U, E>) -> Result<Sourced<U>, E> {
         Ok(Sourced {
@@ -501,9 +516,15 @@ impl Parser {
             let detected_encoding = DetectedEncoding::new(encoding, EncodingReason::Forced {});
             let decoded = detected_encoding.decode(input)?;
 
-            let header = Self::extract_gedcom_header(decoded.as_ref(), mode)?;
-            let version = Self::version_from_header(&header)?;
-            (*version, decoded)
+            let version = if let Some(forced_version) = self.parse_options.force_version {
+                forced_version
+            } else {
+                let header = Self::extract_gedcom_header(decoded.as_ref(), mode)?;
+                let version = Self::version_from_header(&header)?;
+                *version
+            };
+
+            (version, decoded)
         } else if let Some(external_encoding) = detect_external_encoding(input)? {
             // we discovered the encoding externally
             tracing::debug!(encoding = ?external_encoding.encoding(), "detected encoding");
@@ -511,24 +532,31 @@ impl Parser {
 
             // now we can decode the file to actually look inside it
             let decoded = external_encoding.decode(input)?;
+            let version = if let Some(forced_version) = self.parse_options.force_version {
+                forced_version
+            } else {
+                // get version and double-check encoding with file
+                let header = Self::extract_gedcom_header(decoded.as_ref(), mode)?;
+                let (version, f_enc) =
+                    Self::parse_gedcom_header(&header, Some(external_encoding), None)?;
 
-            // get version and double-check encoding with file
-            let header = Self::extract_gedcom_header(decoded.as_ref(), mode)?;
-            let (version, f_enc) = Self::parse_gedcom_header(&header, Some(external_encoding))?;
+                // we don’t need the encoding here since we already decoded
+                // it will always be the same
+                debug_assert_eq!(f_enc.encoding(), ext_enc);
+                version.value
+            };
 
-            // we don’t need the encoding here since we already decoded
-            // it will always be the same
-            debug_assert_eq!(f_enc.encoding(), ext_enc);
-            (*version, decoded)
+            (version, decoded)
         } else {
             // we need to determine the encoding from the file itself
             let header = Self::extract_gedcom_header(input, mode)?;
-            let (version, file_encoding) = Self::parse_gedcom_header(&header, None)?;
+            let (version, file_encoding) =
+                Self::parse_gedcom_header(&header, None, self.parse_options.force_version)?;
 
             // now we can actually decode the input
             let decoded = file_encoding.decode(input)?;
 
-            (*version, decoded)
+            (version.value, decoded)
         };
 
         Ok((version, output))
@@ -559,6 +587,8 @@ impl Parser {
         S: GEDCOMSource + ?Sized,
     {
         let version = Self::detect_version_from_header(header)?;
+        tracing::debug!(version = %version.value, "detected GEDCOM version from file header");
+
         let supported_version: Sourced<SupportedGEDCOMVersion> =
             version
                 .try_into()
@@ -567,15 +597,26 @@ impl Parser {
                     span: version.span,
                 })?;
 
+        tracing::debug!(version = %supported_version.value, "confirmed supported version");
         Ok(supported_version)
     }
 
     fn parse_gedcom_header<S: GEDCOMSource + ?Sized>(
         header: &Sourced<RawRecord<S>>,
         external_encoding: Option<DetectedEncoding>,
-    ) -> Result<(Sourced<SupportedGEDCOMVersion>, DetectedEncoding), DecodingError> {
+        force_version: Option<SupportedGEDCOMVersion>,
+    ) -> Result<(MaybeSourced<SupportedGEDCOMVersion>, DetectedEncoding), DecodingError> {
         debug_assert!(header.value.line.tag.value.eq("HEAD"));
-        let version = Self::version_from_header(header)?;
+
+        let version = if let Some(force_version) = force_version {
+            MaybeSourced {
+                span: None,
+                value: force_version,
+            }
+        } else {
+            Self::version_from_header(header)?.into()
+        };
+
         let encoding = version.detect_encoding_from_head_record(header, external_encoding)?;
         Ok((version, encoding))
     }

@@ -1,24 +1,53 @@
+#![feature(error_generic_member_access)] // required, see Compatibility below
+
 use std::{path::PathBuf, time::Instant};
 
+use errful::ExitResult;
 use gedcomesque::entities::individual::{ActiveModel as IndividualActive, Entity as Individual};
-use gedcomfy::parser::{lines::LineValue, options::ParseOptions, Parser};
-use miette::IntoDiagnostic;
+use gedcomfy::parser::{
+    encodings::SupportedEncoding, lines::LineValue, options::ParseOptions, Parser,
+};
 use sea_orm::{
     sea_query::TableCreateStatement, ActiveValue, ConnectionTrait, Database, DatabaseConnection,
     DbBackend, EntityTrait, PaginatorTrait, Schema, TransactionTrait,
 };
 
+#[derive(derive_more::Display, errful::Error, derive_more::From, Debug)]
+enum Error {
+    #[display("I/O error")]
+    Io { source: std::io::Error },
+
+    #[display("Database error")]
+    Database { source: sea_orm::DbErr },
+
+    #[display("Parse error")]
+    Parse {
+        source: gedcomfy::parser::ParseError,
+    },
+}
+
 #[tokio::main(flavor = "current_thread")]
-async fn main() -> miette::Result<()> {
+async fn main() -> ExitResult<Error> {
     let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../private/ITIS.ged");
     let filename = path.file_name().unwrap().to_string_lossy().to_string();
 
-    let mut parser = Parser::read_file(filename, ParseOptions::default()).into_diagnostic()?;
+    let opts = ParseOptions::default().force_encoding(SupportedEncoding::Windows1252);
+    let file_size = { std::fs::File::open(&path)?.metadata()?.len() };
+    let start_time = Instant::now();
+    let mut parser = Parser::read_file(path, opts)?;
     let records = parser.parse_raw()?;
+    let elapsed = start_time.elapsed().as_secs_f64();
+    println!(
+        "parsed {filename} in {}s: ({} bytes, {} records, {} records/s)",
+        elapsed,
+        file_size,
+        records.len(),
+        records.len() as f64 / elapsed,
+    );
 
     // let target = "sqlite:gogogo.db?mode=rwc";
     let memtarget = "sqlite::memory:";
-    let db: DatabaseConnection = Database::connect(memtarget).await.into_diagnostic()?;
+    let db: DatabaseConnection = Database::connect(memtarget).await?;
 
     // db.execute_unprepared("PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL;")
     //     .await
@@ -28,9 +57,7 @@ async fn main() -> miette::Result<()> {
     let schema = Schema::new(builder);
     let stmt: TableCreateStatement = schema.create_table_from_entity(Individual);
 
-    db.execute(db.get_database_backend().build(&stmt))
-        .await
-        .into_diagnostic()?;
+    db.execute(db.get_database_backend().build(&stmt)).await?;
 
     let to_insert = Vec::from_iter(
         records
@@ -61,23 +88,20 @@ async fn main() -> miette::Result<()> {
 
     let start_time = Instant::now();
 
-    let txn = db.begin().await.into_diagnostic()?;
+    let txn = db.begin().await?;
     for chunk in to_insert.chunks(1000) {
-        Individual::insert_many(chunk.to_owned())
-            .exec(&txn)
-            .await
-            .into_diagnostic()?;
+        Individual::insert_many(chunk.to_owned()).exec(&txn).await?;
     }
 
-    txn.commit().await.into_diagnostic()?;
+    txn.commit().await?;
 
     println!(
         "inserted all records - elapsed {}s",
         start_time.elapsed().as_secs_f64()
     );
 
-    let dudes = Individual::find().count(&db).await.into_diagnostic()?;
+    let dudes = Individual::find().count(&db).await?;
     println!("found {dudes} records");
 
-    Ok(())
+    ExitResult::success()
 }

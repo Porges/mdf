@@ -3,7 +3,7 @@ use std::fmt::{Display, Formatter};
 use crate::{
     colors::ColorGenerator,
     protocol::{AsErrful, Errful, Label, LabelMessage, PrintableSeverity},
-    severity, Severity,
+    Severity,
 };
 
 pub struct PrettyDisplay<'e> {
@@ -58,7 +58,7 @@ impl PrettyDisplay<'_> {
                         label.span(),
                         match label.message {
                             // TODO: inner errors
-                            LabelMessage::Error(e) => format!("{}", e).into(),
+                            LabelMessage::Error(e) => format!("{e}").into(),
                             LabelMessage::String(l) => l,
                         },
                         highlight,
@@ -76,7 +76,7 @@ impl PrettyDisplay<'_> {
                     prefix,
                 );
 
-                writeln!(f, "{}", message)?;
+                writeln!(f, "{message}")?;
             }
         }
 
@@ -92,10 +92,10 @@ impl PrettyDisplay<'_> {
         colors: &mut impl FnMut(&Label) -> owo_colors::Style,
     ) -> std::fmt::Result {
         // output the message for the error
-        let message = format!("{}", err);
+        let message = format!("{err}");
         let wrapped = textwrap::wrap(&message, message_wrap_opts);
         for line in wrapped {
-            writeln!(f, "{}", line)?;
+            writeln!(f, "{line}")?;
         }
 
         // output any additional information
@@ -207,7 +207,7 @@ impl Display for PrettyDisplay<'_> {
         let sev_name = styles.main_sev_style(severity.name());
         if let Some(code) = err.code() {
             // if code is present, message goes on the next line
-            writeln!(f, "{sev_symb} {sev_name} [{}]\n{}", code, err)?;
+            writeln!(f, "{sev_symb} {sev_name} [{code}]\n{err}")?;
         } else {
             // if no code, message goes on the same line
             writeln!(f, "{sev_symb} {sev_name}{} {}", styles.base_style(":"), err)?;

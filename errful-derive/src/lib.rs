@@ -355,7 +355,7 @@ fn name_for_field(field: (usize, &StructField)) -> TokenStream {
     if let Some(ident) = &field.1.ident {
         quote! { #ident }
     } else {
-        let ix = field.0;
+        let ix = proc_macro2::Literal::usize_unsuffixed(field.0);
         quote! { #ix }
     }
 }

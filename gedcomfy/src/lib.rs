@@ -14,7 +14,7 @@ pub mod encodings;
 pub mod highlighting;
 pub mod parser;
 pub mod schemas;
-pub(crate) mod versions;
+pub mod versions;
 
 #[derive(
     derive_more::Error, derive_more::Display, derive_more::From, Debug, miette::Diagnostic,

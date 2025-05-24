@@ -134,32 +134,32 @@ impl<T: ?Sized> std::ops::SubAssign for Count<T> {
 
 /// A trait for things that can be counted.
 pub trait Countable<T: ?Sized> {
-    fn counted(&self) -> Count<T>;
+    fn count_items(&self) -> Count<T>;
 }
 
 impl Countable<u8> for str {
-    fn counted(&self) -> Count<u8> {
+    fn count_items(&self) -> Count<u8> {
         self.len().into()
     }
 }
 
 pub trait ByteCount: Countable<u8> {
-    fn byte_count(&self) -> Count<u8> {
-        self.counted()
+    fn count_bytes(&self) -> Count<u8> {
+        self.count_items()
     }
 }
 
 impl<T: Countable<u8> + ?Sized> ByteCount for T {}
 
 impl Countable<char> for str {
-    fn counted(&self) -> Count<char> {
+    fn count_items(&self) -> Count<char> {
         self.chars().count().into()
     }
 }
 
 pub trait CharCount: Countable<char> {
-    fn char_count(&self) -> Count<char> {
-        self.counted()
+    fn count_chars(&self) -> Count<char> {
+        self.count_items()
     }
 }
 
@@ -170,7 +170,7 @@ pub enum UnicodeWidth {}
 
 #[cfg(feature = "unicode-width")]
 impl Countable<UnicodeWidth> for str {
-    fn counted(&self) -> Count<UnicodeWidth> {
+    fn count_items(&self) -> Count<UnicodeWidth> {
         use unicode_width::UnicodeWidthStr;
         self.width().into()
     }
@@ -179,7 +179,7 @@ impl Countable<UnicodeWidth> for str {
 #[cfg(feature = "unicode-width")]
 pub trait UnicodeWidthCount: Countable<UnicodeWidth> {
     fn width_count(&self) -> Count<UnicodeWidth> {
-        self.counted()
+        self.count_items()
     }
 }
 
@@ -187,7 +187,7 @@ pub trait UnicodeWidthCount: Countable<UnicodeWidth> {
 impl<T: Countable<UnicodeWidth> + ?Sized> UnicodeWidthCount for T {}
 
 impl<T> Countable<T> for [T] {
-    fn counted(&self) -> Count<T> {
+    fn count_items(&self) -> Count<T> {
         self.len().into()
     }
 }
