@@ -1,17 +1,24 @@
-use std::{borrow::Cow, path::PathBuf, sync::Arc};
+use std::{
+    borrow::Cow,
+    hint::unreachable_unchecked,
+    ops::Deref,
+    path::{Path, PathBuf},
+    sync::Arc,
+};
 
 use ascii::{AsciiChar, AsciiStr};
 use decoding::DecodingError;
-use encodings::{detect_external_encoding, DetectedEncoding, EncodingReason};
+use encodings::{ansel::decode, detect_external_encoding, DetectedEncoding, EncodingReason};
 use lines::LineValue;
-use miette::{NamedSource, SourceOffset, SourceSpan};
+use miette::{MietteSpanContents, NamedSource, SourceOffset, SourceSpan};
 use options::ParseOptions;
 use records::{RawRecord, RecordBuilder};
+use tracing::field::debug;
 use versions::VersionError;
-use yoke::Yoke;
+use yoke::{erased::ErasedArcCart, Yoke};
 
 use crate::{
-    schemas::SchemaError,
+    schemas::{v551::Name, SchemaError},
     versions::{parse_version_head_gedc_vers, GEDCOMVersion, SupportedGEDCOMVersion},
     FileStructureError,
 };
@@ -187,64 +194,188 @@ impl<T> std::ops::Deref for Sourced<T> {
         &self.value
     }
 }
-pub struct Parser {
-    path: Option<PathBuf>,
-    state: ParserState,
+
+#[derive(Default)]
+pub struct ParserBuilder {
     parse_options: options::ParseOptions,
+    file_path: Option<PathBuf>,
+}
+
+impl ParserBuilder {
+    pub fn load_str<'i>(mut self, input: impl Into<Cow<'i, str>>) -> Parser<'i> {
+        let path = self.file_path.take();
+        self.load(ParserInput::FromStr {
+            path,
+            input: input.into(),
+        })
+    }
+
+    pub fn load_bytes<'i>(mut self, input: impl Into<Cow<'i, [u8]>>) -> Parser<'i> {
+        let path = self.file_path.take();
+        self.load(ParserInput::FromRaw {
+            path,
+            input: input.into(),
+        })
+    }
+
+    pub fn load_file(mut self, path: &Path) -> Result<Parser<'static>, FileLoadError> {
+        let path = dunce::simplified(path);
+
+        let res: Result<memmap2::Mmap, std::io::Error> = (|| {
+            let file = std::fs::File::open(path)?;
+            let mmap = unsafe { memmap2::Mmap::map(&file) }?;
+            Ok(mmap)
+        })();
+
+        let path_to_use = self.file_path.take().unwrap_or_else(|| path.to_path_buf());
+
+        match res {
+            Ok(mmap) => Ok(self.load(ParserInput::FromFile {
+                path: path_to_use,
+                input: Arc::new(mmap),
+            })),
+            Err(source) => Err(FileLoadError {
+                source,
+                path: path_to_use,
+            }),
+        }
+    }
+
+    fn load<'i>(self, input: ParserInput<'i>) -> Parser<'i> {
+        debug_assert!(self.file_path.is_none());
+        Parser {
+            parse_options: self.parse_options,
+            state: input.into(),
+        }
+    }
+}
+
+pub struct Parser<'a> {
+    parse_options: options::ParseOptions,
+    state: ParserState<'a>,
 }
 
 // Helper type to have decoded data that borrows from original.
 #[derive(yoke::Yokeable, Clone)]
 struct VersionAndDecoded<'a> {
     version: SupportedGEDCOMVersion,
-    decoded: Cow<'a, str>,
+    decoded: Arc<Cow<'a, str>>,
 }
 
-impl miette::SourceCode for ParserState {
+fn attach_name<'a>(
+    inner: Box<dyn miette::SpanContents<'a> + 'a>,
+    name: Option<&Path>,
+) -> Box<dyn miette::SpanContents<'a> + 'a> {
+    if let Some(name) = name {
+        Box::new(miette::MietteSpanContents::new_named(
+            name.to_string_lossy().into_owned(),
+            inner.data(),
+            *inner.span(),
+            inner.line(),
+            inner.column(),
+            inner.line_count(),
+        ))
+    } else {
+        inner
+    }
+}
+
+impl miette::SourceCode for ParserInput<'_> {
     fn read_span<'a>(
         &'a self,
         span: &SourceSpan,
         context_lines_before: usize,
         context_lines_after: usize,
     ) -> Result<Box<dyn miette::SpanContents<'a> + 'a>, miette::MietteError> {
-        match self {
-            ParserState::Read { input } => {
-                input.read_span(span, context_lines_before, context_lines_after)
-            }
-            ParserState::ReadAndDecoded { value } => {
-                value
-                    .get()
-                    .decoded
-                    .read_span(span, context_lines_before, context_lines_after)
-            }
-            ParserState::Decoded { input, .. } => {
-                input.read_span(span, context_lines_before, context_lines_after)
-            }
-        }
+        let inner = self
+            .as_ref()
+            .read_span(span, context_lines_before, context_lines_after)?;
+        Ok(attach_name(inner, self.path()))
     }
 }
 
 /// Represents the data owned by the parser.
 #[derive(Clone)]
-enum ParserState {
+enum ParserInput<'a> {
     /// Data has not yet been decoded.
-    Read { input: Arc<[u8]> },
-    /// Data was decoded from the original input,
-    /// and the decoded data is borrowed from that.
-    ReadAndDecoded {
-        value: Yoke<VersionAndDecoded<'static>, Arc<[u8]>>,
+    FromFile {
+        path: PathBuf,
+        input: Arc<memmap2::Mmap>,
     },
-    /// Data was provided in decoded form, or was decoded
-    /// from the original input into an owned form.
-    Decoded {
-        input: Arc<str>,
-        version: Option<SupportedGEDCOMVersion>,
+    /// Data was provided in raw form.
+    FromRaw {
+        path: Option<PathBuf>,
+        input: Cow<'a, [u8]>,
+    },
+    /// Data was provided in decoded form.
+    FromStr {
+        path: Option<PathBuf>,
+        input: Cow<'a, str>,
     },
 }
 
-struct AnySourceCode(Box<dyn miette::SourceCode>);
+impl ParserInput<'_> {
+    fn path(&self) -> Option<&Path> {
+        match self {
+            ParserInput::FromFile { path, .. } => Some(path),
+            ParserInput::FromRaw { path, .. } => path.as_deref(),
+            ParserInput::FromStr { path, .. } => path.as_deref(),
+        }
+    }
+}
 
-impl std::fmt::Debug for AnySourceCode {
+impl<'a> AsRef<[u8]> for ParserInput<'a> {
+    fn as_ref(&self) -> &[u8] {
+        match self {
+            ParserInput::FromFile { input, .. } => input.as_ref(),
+            ParserInput::FromRaw { input, .. } => input.as_ref(),
+            ParserInput::FromStr { input, .. } => input.as_bytes(),
+        }
+    }
+}
+
+#[derive(Clone)]
+enum SharedInput<'a> {
+    Yoked(Arc<yoke::Yoke<Cow<'static, str>, Option<ErasedArcCart>>>),
+    Borrowed(&'a str),
+}
+
+impl AsRef<str> for SharedInput<'_> {
+    fn as_ref(&self) -> &str {
+        match &self {
+            SharedInput::Yoked(yoke) => yoke.get().as_ref(),
+            SharedInput::Borrowed(borrowed) => borrowed,
+        }
+    }
+}
+
+/// Data was decoded from the original input.
+#[derive(Clone)]
+struct DecodedInput<'a> {
+    shared: SharedInput<'a>,
+    path: Option<PathBuf>,
+    version: Option<SupportedGEDCOMVersion>,
+}
+
+impl<'s> miette::SourceCode for DecodedInput<'s> {
+    fn read_span<'a>(
+        &'a self,
+        span: &SourceSpan,
+        context_lines_before: usize,
+        context_lines_after: usize,
+    ) -> Result<Box<dyn miette::SpanContents<'a> + 'a>, miette::MietteError> {
+        let inner =
+            self.shared
+                .as_ref()
+                .read_span(span, context_lines_before, context_lines_after)?;
+        Ok(attach_name(inner, self.path.as_deref()))
+    }
+}
+
+#[derive(Clone)]
+struct AnySourceCode<'a>(ParserState<'a>);
+
+impl std::fmt::Debug for AnySourceCode<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_tuple("AnySourceCode")
             .field(&"<source code>")
@@ -252,21 +383,25 @@ impl std::fmt::Debug for AnySourceCode {
     }
 }
 
-impl miette::SourceCode for AnySourceCode {
+impl miette::SourceCode for AnySourceCode<'_> {
     fn read_span<'a>(
         &'a self,
         span: &SourceSpan,
         context_lines_before: usize,
         context_lines_after: usize,
     ) -> Result<Box<dyn miette::SpanContents<'a> + 'a>, miette::MietteError> {
-        self.0
-            .read_span(span, context_lines_before, context_lines_after)
-    }
-}
-
-impl AnySourceCode {
-    fn new(source: impl miette::SourceCode + 'static) -> Self {
-        Self(Box::new(source))
+        match &self.0 {
+            ParserState::Loaded(parser_input) => {
+                parser_input
+                    .as_ref()
+                    .read_span(span, context_lines_before, context_lines_after)
+            }
+            ParserState::Decoded(decoded_input) => decoded_input.shared.as_ref().read_span(
+                span,
+                context_lines_before,
+                context_lines_after,
+            ),
+        }
     }
 }
 
@@ -276,14 +411,14 @@ trait NonFatalHandler {
         E: Into<ParseError> + miette::Diagnostic;
 }
 
-trait ParseMode: Default + NonFatalHandler {
-    type ResultBuilder<'i>: ResultBuilder<'i>;
+trait ParseMode<'i>: Default + NonFatalHandler {
+    type ResultBuilder: ResultBuilder<'i>;
 
-    fn get_result_builder<'i>(
+    fn get_result_builder(
         self,
         version: SupportedGEDCOMVersion,
-        source_code: AnySourceCode,
-    ) -> Result<Self::ResultBuilder<'i>, ParseError>;
+        source_code: &AnySourceCode<'i>,
+    ) -> Result<Self::ResultBuilder, ParseError>;
 }
 
 trait ResultBuilder<'i>: NonFatalHandler {
@@ -310,150 +445,245 @@ pub enum ParseError {
 }
 
 #[derive(derive_more::Error, derive_more::Display, Debug, miette::Diagnostic)]
-#[display("An error occurred while parsing the input")]
-pub struct ParserError {
+#[display("The data could not be parsed as a GEDCOM file")]
+pub struct ParserError<'i> {
     #[error(source)]
     #[diagnostic_source]
     source: ParseError,
 
     #[source_code]
-    source_code: AnySourceCode,
+    source_code: AnySourceCode<'i>,
 }
 
-impl Parser {
-    pub fn read_file(
-        path: impl Into<PathBuf>,
-        parse_options: ParseOptions,
-    ) -> Result<Self, std::io::Error> {
-        let path = path.into();
-        let data = std::fs::read(&path)?; // TODO error
-        Ok(Self {
-            path: Some(path),
-            state: ParserState::Read { input: data.into() },
-            parse_options,
-        })
-    }
-
-    pub fn read_bytes(bytes: impl Into<Arc<[u8]>>, parse_options: ParseOptions) -> Self {
-        Self {
-            path: None,
-            state: ParserState::Read {
-                input: bytes.into(),
-            },
-            parse_options,
-        }
-    }
-
-    pub fn read_string(str: impl Into<Arc<str>>, parse_options: ParseOptions) -> Self {
-        Self {
-            path: None,
-            state: ParserState::Decoded {
-                input: str.into(),
-                version: None,
-            },
-            parse_options,
-        }
-    }
-
-    pub fn with_path(self, path: impl Into<PathBuf>) -> Self {
-        Self {
-            path: Some(path.into()),
-            ..self
-        }
-    }
-
-    fn ensure_input_decoded<M: ParseMode>(&mut self, mode: &mut M) -> Result<(), DecodingError> {
-        if let ParserState::Read { ref input } = self.state {
-            let value: Yoke<VersionAndDecoded, Arc<[u8]>> =
-                Yoke::try_attach_to_cart(input.clone(), |i: &[u8]| -> Result<_, DecodingError> {
-                    let (version, decoded) = self.detect_and_decode(i, mode)?;
-                    Ok(VersionAndDecoded { version, decoded })
-                })?;
-
-            // see if we can drop the original input
-            match value.get() {
-                VersionAndDecoded {
+impl ParserError<'_> {
+    pub fn to_static(self) -> ParserError<'static> {
+        ParserError {
+            source: self.source,
+            source_code: AnySourceCode(match self.source_code.0 {
+                ParserState::Loaded(parser_input) => match parser_input {
+                    ParserInput::FromRaw { path, input } => todo!(),
+                    ParserInput::FromStr { path, input } => todo!(),
+                    ParserInput::FromFile { path, input } => {
+                        ParserInput::FromFile { path, input }.into()
+                    }
+                },
+                ParserState::Decoded(DecodedInput {
+                    shared,
+                    path,
                     version,
-                    decoded: Cow::Owned(o),
-                } => {
-                    // TODO: bad, clones owned data
-                    self.state = ParserState::Decoded {
-                        input: o.clone().into(),
-                        version: Some(*version),
+                }) => DecodedInput {
+                    path,
+                    version,
+                    shared: match shared {
+                        SharedInput::Yoked(yoke) => SharedInput::Yoked(yoke),
+                        SharedInput::Borrowed(x) => {
+                            SharedInput::Yoked(Arc::new(Yoke::new_owned(Cow::Owned(x.to_string()))))
+                        }
+                    },
+                }
+                .into(),
+            }),
+        }
+    }
+}
+
+#[derive(
+    derive_more::Error, derive_more::Display, Debug, miette::Diagnostic, derive_more::From,
+)]
+#[display( "An error occurred while reading the file: {}", path.display())]
+pub struct FileLoadError {
+    #[error(source)]
+    source: std::io::Error,
+    path: PathBuf,
+}
+
+#[derive(Clone, derive_more::From)]
+enum ParserState<'a> {
+    Loaded(ParserInput<'a>),
+    Decoded(DecodedInput<'a>),
+}
+
+impl<'i> Parser<'i> {
+    pub fn with_options(parse_options: options::ParseOptions) -> ParserBuilder {
+        ParserBuilder {
+            parse_options,
+            ..Default::default()
+        }
+    }
+
+    pub fn with_path(path: PathBuf) -> ParserBuilder {
+        ParserBuilder {
+            file_path: Some(path),
+            ..Default::default()
+        }
+    }
+
+    pub fn for_str(str: &'i str) -> Parser<'i> {
+        ParserBuilder::default().load_str(str)
+    }
+
+    pub fn for_bytes(bytes: &'i [u8]) -> Parser<'i> {
+        ParserBuilder::default().load_bytes(bytes)
+    }
+
+    pub fn for_file(path: &Path) -> Result<Parser<'static>, FileLoadError> {
+        ParserBuilder::default().load_file(path)
+    }
+
+    fn decode_input<'s, M>(&'s mut self, mode: &mut M) -> Result<DecodedInput<'i>, ParserError<'i>>
+    where
+        M: NonFatalHandler,
+    {
+        match self.state.clone() {
+            ParserState::Loaded(input) => match input {
+                ParserInput::FromFile { input, path } => {
+                    let mut outer_v = None;
+                    match Yoke::try_attach_to_cart(
+                        input.clone(),
+                        |input| -> Result<_, DecodingError> {
+                            let (version, decoded) =
+                                self.detect_and_decode(input.as_ref(), mode)?;
+                            outer_v = Some(version);
+                            Ok(decoded)
+                        },
+                    ) {
+                        Ok(yoked) => Ok(DecodedInput {
+                            shared: SharedInput::Yoked(Arc::new(
+                                yoked.erase_arc_cart().wrap_cart_in_option(),
+                            )),
+                            path: Some(path),
+                            version: outer_v,
+                        }),
+                        Err(err) => Err(ParserError {
+                            source: err.into(),
+                            source_code: AnySourceCode(
+                                ParserInput::FromFile { input, path }.into(),
+                            ),
+                        }),
+                    }
+                }
+                ParserInput::FromRaw { input, path } => match input {
+                    Cow::Owned(owned) => {}
+                    Cow::Borrowed(input) => match self.detect_and_decode(input, mode) {
+                        Ok((version, decoded)) => Ok(DecodedInput {
+                            shared: match decoded {
+                                Cow::Borrowed(borrowed) => SharedInput::Borrowed(borrowed),
+                                Cow::Owned(owned) => {
+                                    SharedInput::Yoked(Arc::new(Yoke::new_owned(Cow::Owned(owned))))
+                                }
+                            },
+                            path,
+                            version: Some(version),
+                        }),
+                        Err(err) => Err(ParserError {
+                            source: err.into(),
+                            source_code: AnySourceCode(
+                                ParserInput::FromRaw {
+                                    input: Cow::Borrowed(input),
+                                    path,
+                                }
+                                .into(),
+                            ),
+                        }),
+                    },
+                },
+                ParserInput::FromStr { input, path } => {
+                    let result = DecodedInput {
+                        shared: SharedInput::Yoked(Arc::new(Yoke::new_owned(input))),
+                        path,
+                        version: None,
                     };
+                    self.state = ParserState::Decoded(result.clone());
+                    Ok(result)
                 }
-                _ => {
-                    self.state = ParserState::ReadAndDecoded { value };
-                }
-            }
+            },
+            ParserState::Decoded(decoded_input) => Ok(decoded_input),
         }
-
-        Ok(())
     }
 
-    fn version_and_input<M: ParseMode>(
-        &self,
+    fn version_from_input<'s, M: NonFatalHandler>(
+        &'s self,
         mode: &mut M,
-    ) -> Result<(SupportedGEDCOMVersion, &str), DecodingError> {
-        match &self.state {
-            ParserState::Read { .. } => unreachable!("checked by ensure_input_decoded"),
-            ParserState::ReadAndDecoded { value } => {
-                let v_and_d = value.get();
-                Ok((v_and_d.version, v_and_d.decoded.as_ref()))
-            }
-            ParserState::Decoded {
-                input,
-                version: Some(version),
-            } => Ok((*version, input.as_ref())),
-            ParserState::Decoded {
-                input,
-                version: None,
-            } => {
-                let head = Self::extract_gedcom_header(input.as_ref(), mode)?;
-                let version = Self::version_from_header(&head)?;
-                Ok((*version, input.as_ref()))
-            }
-        }
+        decoded_input: &'s str,
+    ) -> Result<SupportedGEDCOMVersion, DecodingError> {
+        let head = Self::extract_gedcom_header(decoded_input, mode)?;
+        let version = Self::version_from_header(&head)?;
+        Ok(*version)
     }
 
-    pub fn parse(&mut self) -> Result<ParseResult, ParseError> {
+    pub fn parse<'s>(&'s mut self) -> Result<ParseResult, ParserError<'s>> {
         self.run::<modes::parse::Mode>()
     }
 
-    pub fn validate(&mut self) -> Result<ValidationResult, ParseError> {
+    pub fn validate<'s>(&'s mut self) -> Result<ValidationResult<'s>, ParserError<'s>> {
         self.run::<modes::validation::Mode>()
     }
 
     /// Provides raw access to the parsed records.
-    pub fn parse_raw(&mut self) -> Result<Vec<Sourced<RawRecord<'_>>>, ParseError> {
+    pub fn raw_records<'s>(&'s mut self) -> Result<Vec<Sourced<RawRecord<'s>>>, ParserError<'s>>
+    where
+        'i: 's,
+    {
         self.run::<modes::raw::Mode>()
     }
 
     #[cfg(feature = "kdl")]
     /// Parses a GEDCOM file into KDL format.
-    pub fn parse_kdl(&mut self) -> Result<kdl::KdlDocument, ParseError> {
+    pub fn parse_kdl<'s>(&'s mut self) -> Result<kdl::KdlDocument, ParserError<'s>>
+    where
+        'i: 's,
+    {
         self.run::<modes::kdl::Mode>()
     }
 
-    fn run<'s, Mode: ParseMode>(
+    fn run<'s, Mode: ParseMode<'s>>(
         &'s mut self,
-    ) -> Result<<Mode::ResultBuilder<'s> as ResultBuilder<'s>>::Result, ParseError> {
+    ) -> Result<<Mode::ResultBuilder as ResultBuilder<'s>>::Result, ParserError<'s>> {
         let mut mode = Mode::default();
-        self.ensure_input_decoded(&mut mode)?;
-        let (version, input) = self.version_and_input(&mut mode)?;
-        let source_code = self.get_source_code();
-        let mut builder = mode.get_result_builder::<'s>(version, source_code)?;
-        Self::read_all_records::<Mode>(input, &mut builder)?;
-        builder.complete()
+        tracing::trace!("mode selected");
+        let decoded_input = self.decode_input(&mut mode)?;
+        self.state = decoded_input.into();
+        let decoded_input: &'s DecodedInput<'i> = match &self.state {
+            ParserState::Loaded(_) => unsafe { unreachable_unchecked() },
+            ParserState::Decoded(decoded_input) => decoded_input,
+        };
+        let source_code = AnySourceCode(decoded_input.clone().into());
+        tracing::trace!("input decoded");
+        let version = match decoded_input.version {
+            Some(v) => v,
+            None => match self.version_from_input(&mut mode, decoded_input.shared.as_ref()) {
+                Ok(v) => v,
+                Err(err) => {
+                    return Err(ParserError {
+                        source: err.into(),
+                        source_code,
+                    })
+                }
+            },
+        };
+
+        match self.run_parse(mode, version, decoded_input.shared.as_ref(), &source_code) {
+            Ok(r) => Ok(r),
+            Err(err) => Err(ParserError {
+                source: err.into(),
+                source_code,
+            }),
+        }
     }
 
-    fn get_source_code(&self) -> AnySourceCode {
-        // TODO: bad, clones owned data
-        let source_code = AnySourceCode::new(self.state.clone());
-        match &self.path {
-            Some(p) => AnySourceCode::new(NamedSource::new(p.to_string_lossy(), source_code)),
-            None => source_code,
-        }
+    fn run_parse<Mode: ParseMode<'i>>(
+        &self,
+        mode: Mode,
+        version: SupportedGEDCOMVersion,
+        shared_input: &'i str,
+        source_code: &AnySourceCode<'i>,
+    ) -> Result<<Mode::ResultBuilder as ResultBuilder<'i>>::Result, ParseError> {
+        tracing::trace!(%version, "version found");
+        let mut builder = mode.get_result_builder(version, source_code)?;
+        tracing::trace!("result builder created");
+        Self::read_all_records::<Mode>(shared_input, &mut builder)?;
+        tracing::trace!("all records read");
+        Ok(builder.complete()?)
     }
 
     /// Attempts to detect the encoding of a GEDCOM file and provide the data
@@ -503,13 +733,13 @@ impl Parser {
     /// If you want to exert more control about how the version or encoding are determined,
     /// you can pass appropriate options to the [`parse`] function. See the documentation
     /// on [`detect_file_encoding_opt`].
-    fn detect_and_decode<'a, M>(
+    fn detect_and_decode<'s, M>(
         &self,
-        input: &'a [u8],
+        input: &'s [u8],
         mode: &mut M,
-    ) -> Result<(SupportedGEDCOMVersion, Cow<'a, str>), DecodingError>
+    ) -> Result<(SupportedGEDCOMVersion, Cow<'s, str>), DecodingError>
     where
-        M: ParseMode,
+        M: NonFatalHandler,
     {
         let (version, output) = if let Some(encoding) = self.parse_options.force_encoding {
             // encoding is being forced by settings
@@ -525,13 +755,14 @@ impl Parser {
             };
 
             (version, decoded)
-        } else if let Some(external_encoding) = detect_external_encoding(input)? {
+        } else if let Some(external_encoding) = detect_external_encoding(input.as_ref().as_ref())? {
             // we discovered the encoding externally
             tracing::debug!(encoding = ?external_encoding.encoding(), "detected encoding");
             let ext_enc = external_encoding.encoding();
 
             // now we can decode the file to actually look inside it
             let decoded = external_encoding.decode(input)?;
+
             let version = if let Some(forced_version) = self.parse_options.force_version {
                 forced_version
             } else {
@@ -549,7 +780,7 @@ impl Parser {
             (version, decoded)
         } else {
             // we need to determine the encoding from the file itself
-            let header = Self::extract_gedcom_header(input, mode)?;
+            let header = Self::extract_gedcom_header(input.as_ref().as_ref(), mode)?;
             let (version, file_encoding) =
                 Self::parse_gedcom_header(&header, None, self.parse_options.force_version)?;
 
@@ -562,13 +793,13 @@ impl Parser {
         Ok((version, output))
     }
 
-    fn extract_gedcom_header<'a, S, M>(
-        input: &'a S,
+    fn extract_gedcom_header<'s, S, M>(
+        input: &'s S,
         mode: &mut M,
-    ) -> Result<Sourced<RawRecord<'a, S>>, DecodingError>
+    ) -> Result<Sourced<RawRecord<'s, S>>, DecodingError>
     where
         S: GEDCOMSource + ?Sized,
-        M: ParseMode,
+        M: NonFatalHandler,
     {
         let first_record = Self::read_first_record(input, mode)?;
         match first_record {
@@ -663,13 +894,13 @@ impl Parser {
     }
 
     /// Attempts to read the entirety of the first record found in the input.
-    fn read_first_record<'a, S, M>(
-        input: &'a S,
+    fn read_first_record<'s, S, M>(
+        input: &'s S,
         mode: &mut M,
-    ) -> Result<Option<Sourced<RawRecord<'a, S>>>, DecodingError>
+    ) -> Result<Option<Sourced<RawRecord<'s, S>>>, DecodingError>
     where
         S: GEDCOMSource + ?Sized,
-        M: ParseMode,
+        M: NonFatalHandler,
     {
         let mut builder = RecordBuilder::new();
         for line in lines::iterate_lines(input) {
@@ -682,12 +913,9 @@ impl Parser {
     }
 
     /// Attempts to read all records found in the input.
-    fn read_all_records<'s, M>(
-        input: &'s str,
-        mode: &mut M::ResultBuilder<'s>,
-    ) -> Result<(), ParseError>
+    fn read_all_records<M>(input: &'i str, mode: &mut M::ResultBuilder) -> Result<(), ParseError>
     where
-        M: ParseMode,
+        M: ParseMode<'i>,
     {
         let mut builder = RecordBuilder::new();
 

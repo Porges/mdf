@@ -1,10 +1,12 @@
+use std::any::Any;
+
 use complex_indifference::{plural, Count};
 use miette::Diagnostic;
 
 use crate::{
     parser::{
         records::RawRecord, AnySourceCode, NonFatalHandler, ParseError, ParseMode, ResultBuilder,
-        Sourced,
+        SharedInput, Sourced,
     },
     versions::SupportedGEDCOMVersion,
 };
@@ -23,7 +25,7 @@ pub(in crate::parser) struct Mode {
     advice_count.plural(plural!(piece(s)" of advice"))
 )]
 #[diagnostic(severity(Advice))]
-pub struct ValidationResult {
+pub struct ValidationResult<'i> {
     pub validity: Validity,
 
     pub record_count: usize,
@@ -36,7 +38,7 @@ pub struct ValidationResult {
     pub errors: Vec<ParseError>,
 
     #[source_code]
-    source_code: AnySourceCode,
+    source_code: AnySourceCode<'i>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -66,29 +68,29 @@ impl NonFatalHandler for Mode {
     }
 }
 
-impl ParseMode for Mode {
-    type ResultBuilder<'i> = Builder;
+impl<'i> ParseMode<'i> for Mode {
+    type ResultBuilder = Builder<'i>;
 
-    fn get_result_builder<'i>(
+    fn get_result_builder(
         self,
         _version: SupportedGEDCOMVersion,
-        source_code: AnySourceCode,
-    ) -> Result<Self::ResultBuilder<'i>, ParseError> {
+        source_code: &AnySourceCode<'i>,
+    ) -> Result<Self::ResultBuilder, ParseError> {
         Ok(Builder {
             mode: self,
             record_count: 0,
-            source_code,
+            source_code: source_code.clone(),
         })
     }
 }
 
-pub(in crate::parser) struct Builder {
+pub(in crate::parser) struct Builder<'i> {
     mode: Mode,
     record_count: usize,
-    source_code: AnySourceCode,
+    source_code: AnySourceCode<'i>,
 }
 
-impl NonFatalHandler for Builder {
+impl NonFatalHandler for Builder<'_> {
     fn non_fatal<E>(&mut self, error: E) -> Result<(), E>
     where
         E: Into<ParseError> + miette::Diagnostic,
@@ -97,10 +99,10 @@ impl NonFatalHandler for Builder {
     }
 }
 
-impl ResultBuilder<'_> for Builder {
-    type Result = ValidationResult;
+impl<'i> ResultBuilder<'i> for Builder<'i> {
+    type Result = ValidationResult<'i>;
 
-    fn handle_record(&mut self, _record: Sourced<RawRecord<'_>>) -> Result<(), ParseError> {
+    fn handle_record(&mut self, _record: Sourced<RawRecord<'i>>) -> Result<(), ParseError> {
         self.record_count += 1;
         Ok(())
     }

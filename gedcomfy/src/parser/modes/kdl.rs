@@ -17,14 +17,14 @@ impl NonFatalHandler for Mode {
     }
 }
 
-impl ParseMode for Mode {
-    type ResultBuilder<'i> = Builder;
+impl<'i> ParseMode<'i> for Mode {
+    type ResultBuilder = Builder;
 
-    fn get_result_builder<'i>(
+    fn get_result_builder(
         self,
         _version: crate::versions::SupportedGEDCOMVersion,
-        _source_code: AnySourceCode,
-    ) -> Result<Self::ResultBuilder<'i>, crate::parser::ParseError> {
+        _source_code: &AnySourceCode<'i>,
+    ) -> Result<Self::ResultBuilder, crate::parser::ParseError> {
         Ok(Builder {
             mode: self,
             doc: KdlDocument::new(),
@@ -46,12 +46,12 @@ impl NonFatalHandler for Builder {
     }
 }
 
-impl<'i> ResultBuilder<'i> for Builder {
+impl<'s> ResultBuilder<'s> for Builder {
     type Result = KdlDocument;
 
     fn handle_record(
         &mut self,
-        record: Sourced<RawRecord<'i>>,
+        record: Sourced<RawRecord>,
     ) -> Result<(), crate::parser::ParseError> {
         self.doc.nodes_mut().push(record_to_kdl(record.value));
         Ok(())

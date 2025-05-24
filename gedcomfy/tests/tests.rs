@@ -10,7 +10,8 @@ fn can_parse_allged_lines() -> miette::Result<()> {
     let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     path.push("tests/external/others/allged.ged");
 
-    let result = gedcomfy::validate_file(&path, ParseOptions::default())?;
+    let mut parser = gedcomfy::Parser::for_file(&path)?;
+    let result = parser.validate().map_err(|e| e.to_static())?;
     assert_eq!(result.record_count, 18);
     Ok(())
 }
@@ -20,7 +21,8 @@ fn can_parse_allged_fully() -> miette::Result<()> {
     let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     path.push("tests/external/others/allged.ged");
 
-    let parsed_file = gedcomfy::parse_file(&path, ParseOptions::default())?;
+    let mut parser = gedcomfy::Parser::for_file(&path)?;
+    let parsed_file = parser.parse().map_err(|e| e.to_static())?;
     insta::assert_debug_snapshot!(parsed_file.file);
     Ok(())
 }
@@ -30,7 +32,7 @@ fn produces_expected_allged_tree() {
     let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     path.push("tests/external/others/allged.ged");
 
-    let mut parser = Parser::read_file(path, ParseOptions::default()).unwrap();
+    let mut parser = Parser::for_file(&path).unwrap();
     let kdl = parser.parse_kdl().unwrap();
 
     insta::assert_snapshot!(kdl);
@@ -41,9 +43,9 @@ fn torture_test_valid() {
     ensure_hook();
 
     insta::glob!("external/torture-test-55-files/*.ged", |path| {
-        let mut parser = Parser::read_file(path, ParseOptions::default())
-            .unwrap()
-            .with_path(path.file_name().unwrap());
+        let mut parser = Parser::with_path(Path::new(path.file_name().unwrap()).into())
+            .load_file(path)
+            .unwrap();
         let kdl = parser.parse_kdl().unwrap();
         insta::assert_snapshot!(kdl);
     });
@@ -54,12 +56,12 @@ fn golden_files() -> miette::Result<()> {
     ensure_hook();
     insta::glob!("format_inputs/*.ged", |path| {
         let data = std::fs::read(path).unwrap();
-        let filename = path.file_name().unwrap();
+        let filename = Path::new(path.file_name().unwrap());
         insta::with_settings!({
             // provide GEDCOM source alongside output
             description => String::from_utf8_lossy(&data),
         }, {
-            let mut parser = Parser::read_bytes(data, ParseOptions::default()).with_path(filename);
+            let mut parser = Parser::with_path(filename.into()).load_bytes(data);
             match parser.parse_kdl() {
                 Ok(kdl) => {
                     insta::assert_snapshot!(kdl);

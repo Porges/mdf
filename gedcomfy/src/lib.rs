@@ -1,7 +1,6 @@
 //! This is a library for parsing and validating GEDCOM files.
 
 use core::str;
-use std::path::Path;
 
 use miette::{Context, IntoDiagnostic, SourceSpan};
 use parser::{
@@ -15,6 +14,8 @@ pub mod highlighting;
 pub mod parser;
 pub mod schemas;
 pub mod versions;
+
+pub use parser::Parser;
 
 #[derive(
     derive_more::Error, derive_more::Display, derive_more::From, Debug, miette::Diagnostic,
@@ -40,28 +41,6 @@ impl<S: GEDCOMSource + ?Sized> RawRecord<'_, S> {
             .iter()
             .find(|r| r.value.line.tag.value == subrecord_tag)
     }
-}
-
-pub fn validate_file(
-    path: &Path,
-    parse_options: ParseOptions,
-) -> Result<parser::ValidationResult, miette::Report> {
-    let mut parser = parser::Parser::read_file(path, parse_options)
-        .into_diagnostic()
-        .with_context(|| format!("Parsing file {}", path.display()))?;
-
-    Ok(parser.validate()?)
-}
-
-pub fn parse_file(
-    path: &Path,
-    parse_options: ParseOptions,
-) -> Result<parser::ParseResult, miette::Report> {
-    let mut parser = parser::Parser::read_file(path, parse_options)
-        .into_diagnostic()
-        .with_context(|| format!("Parsing file {}", path.display()))?;
-
-    Ok(parser.parse()?)
 }
 
 #[derive(derive_more::Error, derive_more::Display, Debug, miette::Diagnostic)]

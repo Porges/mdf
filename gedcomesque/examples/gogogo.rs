@@ -15,15 +15,18 @@ use sea_orm::{
 #[derive(derive_more::Display, errful::Error, derive_more::From, Debug)]
 enum Error {
     #[display("I/O error")]
-    Io { source: std::io::Error },
+    Io {
+        source: std::io::Error,
+    },
 
     #[display("Database error")]
-    Database { source: sea_orm::DbErr },
-
-    #[display("Parse error")]
-    Parse {
-        source: gedcomfy::parser::ParseError,
+    Database {
+        source: sea_orm::DbErr,
     },
+
+    Parse(gedcomfy::parser::ParserError<'static>),
+
+    FileLoad(gedcomfy::parser::FileLoadError),
 }
 
 #[tokio::main(flavor = "current_thread")]
@@ -34,8 +37,8 @@ async fn main() -> ExitResult<Error> {
     let opts = ParseOptions::default().force_encoding(SupportedEncoding::Windows1252);
     let file_size = { std::fs::File::open(&path)?.metadata()?.len() };
     let start_time = Instant::now();
-    let mut parser = Parser::read_file(path, opts)?;
-    let records = parser.parse_raw()?;
+    let mut parser = Parser::with_options(opts).load_file(&path)?;
+    let records = parser.raw_records().map_err(|e| e.to_static())?;
     let elapsed = start_time.elapsed().as_secs_f64();
     println!(
         "parsed {filename} in {}s: ({} bytes, {} records, {} records/s)",

@@ -26,6 +26,8 @@ tracing = { version = "0.1", features = ["attributes"] }
 vec1 = "1.12.1"
 yoke = { version = "0.7.4", features = ["derive"] }
 itertools = "0.14.0"
+memmap2 = "0.9.5"
+dunce = "1.0.5"
 
 
 [dev-dependencies]

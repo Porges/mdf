@@ -121,22 +121,16 @@ fn main() -> miette::Result<()> {
                 path,
                 parse_options,
             } => {
-                let mut parser = Parser::read_file(&path, parse_options.into())
-                    .into_diagnostic()
-                    .with_context(|| format!("Parsing file {}", path.display()))?;
-
-                let result = parser.parse_kdl()?;
+                let mut parser = Parser::with_options(parse_options.into()).load_file(&path)?;
+                let result = parser.parse_kdl().map_err(|e| e.to_static())?;
                 println!("{result}");
             }
             GedcomCommands::Parse {
                 path,
                 parse_options,
             } => {
-                let mut parser = Parser::read_file(&path, parse_options.into())
-                    .into_diagnostic()
-                    .with_context(|| format!("Parsing file {}", path.display()))?;
-
-                let result = parser.parse()?;
+                let mut parser = Parser::with_options(parse_options.into()).load_file(&path)?;
+                let result = parser.parse().map_err(|e| e.to_static())?;
                 // TODO: print warnings
                 println!("{:#?}", result.file);
             }
@@ -145,14 +139,12 @@ fn main() -> miette::Result<()> {
                 parse_options,
             } => {
                 let start_time = Instant::now();
-                let mut parser = Parser::read_file(&path, parse_options.into())
-                    .into_diagnostic()
-                    .with_context(|| format!("Parsing file {}", path.display()))?;
+                let mut parser = Parser::with_options(parse_options.into()).load_file(&path)?;
 
                 println!("File loaded: {}", path.display());
                 println!("Validating file syntax…");
 
-                let result = parser.validate()?;
+                let result = parser.validate().map_err(|e| e.to_static())?;
 
                 println!(
                     "Completed in {}",

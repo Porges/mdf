@@ -18,14 +18,14 @@ impl NonFatalHandler for Mode {
     }
 }
 
-impl ParseMode for Mode {
-    type ResultBuilder<'i> = Builder<'i>;
+impl<'i> ParseMode<'i> for Mode {
+    type ResultBuilder = Builder<'i>;
 
-    fn get_result_builder<'i>(
+    fn get_result_builder(
         self,
         _version: SupportedGEDCOMVersion,
-        _source_code: AnySourceCode,
-    ) -> Result<Self::ResultBuilder<'i>, ParseError> {
+        _source_code: &AnySourceCode<'i>,
+    ) -> Result<Self::ResultBuilder, ParseError> {
         Ok(Builder {
             mode: self,
             records: Vec::new(),

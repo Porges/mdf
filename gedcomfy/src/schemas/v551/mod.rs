@@ -711,8 +711,8 @@ mod test {
         2 VERS 5.5.1\n\
         2 FORM LINEAGE-LINKED";
 
-        let mut parser = Parser::read_string(lines, ParseOptions::default());
-        let records = parser.parse_raw()?;
+        let mut parser = Parser::for_str(lines);
+        let records = parser.raw_records().map_err(|e| e.to_static())?;
         let header = Header::try_from(records.into_iter().next().unwrap())?;
         assert_eq!(header.source.approved_system_id, "Test".to_string());
         assert_eq!(header.destination, Some("example".to_string()));
@@ -735,8 +735,7 @@ mod test {
         2 VERS 5.5.1\n\
         2 FORM LINEAGE-LINKED";
 
-        let mut parser = Parser::read_string(lines, ParseOptions::default());
-        let records = parser.parse_raw()?;
+        let records = Parser::for_str(lines).raw_records()?;
         let err = Header::try_from(records.into_iter().next().unwrap()).unwrap_err();
         assert_eq!(
             SchemaError::UnexpectedTag {
@@ -763,8 +762,8 @@ mod test {
         2 VERS 5.5.1\n\
         2 FORM LINEAGE-LINKED";
 
-        let mut parser = Parser::read_string(lines, ParseOptions::default());
-        let records = parser.parse_raw()?;
+        let mut parser = Parser::for_str(lines);
+        let records = parser.raw_records()?;
         let _header = Header::try_from(records.into_iter().next().unwrap())?;
 
         Ok(())
@@ -779,8 +778,7 @@ mod test {
         0 INDI\n\
         1 NAME John /Smith/\n";
 
-        let mut parser = Parser::read_string(lines, ParseOptions::default());
-        let records = parser.parse_raw()?;
+        let records = Parser::for_str(lines).raw_records()?;
         let indi = Individual::try_from(records.into_iter().nth(1).unwrap())?;
 
         assert_eq!(indi.names, vec![Name::new("John /Smith/".to_string())]);
@@ -798,8 +796,7 @@ mod test {
         1 NAME John /Smith/\n\
         1 NAME Jim /Smarth/\n";
 
-        let mut parser = Parser::read_string(lines, ParseOptions::default());
-        let records = parser.parse_raw()?;
+        let records = Parser::for_str(lines).raw_records()?;
         let indi = Individual::try_from(records.into_iter().nth(1).unwrap())?;
         assert_eq!(
             indi.names,
@@ -823,8 +820,7 @@ mod test {
         1 ADDR it has an address...\n\
         2 CONC which is continued";
 
-        let mut parser = Parser::read_string(lines, ParseOptions::default());
-        let records = parser.parse_raw()?;
+        let records = Parser::for_str(lines).raw_records()?;
         let corp = Corporate::try_from(records.into_iter().nth(1).unwrap())?;
         assert_eq!(
             corp.name_of_business,

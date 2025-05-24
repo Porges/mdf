@@ -1,18 +1,12 @@
-use gedcomfy::parser::{options::ParseOptions, Parser};
+use gedcomfy::parser::{options::ParseOptions, Parser, ParserError};
 use kdl::KdlDocument;
 
 mod shared;
 
-fn to_kdl(input: &[u8]) -> Result<KdlDocument, String> {
+fn to_kdl(input: &[u8]) -> Result<KdlDocument, ParserError<'static>> {
     shared::ensure_hook();
-    Parser::read_bytes(input, ParseOptions::default())
-        .parse_kdl()
-        .map_err(|e| {
-            format!(
-                "Error: {:?}",
-                miette::Report::new(e).with_source_code(input.to_owned())
-            )
-        })
+    let mut parser = Parser::for_bytes(input);
+    parser.parse_kdl().map_err(|e| e.to_static())
 }
 
 #[test]

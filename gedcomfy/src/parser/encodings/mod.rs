@@ -82,12 +82,12 @@ pub enum EncodingReason {
     BOMDetected { bom_length: usize },
 
     #[display(
-        "this encoding was detected from start of file content (no byte-order mark was present)"
+        "this encoding was detected from the start of the file content (no byte-order mark was present)"
     )]
     #[diagnostic(severity(Advice), code(gedcom::encoding_reason::sniffed))]
     Sniffed {},
 
-    #[display("this encoding was specified in the GEDCOM header")]
+    #[display("this encoding was used because it was specified in the GEDCOM header")]
     #[diagnostic(severity(Advice), code(gedcom::encoding_reason::header))]
     SpecifiedInHeader {
         #[label("encoding was specified here")]
@@ -95,8 +95,8 @@ pub enum EncodingReason {
     },
 
     #[display(
-        "this encoding was used because it is required by GEDCOM version {version}{}",
-        if span.is_none() { " (this version was forced by parsing options)" } else { "" }
+        "this encoding was used because it is required by the GEDCOM version used: {version}{}",
+        if span.is_none() { " (this version was selected explicitly in the options)" } else { "" }
     )]
     #[diagnostic(severity(Advice))]
     DeterminedByVersion {
@@ -131,7 +131,7 @@ pub enum EncodingError {
 
     #[display(
         "GEDCOM version {version}{} requires the encoding to be {version_encoding}, but the file encoding was determined to be {external_encoding}",
-        if version_span.is_none() { " (this version was forced by parsing options)" } else { "" }
+        if version_span.is_none() { " (this version was selected explicitly in the options)" } else { "" }
     )]
     #[diagnostic(code(gedcom::encoding::version_encoding_mismatch))]
     VersionEncodingMismatch {
@@ -252,7 +252,7 @@ impl DetectedEncoding {
         match self.encoding {
             SupportedEncoding::Ascii => {
                 let ascii_err = match data.as_ascii_str() {
-                    Ok(str) => return Ok(str.as_str().into()),
+                    Ok(ascii_str) => return Ok(ascii_str.as_str().into()),
                     Err(err) => err,
                 };
 
@@ -279,7 +279,10 @@ impl DetectedEncoding {
                         .copied(),
                 );
 
-                tracing::debug!("data to decode is {}", String::from_utf8_lossy(&to_show));
+                tracing::debug!(
+                    data_as_utf8 = String::from_utf8_lossy(&to_show).as_ref(),
+                    "data failed to decode"
+                );
 
                 let mut possible_encodings = Vec::new();
                 for encoding in [SupportedEncoding::Windows1252, SupportedEncoding::Utf8] {
@@ -295,7 +298,7 @@ impl DetectedEncoding {
                         Ok(decoded) => {
                             // if we decoded to something containing control characters,
                             // it’s not valid
-                            if decoded.as_ref().chars().all(|c| !c.is_control()) {
+                            if decoded.chars().all(|c| !c.is_control()) {
                                 possible_encodings.push(PossibleEncoding {
                                     encoding,
                                     data_in_encoding: decoded.into_owned(),

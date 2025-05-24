@@ -33,14 +33,14 @@ impl NonFatalHandler for Mode {
     }
 }
 
-impl ParseMode for Mode {
-    type ResultBuilder<'i> = Builder<'i>;
+impl<'i> ParseMode<'i> for Mode {
+    type ResultBuilder = Builder<'i>;
 
-    fn get_result_builder<'i>(
+    fn get_result_builder(
         self,
         version: SupportedGEDCOMVersion,
-        _source_code: AnySourceCode,
-    ) -> Result<Self::ResultBuilder<'i>, ParseError> {
+        _source_code: &AnySourceCode<'i>,
+    ) -> Result<Self::ResultBuilder, ParseError> {
         Ok(Builder {
             mode: self,
             version,
@@ -61,7 +61,7 @@ pub struct ParseResult {
     pub non_fatals: Vec<ParseError>,
 }
 
-impl NonFatalHandler for Builder<'_> {
+impl<'i> NonFatalHandler for Builder<'i> {
     fn non_fatal<E>(&mut self, error: E) -> Result<(), E>
     where
         E: Into<ParseError> + miette::Diagnostic,
@@ -70,16 +70,17 @@ impl NonFatalHandler for Builder<'_> {
     }
 }
 
-impl<'i> ResultBuilder<'i> for Builder<'i> {
+impl<'s> ResultBuilder<'s> for Builder<'s> {
     type Result = ParseResult;
-    fn complete(self) -> Result<Self::Result, ParseError> {
+
+    fn complete(self) -> Result<ParseResult, ParseError> {
         Ok(ParseResult {
             file: AnyFileVersion::try_from((self.version, self.records))?,
             non_fatals: self.mode.non_fatals,
         })
     }
 
-    fn handle_record(&mut self, record: Sourced<RawRecord<'i>>) -> Result<(), ParseError> {
+    fn handle_record(&mut self, record: Sourced<RawRecord<'s>>) -> Result<(), ParseError> {
         self.records.push(record);
         Ok(())
     }
