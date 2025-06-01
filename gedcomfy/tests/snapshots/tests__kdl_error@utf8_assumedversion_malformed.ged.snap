@@ -1,15 +1,34 @@
 ---
 source: gedcomfy/tests/tests.rs
 description: "0 HEAD\r\n1 GEDC\r\n2 VERS 7.0\r\n0 TEXT h�3�ré\r\n0 TRLR"
-expression: "format!(\"{:?}\", miette::Report::new(err))"
+expression: "shared::render(&err)"
 input_file: gedcomfy/tests/encoding_inputs/utf8_assumedversion_malformed.ged
 ---
-gedcom::encoding::invalid_data
+gedcomfy::error
 
-  × An error occurred while parsing the GEDCOM file
-  ├─▶ GEDCOM file contained data which was invalid in the detected encoding
+  × A problem was found in the GEDCOM file
+  ├─▶ gedcom::encoding::invalid_data
+  │   
+  │     × GEDCOM file contained data which was invalid in the detected
+  │     │ encoding
+  │      ╭─[4:9]
+  │    3 │ 2 VERS 7.0
+  │    4 │ 0 TEXT h�3�ré
+  │      ·         ┬
+  │      ·         ╰── this is not valid data for the encoding UTF-8
+  │    5 │ 0 TRLR
+  │      ╰────
+  │   
+  │   Advice:
+  │     ☞ this encoding was used because it is required by the GEDCOM version
+  │     │ used: 7.0
+  │      ╭─[3:8]
+  │    2 │ 1 GEDC
+  │    3 │ 2 VERS 7.0
+  │      ·        ─┬─
+  │      ·         ╰── version was specified here
+  │    4 │ 0 TEXT h�3�ré
+  │      ╰────
+  │   
   ├─▶ Invalid data for encoding UTF-8
   ╰─▶ invalid utf-8 sequence of 1 bytes from index 36
-
-Advice: 
-  ☞ this encoding was used because it is required by GEDCOM version 7.0

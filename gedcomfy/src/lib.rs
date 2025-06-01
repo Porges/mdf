@@ -2,24 +2,21 @@
 
 use core::str;
 
-use miette::{Context, IntoDiagnostic, SourceSpan};
-use parser::{
-    decoding::DecodingError, lines::LineSyntaxError, options::ParseOptions, records::RawRecord,
-    GEDCOMSource, Sourced,
+use miette::SourceSpan;
+use reader::{
+    decoding::DecodingError, lines::LineSyntaxError, records::RawRecord, GEDCOMSource, Sourced,
 };
 use vec1::Vec1;
 
 pub mod encodings;
 pub mod highlighting;
-pub mod parser;
+pub mod reader;
 pub mod schemas;
 pub mod versions;
 
-pub use parser::Parser;
+pub use reader::Reader;
 
-#[derive(
-    derive_more::Error, derive_more::Display, derive_more::From, Debug, miette::Diagnostic,
-)]
+#[derive(thiserror::Error, derive_more::Display, Debug, miette::Diagnostic)]
 pub enum ValidationError {
     #[display("{} syntax error{} detected", errors.len(), if errors.len() > 1 { "s" } else { "" })]
     SyntaxErrorsDetected {
@@ -29,7 +26,6 @@ pub enum ValidationError {
     #[display("Encoding error detected: further validation errors will not be found")]
     #[diagnostic(transparent)]
     EncodingErrorDetected {
-        #[error(source)]
         #[from]
         error: DecodingError,
     },
@@ -39,11 +35,11 @@ impl<S: GEDCOMSource + ?Sized> RawRecord<'_, S> {
     pub(crate) fn subrecord_optional(&self, subrecord_tag: &str) -> Option<&Sourced<RawRecord<S>>> {
         self.records
             .iter()
-            .find(|r| r.value.line.tag.value == subrecord_tag)
+            .find(|r| r.sourced_value.line.tag.sourced_value == subrecord_tag)
     }
 }
 
-#[derive(derive_more::Error, derive_more::Display, Debug, miette::Diagnostic)]
+#[derive(thiserror::Error, derive_more::Display, Debug, miette::Diagnostic)]
 pub enum FileStructureError {
     #[display("Missing HEAD record")]
     #[diagnostic(code(gedcom::schema_error::missing_head_record))]

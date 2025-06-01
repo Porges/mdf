@@ -1,17 +1,17 @@
 use std::path::PathBuf;
 
-use gedcomfy::parser::{encodings::detect_external_encoding, options::ParseOptions, Parser};
+use gedcomfy::reader::{decoding::detect_external_encoding, input::File, Reader};
 
 mod shared;
-use shared::ensure_hook;
 
 #[test]
 fn can_parse_allged_lines() -> miette::Result<()> {
     let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     path.push("tests/external/others/allged.ged");
 
-    let mut parser = gedcomfy::Parser::for_file(&path)?;
-    let result = parser.validate().map_err(|e| e.to_static())?;
+    let reader = gedcomfy::Reader::default();
+    let input = reader.decode(File::load(path)?)?;
+    let result = reader.validate(&input)?;
     assert_eq!(result.record_count, 18);
     Ok(())
 }
@@ -21,68 +21,64 @@ fn can_parse_allged_fully() -> miette::Result<()> {
     let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     path.push("tests/external/others/allged.ged");
 
-    let mut parser = gedcomfy::Parser::for_file(&path)?;
-    let parsed_file = parser.parse().map_err(|e| e.to_static())?;
+    let reader = gedcomfy::Reader::default();
+    let file = reader.decode_file(path)?;
+    let parsed_file = reader.parse(&file)?;
     insta::assert_debug_snapshot!(parsed_file.file);
     Ok(())
 }
 
 #[test]
-fn produces_expected_allged_tree() {
+fn produces_expected_allged_tree() -> miette::Result<()> {
     let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     path.push("tests/external/others/allged.ged");
 
-    let mut parser = Parser::for_file(&path).unwrap();
-    let kdl = parser.parse_kdl().unwrap();
+    let reader = Reader::default();
+    let file = reader.decode_file(path)?;
+    let kdl = reader.parse_kdl(&file)?;
 
     insta::assert_snapshot!(kdl);
+    Ok(())
 }
 
 #[test]
 fn torture_test_valid() {
-    ensure_hook();
-
     insta::glob!("external/torture-test-55-files/*.ged", |path| {
-        let mut parser = Parser::with_path(Path::new(path.file_name().unwrap()).into())
-            .load_file(path)
-            .unwrap();
-        let kdl = parser.parse_kdl().unwrap();
+        let parser = Reader::default();
+        let decoded = parser.decode_file(path).unwrap();
+        let kdl = parser.parse_kdl(&decoded).unwrap();
         insta::assert_snapshot!(kdl);
     });
 }
 
 #[test]
-fn golden_files() -> miette::Result<()> {
-    ensure_hook();
+fn golden_files() {
     insta::glob!("format_inputs/*.ged", |path| {
         let data = std::fs::read(path).unwrap();
-        let filename = Path::new(path.file_name().unwrap());
+        let _filename = Path::new(path.file_name().unwrap());
         insta::with_settings!({
             // provide GEDCOM source alongside output
             description => String::from_utf8_lossy(&data),
         }, {
-            let mut parser = Parser::with_path(filename.into()).load_bytes(data);
-            match parser.parse_kdl() {
+            let reader = Reader::default();
+            let it = reader.decode_borrowed(data.as_slice()).and_then(|input| reader.parse_kdl(&input));
+            match it {
                 Ok(kdl) => {
                     insta::assert_snapshot!(kdl);
                 }
                 Err(err) => {
-                    insta::assert_snapshot!(format!("{:?}", miette::Report::new(err)))
+                    insta::assert_snapshot!(shared::render(&err));
                 },
             };
         });
     });
-
-    Ok(())
 }
 
 #[test]
 fn test_encodings() {
-    ensure_hook();
-
     insta::glob!("encoding_inputs/*.ged", |path| {
         let data = std::fs::read(path).unwrap();
-        let filename = path.file_name().unwrap();
+        let _filename = path.file_name().unwrap();
 
         insta::with_settings!({
             // provide GEDCOM source alongside output
@@ -90,13 +86,14 @@ fn test_encodings() {
         }, {
             let external_encoding = detect_external_encoding(&data);
             insta::assert_debug_snapshot!("external_encoding", external_encoding);
-            let mut parser = Parser::read_bytes(data, ParseOptions::default()).with_path(filename);
-            match parser.parse_kdl(){
+            let reader = Reader::default();
+            match reader.decode_borrowed(data.as_slice())
+                .and_then(|input| reader.parse_kdl(&input)) {
                 Ok(kdl) => {
                     insta::assert_snapshot!("kdl", kdl);
                 }
                 Err(err) => {
-                    insta::assert_snapshot!("kdl_error", format!("{:?}", miette::Report::new(err)))
+                    insta::assert_snapshot!("kdl_error", shared::render(&err));
                 },
             };
         });

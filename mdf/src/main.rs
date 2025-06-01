@@ -6,10 +6,9 @@ use std::{
 
 use fancy_duration::FancyDuration;
 use gedcomfy::{
-    parser::{encodings::SupportedEncoding, options::ParseOptions, Parser},
+    reader::{encodings::SupportedEncoding, options::ParseOptions, Reader},
     versions::SupportedGEDCOMVersion,
 };
-use miette::{Context, IntoDiagnostic};
 
 mod components;
 
@@ -121,16 +120,18 @@ fn main() -> miette::Result<()> {
                 path,
                 parse_options,
             } => {
-                let mut parser = Parser::with_options(parse_options.into()).load_file(&path)?;
-                let result = parser.parse_kdl().map_err(|e| e.to_static())?;
+                let reader = Reader::with_options(parse_options.into());
+                let input = reader.decode_file(path)?;
+                let result = reader.parse_kdl(&input)?;
                 println!("{result}");
             }
             GedcomCommands::Parse {
                 path,
                 parse_options,
             } => {
-                let mut parser = Parser::with_options(parse_options.into()).load_file(&path)?;
-                let result = parser.parse().map_err(|e| e.to_static())?;
+                let reader = Reader::with_options(parse_options.into());
+                let input = reader.decode_file(path)?;
+                let result = reader.parse(&input)?;
                 // TODO: print warnings
                 println!("{:#?}", result.file);
             }
@@ -139,12 +140,13 @@ fn main() -> miette::Result<()> {
                 parse_options,
             } => {
                 let start_time = Instant::now();
-                let mut parser = Parser::with_options(parse_options.into()).load_file(&path)?;
+                let reader = Reader::with_options(parse_options.into());
+                let input = reader.decode_file(&path)?;
 
                 println!("File loaded: {}", path.display());
                 println!("Validating file syntax…");
 
-                let result = parser.validate().map_err(|e| e.to_static())?;
+                let result = reader.validate(&input)?;
 
                 println!(
                     "Completed in {}",

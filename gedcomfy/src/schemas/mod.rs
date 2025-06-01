@@ -1,7 +1,7 @@
 use miette::SourceSpan;
 
 use crate::{
-    parser::{records::RawRecord, Sourced},
+    reader::{records::RawRecord, Sourced},
     versions::SupportedGEDCOMVersion,
 };
 
@@ -31,9 +31,10 @@ impl TryFrom<(SupportedGEDCOMVersion, Vec<Sourced<RawRecord<'_>>>)> for AnyFileV
     }
 }
 
-#[derive(Debug, derive_more::Error, derive_more::Display, miette::Diagnostic, PartialEq, Eq)]
+#[derive(Debug, thiserror::Error, derive_more::Display, miette::Diagnostic, PartialEq, Eq)]
 pub enum SchemaError {
     #[display("Missing required subrecord {tag}")]
+    #[diagnostic(code("gedcom::schema::missing_subrecord"))]
     MissingRecord {
         tag: &'static str,
 
@@ -42,6 +43,7 @@ pub enum SchemaError {
     },
 
     #[display("Unknown top-level record {tag}")]
+    #[diagnostic(code("gedcom::schema::unknown_record"))]
     UnknownTopLevelRecord {
         tag: String,
 
@@ -50,6 +52,7 @@ pub enum SchemaError {
     },
 
     #[display("Unexpected subrecord {tag}")]
+    #[diagnostic(code("gedcom::schema::unexpected_subrecord"))]
     UnexpectedTag {
         tag: String,
 
@@ -64,6 +67,7 @@ pub enum SchemaError {
     DataError { tag: String, source: DataError },
 
     #[display("Too many values for subrecord {tag} (expected {expected}, received {received})")]
+    #[diagnostic(code("gedcom::schema::excess_subrecords"))]
     TooManyRecords {
         tag: &'static str,
         expected: usize,
@@ -71,7 +75,7 @@ pub enum SchemaError {
     },
 }
 
-#[derive(Debug, derive_more::Error, derive_more::Display, PartialEq, Eq)]
+#[derive(Debug, thiserror::Error, derive_more::Display, PartialEq, Eq)]
 pub enum DataError {
     #[display("Invalid data")]
     InvalidData {

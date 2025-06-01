@@ -2,7 +2,7 @@ use std::borrow::Cow;
 
 use ascii::AsAsciiStr;
 
-#[derive(derive_more::Error, derive_more::Display, Debug, Clone, Copy)]
+#[derive(thiserror::Error, derive_more::Display, Debug, Clone, Copy)]
 pub(crate) enum AnselErr {
     #[display("the byte at index {offset} (value 0x{value:x}) is not ANSEL")]
     Invalid { offset: usize, value: u8 },

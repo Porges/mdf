@@ -330,7 +330,7 @@ impl Highlighter<'_> {
                 .subsequent_indent(&subsequent_indent);
 
             for wrapped_line in textwrap::wrap(&line, wrap_opts) {
-                writeln!(result, "{}", wrapped_line).unwrap();
+                writeln!(result, "{wrapped_line}").unwrap();
             }
         }
 

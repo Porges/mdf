@@ -1,11 +1,22 @@
 ---
 source: gedcomfy/tests/tests.rs
 description: "0 HEAD\r\n1 GEDC\r\n2 VERS 5.5.1\r\n1 CHAR UNICODE\r\n0 TRLR\r\n"
-expression: "format!(\"{:?}\", miette::Report::new(err))"
+expression: "shared::render(&err)"
 input_file: gedcomfy/tests/encoding_inputs/utf16le_specified_incorrect.ged
 ---
-gedcom::encoding::file_encoding_mismatch
+gedcomfy::error
 
-  × An error occurred while parsing the GEDCOM file
-  ├─▶ Unable to determine encoding of GEDCOM file
-  ╰─▶ The file’s GEDCOM header specifies the encoding to be UNICODE, but the file is in an unknown ASCII-compatible encoding
+  × A problem was found in the GEDCOM file
+  ├─▶ gedcom::encoding::file_encoding_mismatch
+  │   
+  │     × Unable to determine encoding of GEDCOM file
+  │      ╭─[4:8]
+  │    3 │ 2 VERS 5.5.1
+  │    4 │ 1 CHAR UNICODE
+  │      ·        ───┬───
+  │      ·           ╰── encoding was specified here
+  │    5 │ 0 TRLR
+  │      ╰────
+  │   
+  ╰─▶ The file’s GEDCOM header specifies the encoding to be UNICODE, but the
+      file is in an unknown ASCII-compatible encoding

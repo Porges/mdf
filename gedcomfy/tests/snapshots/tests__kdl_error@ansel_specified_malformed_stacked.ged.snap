@@ -1,16 +1,33 @@
 ---
 source: gedcomfy/tests/tests.rs
 description: "0 HEAD\r\n1 GEDC\r\n2 VERS 5.5.1\r\n1 CHAR ANSEL\r\n0 SOME te��a\r\n0 TRLR2r\r\n"
-expression: "format!(\"{:?}\", miette::Report::new(err))"
+expression: "shared::render(&err)"
 input_file: gedcomfy/tests/encoding_inputs/ansel_specified_malformed_stacked.ged
 ---
-gedcom::encoding::invalid_data
+gedcomfy::error
 
-  × An error occurred while parsing the GEDCOM file
-  ├─▶ GEDCOM file contained data which was invalid in the detected encoding
+  × A problem was found in the GEDCOM file
+  ├─▶ gedcom::encoding::invalid_data
+  │   
+  │     × GEDCOM file contained data which was invalid in the detected
+  │     │ encoding
+  │      ╭─[1:1]
+  │    1 │ 0 HEAD
+  │      · ┬
+  │      · ╰── this is not valid data for the encoding ANSEL
+  │    2 │ 1 GEDC
+  │      ╰────
+  │   
+  │   Advice: gedcom::encoding_reason::header
+  │   
+  │     ☞ this encoding was used because it was specified in the GEDCOM header
+  │      ╭─[4:8]
+  │    3 │ 2 VERS 5.5.1
+  │    4 │ 1 CHAR ANSEL
+  │      ·        ──┬──
+  │      ·          ╰── encoding was specified here
+  │    5 │ 0 SOME te��a
+  │      ╰────
+  │   
   ├─▶ Invalid data for encoding ANSEL
   ╰─▶ stacked combining characters are not allowed
-
-Advice: gedcom::encoding_reason::header
-
-  ☞ this encoding was specified in the GEDCOM header

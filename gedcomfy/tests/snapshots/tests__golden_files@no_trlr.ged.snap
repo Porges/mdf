@@ -1,9 +1,21 @@
 ---
 source: gedcomfy/tests/tests.rs
 description: "0 HEAD\r\n1 FOO BAR\r\n"
-expression: "format!(\"{:?}\", miette::Report::new(err))"
+expression: "shared::render(&err)"
 input_file: gedcomfy/tests/format_inputs/no_trlr.ged
 ---
-  × An error occurred while parsing the GEDCOM file
-  ├─▶ Unable to determine version of GEDCOM file
-  ╰─▶ GEDCOM file appeared to be syntactically valid, but no version could be found
+gedcomfy::error
+
+  × A problem was found in the GEDCOM file
+  ╰─▶ gedcom::version::missing
+      
+        × GEDCOM file appeared to be syntactically valid, but no version could
+        │ be found
+         ╭─[1:1]
+       1 │ ╭─▶ 0 HEAD
+       2 │ ├─▶ 1 FOO BAR
+         · ╰──── this is the head record, which should contain the GEDCOM
+      version
+         ╰────
+        help: GEDCOM version can be explicitly set using the `--force-version`
+              flag

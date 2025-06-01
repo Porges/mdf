@@ -13,7 +13,7 @@ use super::{GEDCOMSource, Sourced};
 pub struct RawLine<'a, S: GEDCOMSource + ?Sized> {
     pub tag: Sourced<&'a AsciiStr>,
     pub xref: Option<Sourced<&'a S>>,
-    pub line_value: Sourced<LineValue<'a, S>>,
+    pub value: Sourced<LineValue<'a, S>>,
 }
 
 #[derive(PartialEq, Eq, Debug)]
@@ -31,19 +31,18 @@ impl<S: GEDCOMSource + ?Sized> LineValue<'_, S> {
 
 /// The types of errors that can occur when parsing lines
 /// from a GEDCOM file.
-#[derive(derive_more::Error, derive_more::Display, Debug, miette::Diagnostic)]
+#[derive(thiserror::Error, Debug, miette::Diagnostic)]
 pub enum LineSyntaxError {
-    #[display("Invalid non-numeric level '{value}'")]
+    #[error("Invalid non-numeric level '{value}'")]
     #[diagnostic(code(gedcom::parse_error::invalid_level))]
     InvalidLevel {
         value: String,
-        #[error(source)]
         source: Box<dyn std::error::Error + Send + Sync>,
         #[label("this is not a (positive) number")]
         span: SourceSpan,
     },
 
-    #[display("Reserved value '{reserved_value}' cannot be used as an XRef")]
+    #[error("Reserved value '{reserved_value}' cannot be used as an XRef")]
     #[diagnostic(code(gedcom::parse_error::reserved_xref))]
     ReservedXRef {
         reserved_value: String,
@@ -51,21 +50,21 @@ pub enum LineSyntaxError {
         span: SourceSpan,
     },
 
-    #[display("No tag found")]
+    #[error("No tag found")]
     #[diagnostic(code(gedcom::parse_error::no_tag))]
     NoTag {
         #[label("no tag in this line")]
         span: SourceSpan,
     },
 
-    #[display("A line should consist of at least two space-separated parts")]
+    #[error("A line should consist of at least two space-separated parts")]
     #[diagnostic(code(gedcom::parse_error::no_space))]
     NoSpace {
         #[label("no space in this line")]
         span: SourceSpan,
     },
 
-    #[display("Invalid character in tag")]
+    #[error("Invalid character in tag")]
     #[diagnostic(
         code(gedcom::parse_error::invalid_tag),
         help("tag names must begin with either an uppercase letter or underscore, followed by letters or numbers")
@@ -75,7 +74,7 @@ pub enum LineSyntaxError {
         span: SourceSpan,
     },
 
-    #[display("Incomplete pointer value")]
+    #[error("Incomplete pointer value")]
     #[diagnostic(code(gedcom::parse_error::incomplete_pointer))]
     IncompletePointer {
         #[label("this pointer value should end with '@'")]
@@ -140,7 +139,7 @@ fn parse_line<'a, S: GEDCOMSource + ?Sized>(
     debug_assert!(!line.is_empty());
 
     let to_sourced = |s: &'a S| Sourced {
-        value: s,
+        sourced_value: s,
         span: source_code.span_of(s),
     };
 
@@ -168,7 +167,7 @@ fn parse_line<'a, S: GEDCOMSource + ?Sized>(
         })?;
 
     let level = Sourced {
-        value: level,
+        sourced_value: level,
         span: source_code.span_of(level_part),
     };
 
@@ -231,14 +230,14 @@ fn parse_line<'a, S: GEDCOMSource + ?Sized>(
     }
 
     let tag = Sourced {
-        value: tag,
+        sourced_value: tag,
         span: source_code.span_of(tag_part),
     };
 
     let line_value = match rest_part {
         Some(val) => {
             Sourced {
-                value: if val.starts_with(AsciiChar::At) {
+                sourced_value: if val.starts_with(AsciiChar::At) {
                     let after_at = val.slice_from(1);
                     if after_at.starts_with(AsciiChar::At) {
                         LineValue::Str(after_at)
@@ -265,7 +264,7 @@ fn parse_line<'a, S: GEDCOMSource + ?Sized>(
             }
         }
         None => Sourced {
-            value: LineValue::None,
+            sourced_value: LineValue::None,
             // TODO: think about what to do here
             span: source_code.span_of(line),
         },
@@ -275,10 +274,10 @@ fn parse_line<'a, S: GEDCOMSource + ?Sized>(
         level,
         Sourced {
             span: source_code.span_of(line),
-            value: RawLine {
+            sourced_value: RawLine {
                 tag,
                 xref,
-                line_value,
+                value: line_value,
             },
         },
     ))
@@ -294,8 +293,8 @@ mod test {
     fn basic_line() -> Result<()> {
         let src = "0 HEAD";
         let result = parse_line(src, src)?;
-        assert_eq!(0, result.0.value);
-        assert_eq!("HEAD", result.1.tag.value);
+        assert_eq!(0, result.0.sourced_value);
+        assert_eq!("HEAD", result.1.tag.sourced_value);
         Ok(())
     }
 
@@ -303,9 +302,9 @@ mod test {
     fn basic_xref_line() -> Result<()> {
         let src = "2 @XREF@ TAG";
         let result = parse_line(src, src)?;
-        assert_eq!(2, result.0.value);
-        assert_eq!("TAG", result.1.tag.value);
-        assert_eq!("XREF", result.1.xref.unwrap().value);
+        assert_eq!(2, result.0.sourced_value);
+        assert_eq!("TAG", result.1.tag.sourced_value);
+        assert_eq!("XREF", result.1.xref.unwrap().sourced_value);
         Ok(())
     }
 
@@ -313,10 +312,13 @@ mod test {
     fn basic_line_with_data() -> Result<()> {
         let src = "3 TAG SOME DATA HERE";
         let result = parse_line(src, src)?;
-        assert_eq!(3, result.0.value);
-        assert_eq!("TAG", result.1.tag.value);
+        assert_eq!(3, result.0.sourced_value);
+        assert_eq!("TAG", result.1.tag.sourced_value);
         assert_eq!(None, result.1.xref);
-        assert_eq!(LineValue::Str("SOME DATA HERE"), result.1.line_value.value);
+        assert_eq!(
+            LineValue::Str("SOME DATA HERE"),
+            result.1.value.sourced_value
+        );
         Ok(())
     }
 
@@ -324,12 +326,12 @@ mod test {
     fn basic_xref_line_with_data() -> Result<()> {
         let src = "3 @XREF@ TAG SOME DATA HERE TOO";
         let result = parse_line(src, src)?;
-        assert_eq!(3, result.0.value);
-        assert_eq!("TAG", result.1.tag.value);
-        assert_eq!("XREF", result.1.xref.unwrap().value);
+        assert_eq!(3, result.0.sourced_value);
+        assert_eq!("TAG", result.1.tag.sourced_value);
+        assert_eq!("XREF", result.1.xref.unwrap().sourced_value);
         assert_eq!(
             LineValue::Str("SOME DATA HERE TOO"),
-            result.1.line_value.value
+            result.1.value.sourced_value
         );
         Ok(())
     }
@@ -338,8 +340,8 @@ mod test {
     fn basic_line_u8() -> Result<()> {
         let src: &[u8] = b"0 HEAD";
         let result = parse_line(src, src)?;
-        assert_eq!(0, result.0.value);
-        assert_eq!("HEAD", result.1.tag.value);
+        assert_eq!(0, result.0.sourced_value);
+        assert_eq!("HEAD", result.1.tag.sourced_value);
         Ok(())
     }
 
@@ -347,9 +349,9 @@ mod test {
     fn basic_xref_line_u8() -> Result<()> {
         let src: &[u8] = b"2 @XREF@ TAG";
         let result = parse_line(src, src)?;
-        assert_eq!(2, result.0.value);
-        assert_eq!("TAG", result.1.tag.value);
-        assert_eq!(b"XREF", result.1.xref.unwrap().value);
+        assert_eq!(2, result.0.sourced_value);
+        assert_eq!("TAG", result.1.tag.sourced_value);
+        assert_eq!(b"XREF", result.1.xref.unwrap().sourced_value);
         Ok(())
     }
 
@@ -357,12 +359,12 @@ mod test {
     fn basic_line_with_data_u8() -> Result<()> {
         let src: &[u8] = b"3 TAG SOME DATA HERE";
         let result = parse_line(src, src)?;
-        assert_eq!(3, result.0.value);
-        assert_eq!("TAG", result.1.tag.value);
+        assert_eq!(3, result.0.sourced_value);
+        assert_eq!("TAG", result.1.tag.sourced_value);
         assert_eq!(None, result.1.xref);
         assert_eq!(
             LineValue::Str(b"SOME DATA HERE" as &[u8]),
-            result.1.line_value.value
+            result.1.value.sourced_value
         );
         Ok(())
     }
@@ -371,12 +373,12 @@ mod test {
     fn basic_xref_line_with_data_u8() -> Result<()> {
         let src: &[u8] = b"3 @XREF@ TAG SOME DATA HERE TOO";
         let result = parse_line(src, src)?;
-        assert_eq!(3, result.0.value);
-        assert_eq!("TAG", result.1.tag.value);
-        assert_eq!(b"XREF", result.1.xref.unwrap().value);
+        assert_eq!(3, result.0.sourced_value);
+        assert_eq!("TAG", result.1.tag.sourced_value);
+        assert_eq!(b"XREF", result.1.xref.unwrap().sourced_value);
         assert_eq!(
             LineValue::Str(b"SOME DATA HERE TOO" as &[u8]),
-            result.1.line_value.value
+            result.1.value.sourced_value
         );
         Ok(())
     }

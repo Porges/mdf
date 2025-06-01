@@ -118,7 +118,7 @@ impl<'e> From<&'e dyn Errful> for PrettyDisplay<'e> {
 struct Styles {
     base: owo_colors::Style,
     base_dim: owo_colors::Style,
-    bold: owo_colors::Style,
+    _bold: owo_colors::Style,
     only_bold: owo_colors::Style,
     main_sev: owo_colors::Style,
 }
@@ -128,7 +128,7 @@ impl Styles {
         Self {
             base: owo_colors::Style::new(),
             base_dim: owo_colors::Style::new(),
-            bold: owo_colors::Style::new(),
+            _bold: owo_colors::Style::new(),
             only_bold: owo_colors::Style::new(),
             main_sev: owo_colors::Style::new(),
         }
@@ -139,7 +139,7 @@ impl Styles {
         Self {
             base,
             base_dim: base.dimmed(),
-            bold: base.bold(),
+            _bold: base.bold(),
             only_bold: owo_colors::Style::new().bold(),
             main_sev: base.bold().underline(),
         }

@@ -4,8 +4,9 @@ use std::{path::PathBuf, time::Instant};
 
 use errful::ExitResult;
 use gedcomesque::entities::individual::{ActiveModel as IndividualActive, Entity as Individual};
-use gedcomfy::parser::{
-    encodings::SupportedEncoding, lines::LineValue, options::ParseOptions, Parser,
+use gedcomfy::reader::{
+    encodings::SupportedEncoding, input::FileLoadError, lines::LineValue, options::ParseOptions,
+    Reader, ReaderError,
 };
 use sea_orm::{
     sea_query::TableCreateStatement, ActiveValue, ConnectionTrait, Database, DatabaseConnection,
@@ -24,9 +25,8 @@ enum Error {
         source: sea_orm::DbErr,
     },
 
-    Parse(gedcomfy::parser::ParserError<'static>),
-
-    FileLoad(gedcomfy::parser::FileLoadError),
+    Loading(#[from] FileLoadError),
+    Parsing(#[from] gedcomfy::reader::WithSourceCode<'static, ReaderError>),
 }
 
 #[tokio::main(flavor = "current_thread")]
@@ -37,8 +37,9 @@ async fn main() -> ExitResult<Error> {
     let opts = ParseOptions::default().force_encoding(SupportedEncoding::Windows1252);
     let file_size = { std::fs::File::open(&path)?.metadata()?.len() };
     let start_time = Instant::now();
-    let mut parser = Parser::with_options(opts).load_file(&path)?;
-    let records = parser.raw_records().map_err(|e| e.to_static())?;
+    let reader = Reader::with_options(opts);
+    let input = reader.decode_file(path)?;
+    let records = reader.raw_records(&input)?;
     let elapsed = start_time.elapsed().as_secs_f64();
     println!(
         "parsed {filename} in {}s: ({} bytes, {} records, {} records/s)",
@@ -65,14 +66,14 @@ async fn main() -> ExitResult<Error> {
     let to_insert = Vec::from_iter(
         records
             .iter()
-            .filter(|r| r.value.line.tag.value == "INDI")
+            .filter(|r| r.sourced_value.line.tag.sourced_value == "INDI")
             .map(|r| IndividualActive {
                 name: ActiveValue::Set(
                     r.records
                         .iter()
                         .find_map(|r| {
-                            if r.value.line.tag.value == "NAME" {
-                                match r.value.line.line_value.value {
+                            if r.sourced_value.line.tag.sourced_value == "NAME" {
+                                match r.sourced_value.line.value.sourced_value {
                                     LineValue::None | LineValue::Ptr(_) => todo!("unhandled"),
                                     LineValue::Str(s) => Some(s),
                                 }

@@ -1,22 +1,19 @@
 use crate::{
-    parser::{
-        records::RawRecord, AnySourceCode, NonFatalHandler, ParseError, ParseMode, ResultBuilder,
-        Sourced,
-    },
+    reader::{records::RawRecord, NonFatalHandler, ReadMode, ReaderError, ResultBuilder, Sourced},
     schemas::AnyFileVersion,
     versions::SupportedGEDCOMVersion,
 };
 
 #[derive(Default)]
-pub(in crate::parser) struct Mode {
-    non_fatals: Vec<ParseError>,
+pub(in crate::reader) struct Mode {
+    non_fatals: Vec<ReaderError>,
     warnings_as_errors: bool,
 }
 
 impl NonFatalHandler for Mode {
-    fn non_fatal<E>(&mut self, error: E) -> Result<(), E>
+    fn report<E>(&mut self, error: E) -> Result<(), E>
     where
-        E: Into<ParseError> + miette::Diagnostic,
+        E: Into<ReaderError> + miette::Diagnostic,
     {
         match error.severity() {
             // all errors are fatal for parsing mode
@@ -33,14 +30,13 @@ impl NonFatalHandler for Mode {
     }
 }
 
-impl<'i> ParseMode<'i> for Mode {
+impl<'i> ReadMode<'i> for Mode {
     type ResultBuilder = Builder<'i>;
 
-    fn get_result_builder(
+    fn into_result_builder(
         self,
         version: SupportedGEDCOMVersion,
-        _source_code: &AnySourceCode<'i>,
-    ) -> Result<Self::ResultBuilder, ParseError> {
+    ) -> Result<Self::ResultBuilder, ReaderError> {
         Ok(Builder {
             mode: self,
             version,
@@ -49,7 +45,7 @@ impl<'i> ParseMode<'i> for Mode {
     }
 }
 
-pub(in crate::parser) struct Builder<'i> {
+pub(in crate::reader) struct Builder<'i> {
     mode: Mode,
     version: SupportedGEDCOMVersion,
     records: Vec<Sourced<RawRecord<'i>>>,
@@ -58,29 +54,29 @@ pub(in crate::parser) struct Builder<'i> {
 #[derive(Debug)]
 pub struct ParseResult {
     pub file: AnyFileVersion,
-    pub non_fatals: Vec<ParseError>,
+    pub non_fatals: Vec<ReaderError>,
 }
 
 impl<'i> NonFatalHandler for Builder<'i> {
-    fn non_fatal<E>(&mut self, error: E) -> Result<(), E>
+    fn report<E>(&mut self, error: E) -> Result<(), E>
     where
-        E: Into<ParseError> + miette::Diagnostic,
+        E: Into<ReaderError> + miette::Diagnostic,
     {
-        self.mode.non_fatal(error)
+        self.mode.report(error)
     }
 }
 
 impl<'s> ResultBuilder<'s> for Builder<'s> {
     type Result = ParseResult;
 
-    fn complete(self) -> Result<ParseResult, ParseError> {
+    fn complete(self) -> Result<ParseResult, ReaderError> {
         Ok(ParseResult {
             file: AnyFileVersion::try_from((self.version, self.records))?,
             non_fatals: self.mode.non_fatals,
         })
     }
 
-    fn handle_record(&mut self, record: Sourced<RawRecord<'s>>) -> Result<(), ParseError> {
+    fn handle_record(&mut self, record: Sourced<RawRecord<'s>>) -> Result<(), ReaderError> {
         self.records.push(record);
         Ok(())
     }

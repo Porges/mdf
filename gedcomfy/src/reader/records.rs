@@ -1,7 +1,7 @@
 use miette::SourceSpan;
 
 use super::{
-    decoding::DecodingError, lines::RawLine, GEDCOMSource, NonFatalHandler, ParseError, Sourced,
+    decoding::DecodingError, lines::RawLine, GEDCOMSource, NonFatalHandler, ReaderError, Sourced,
 };
 
 /// Represents an assembled GEDCOM record, or sub-record,
@@ -21,7 +21,7 @@ impl<'i, S: GEDCOMSource + ?Sized> RawRecord<'i, S> {
     }
 }
 
-#[derive(derive_more::Error, derive_more::Display, Debug, miette::Diagnostic)]
+#[derive(thiserror::Error, derive_more::Display, Debug, miette::Diagnostic)]
 pub enum RecordStructureError {
     #[display("Invalid child level {level}, expected {expected_level} or less")]
     #[diagnostic(code(gedcom::record_error::invalid_child_level))]
@@ -40,7 +40,7 @@ pub enum RecordStructureError {
     },
 }
 
-impl From<RecordStructureError> for ParseError {
+impl From<RecordStructureError> for ReaderError {
     fn from(value: RecordStructureError) -> Self {
         DecodingError::from(value).into()
     }
@@ -61,21 +61,21 @@ where
         Self { stack: Vec::new() }
     }
 
-    fn pop_to_level<M: NonFatalHandler>(
+    fn pop_to_level<NF: NonFatalHandler>(
         &mut self,
         level: usize,
-        mode: &mut M,
+        warnings: &mut NF,
     ) -> Result<Option<Sourced<RawRecord<'i, S>>>, RecordStructureError> {
         while self.stack.len() > level {
             let child = self.stack.pop().unwrap(); // UNWRAP: guaranteed, len > 0
 
             // this sort of feels like the wrong place to enforce this
             if child.records.is_empty()
-                && child.line.line_value.is_none()
-                && !child.line.tag.value.eq("CONT")
-                && !child.line.tag.value.eq("TRLR")
+                && child.line.value.is_none()
+                && child.line.tag.as_str() != "CONT"
+                && child.line.tag.as_str() != "TRLR"
             {
-                mode.non_fatal(RecordStructureError::MissingRecordValue {
+                warnings.report(RecordStructureError::MissingRecordValue {
                     span: child.line.span,
                 })?;
             }
@@ -91,7 +91,10 @@ where
                 child.line.span
             };
 
-            let sourced = Sourced { value: child, span };
+            let sourced = Sourced {
+                sourced_value: child,
+                span,
+            };
 
             match self.stack.last_mut() {
                 None => {
@@ -107,17 +110,17 @@ where
         Ok(None)
     }
 
-    pub(super) fn handle_line<M: NonFatalHandler>(
+    pub(super) fn handle_line(
         &mut self,
         (level, line): (Sourced<usize>, Sourced<RawLine<'i, S>>),
-        mode: &mut M,
+        warnings: &mut impl NonFatalHandler,
     ) -> Result<Option<Sourced<RawRecord<'i, S>>>, RecordStructureError> {
-        let to_emit = self.pop_to_level(level.value, mode)?;
+        let to_emit = self.pop_to_level(level.sourced_value, warnings)?;
 
         let expected_level = self.stack.len();
-        if level.value != expected_level {
+        if level.sourced_value != expected_level {
             return Err(RecordStructureError::InvalidChildLevel {
-                level: level.value,
+                level: level.sourced_value,
                 expected_level,
                 span: level.span,
             });
@@ -128,9 +131,9 @@ where
         Ok(to_emit)
     }
 
-    pub(super) fn complete<M: NonFatalHandler>(
+    pub(super) fn complete(
         mut self,
-        mode: &mut M,
+        mode: &mut impl NonFatalHandler,
     ) -> Result<Option<Sourced<RawRecord<'i, S>>>, RecordStructureError> {
         self.pop_to_level(0, mode)
     }

@@ -1,12 +1,16 @@
-use gedcomfy::parser::{options::ParseOptions, Parser, ParserError};
+use gedcomfy::reader::{Reader, ReaderError, WithSourceCode};
 use kdl::KdlDocument;
 
 mod shared;
 
-fn to_kdl(input: &[u8]) -> Result<KdlDocument, ParserError<'static>> {
-    shared::ensure_hook();
-    let mut parser = Parser::for_bytes(input);
-    parser.parse_kdl().map_err(|e| e.to_static())
+fn to_kdl<'s>(input: &'s [u8]) -> Result<KdlDocument, WithSourceCode<'s, ReaderError>> {
+    let reader = Reader::default();
+    let decoded = reader.decode_borrowed(input)?;
+    reader.parse_kdl(&decoded)
+}
+
+fn test(input: &[u8]) -> Result<KdlDocument, String> {
+    to_kdl(input).map_err(|e| shared::render(&e))
 }
 
 #[test]
@@ -18,7 +22,7 @@ fn basic_line() {
     1 CHAR ASCII\n\
     0 TAG value";
 
-    let result = to_kdl(input).unwrap();
+    let result = test(input).unwrap();
     insta::assert_snapshot!(result, @r###"
     HEAD {
         GEDC {
@@ -40,7 +44,7 @@ fn basic_nested() {
     0 _ROOT\n\
     1 _CHILD c";
 
-    let result = to_kdl(input).unwrap();
+    let result = test(input).unwrap();
     insta::assert_snapshot!(result, @r###"
     HEAD {
         GEDC {
@@ -65,7 +69,7 @@ fn basic_siblings() {
     1 _CHILD c1\n\
     1 _CHILD c2";
 
-    let result = to_kdl(input).unwrap();
+    let result = test(input).unwrap();
     insta::assert_snapshot!(result, @r###"
     HEAD {
         GEDC {
@@ -91,7 +95,7 @@ fn basic_nested_2() {
     1 _CHILD\n\
     2 _GRANDCHILD gc";
 
-    let result = to_kdl(input).unwrap();
+    let result = test(input).unwrap();
     insta::assert_snapshot!(result, @r###"
     HEAD {
         GEDC {
@@ -119,7 +123,7 @@ fn basic_nested_2_siblings() {
     2 _GRANDCHILD gc1\n\
     1 _CHILD c2";
 
-    let result = to_kdl(input).unwrap();
+    let result = test(input).unwrap();
     insta::assert_snapshot!(result, @r###"
     HEAD {
         GEDC {
@@ -148,7 +152,7 @@ fn basic_grandparent() {
     2 _GRANDCHILD gc\n\
     0 _ROOT2 r";
 
-    let result = to_kdl(input).unwrap();
+    let result = test(input).unwrap();
     insta::assert_snapshot!(result, @r###"
     HEAD {
         GEDC {
@@ -174,20 +178,21 @@ fn bad_xref_no_tag() {
     1 CHAR ASCII\n\
     0 @x@\n";
 
-    let err = to_kdl(input).unwrap_err();
-    insta::assert_snapshot!(err, @r#"
-    Error: gedcom::parse_error::no_tag
+    let err = test(input).unwrap_err();
+    insta::assert_snapshot!(err, @r"
+    gedcomfy::error
 
-      × An error occurred while parsing the GEDCOM file
-      ├─▶ GEDCOM file contains a syntax error
-      ╰─▶ No tag found
-       ╭─[5:1]
-     4 │ 1 CHAR ASCII
-     5 │ 0 @x@
-       · ──┬──
-       ·   ╰── no tag in this line
-       ╰────
-    "#);
+      × A problem was found in the GEDCOM file
+      ╰─▶ gedcom::parse_error::no_tag
+          
+            × No tag found
+             ╭─[5:1]
+           4 │ 1 CHAR ASCII
+           5 │ 0 @x@
+             · ──┬──
+             ·   ╰── no tag in this line
+             ╰────
+    ");
 }
 
 #[test]
@@ -200,20 +205,21 @@ fn bad_void_xref() {
     0 OK\n\
     1 @VOID@ BAD\n";
 
-    let err = to_kdl(input).unwrap_err();
-    insta::assert_snapshot!(err, @r#"
-    Error: gedcom::parse_error::reserved_xref
+    let err = test(input).unwrap_err();
+    insta::assert_snapshot!(err, @r"
+    gedcomfy::error
 
-      × An error occurred while parsing the GEDCOM file
-      ├─▶ GEDCOM file contains a syntax error
-      ╰─▶ Reserved value 'VOID' cannot be used as an XRef
-       ╭─[6:4]
-     5 │ 0 OK
-     6 │ 1 @VOID@ BAD
-       ·    ──┬─
-       ·      ╰── VOID is a reserved value
-       ╰────
-    "#);
+      × A problem was found in the GEDCOM file
+      ╰─▶ gedcom::parse_error::reserved_xref
+          
+            × Reserved value 'VOID' cannot be used as an XRef
+             ╭─[6:4]
+           5 │ 0 OK
+           6 │ 1 @VOID@ BAD
+             ·    ──┬─
+             ·      ╰── VOID is a reserved value
+             ╰────
+    ");
 }
 
 #[test]
@@ -226,20 +232,21 @@ fn bad_skipped_level() {
     0 TAG\n\
     2 TAG";
 
-    let err = to_kdl(input).unwrap_err();
-    insta::assert_snapshot!(err, @r#"
-    Error: gedcom::record_error::invalid_child_level
+    let err = test(input).unwrap_err();
+    insta::assert_snapshot!(err, @r"
+    gedcomfy::error
 
-      × An error occurred while parsing the GEDCOM file
-      ├─▶ GEDCOM file contains a record-hierarchy error
-      ╰─▶ Invalid child level 2, expected 1 or less
-       ╭─[6:1]
-     5 │ 0 TAG
-     6 │ 2 TAG
-       · ┬
-       · ╰── this should be less than or equal to 1
-       ╰────
-    "#);
+      × A problem was found in the GEDCOM file
+      ╰─▶ gedcom::record_error::invalid_child_level
+          
+            × Invalid child level 2, expected 1 or less
+             ╭─[6:1]
+           5 │ 0 TAG
+           6 │ 2 TAG
+             · ┬
+             · ╰── this should be less than or equal to 1
+             ╰────
+    ");
 }
 
 #[test]
@@ -251,20 +258,21 @@ fn bad_no_tag() {
     1 CHAR ASCII\n\
     0";
 
-    let err = to_kdl(input).unwrap_err();
-    insta::assert_snapshot!(err, @r#"
-    Error: gedcom::parse_error::no_tag
+    let err = test(input).unwrap_err();
+    insta::assert_snapshot!(err, @r"
+    gedcomfy::error
 
-      × An error occurred while parsing the GEDCOM file
-      ├─▶ GEDCOM file contains a syntax error
-      ╰─▶ No tag found
-       ╭─[5:1]
-     4 │ 1 CHAR ASCII
-     5 │ 0
-       · ┬
-       · ╰── no tag in this line
-       ╰────
-    "#);
+      × A problem was found in the GEDCOM file
+      ╰─▶ gedcom::parse_error::no_tag
+          
+            × No tag found
+             ╭─[5:1]
+           4 │ 1 CHAR ASCII
+           5 │ 0
+             · ┬
+             · ╰── no tag in this line
+             ╰────
+    ");
 }
 
 #[test]
@@ -273,15 +281,19 @@ fn bad_incorrect_level() {
     1 HEAD\n\
     1 TAG";
 
-    let err = to_kdl(input).unwrap_err();
-    insta::assert_snapshot!(err, @r#"
-    Error: gedcom::encoding::not_gedcom
+    let err = test(input).unwrap_err();
+    insta::assert_snapshot!(err, @r"
+    gedcomfy::error
 
-      × An error occurred while parsing the GEDCOM file
-      ├─▶ Unable to determine encoding of GEDCOM file
+      × A problem was found in the GEDCOM file
+      ├─▶ gedcom::encoding::not_gedcom
+      │   
+      │     × Unable to determine encoding of GEDCOM file
+      │     help: GEDCOM files must start with a '0 HEAD' record, but this was
+      │           not found
+      │   
       ╰─▶ Input does not appear to be a GEDCOM file
-      help: GEDCOM files must start with a '0 HEAD' record, but this was not found
-    "#);
+    ");
 }
 
 #[test]
@@ -293,21 +305,23 @@ fn bad_invalid_level() {
     1 CHAR ASCII\n\
     x y z";
 
-    let err = to_kdl(input).unwrap_err();
-    insta::assert_snapshot!(err, @r#"
-    Error: gedcom::parse_error::invalid_level
+    let err = test(input).unwrap_err();
+    insta::assert_snapshot!(err, @r"
+    gedcomfy::error
 
-      × An error occurred while parsing the GEDCOM file
-      ├─▶ GEDCOM file contains a syntax error
-      ├─▶ Invalid non-numeric level 'x'
+      × A problem was found in the GEDCOM file
+      ├─▶ gedcom::parse_error::invalid_level
+      │   
+      │     × Invalid non-numeric level 'x'
+      │      ╭─[5:1]
+      │    4 │ 1 CHAR ASCII
+      │    5 │ x y z
+      │      · ┬
+      │      · ╰── this is not a (positive) number
+      │      ╰────
+      │   
       ╰─▶ invalid digit found in string
-       ╭─[5:1]
-     4 │ 1 CHAR ASCII
-     5 │ x y z
-       · ┬
-       · ╰── this is not a (positive) number
-       ╰────
-    "#);
+    ");
 }
 
 #[test]
@@ -320,7 +334,7 @@ fn warn_no_children_or_value() {
     0 TAG";
 
     // TODO[warn]: warning check
-    let err = to_kdl(input).unwrap();
+    let err = test(input).unwrap();
     insta::assert_snapshot!(err, @r###"
     HEAD {
         GEDC {

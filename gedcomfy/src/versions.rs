@@ -6,8 +6,9 @@ use vec1::Vec1;
 
 use crate::{
     encodings::{parse_encoding_raw, GEDCOMEncoding},
-    parser::{
-        encodings::{DetectedEncoding, EncodingError, EncodingReason, SupportedEncoding},
+    reader::{
+        decoding::DetectedEncoding,
+        encodings::{EncodingError, EncodingReason, SupportedEncoding},
         lines::LineValue,
         records::RawRecord,
         GEDCOMSource, MaybeSourced, Sourced,
@@ -21,8 +22,8 @@ pub(crate) struct GEDCOMVersion {
     patch: u8,
 }
 
-#[derive(derive_more::Error, derive_more::Display, Debug, miette::Diagnostic)]
-#[display("GEDCOM version {version} is unsupported")]
+#[derive(thiserror::Error, derive_more::Display, Debug, miette::Diagnostic)]
+#[display("GEDCOM version {version} is not supported by the `gedcomfy` library")]
 pub struct UnsupportedGEDCOMVersionError {
     version: GEDCOMVersion,
 }
@@ -114,21 +115,22 @@ impl MaybeSourced<SupportedGEDCOMVersion> {
         head: &Sourced<RawRecord<S>>,
         external_encoding: Option<DetectedEncoding>,
     ) -> Result<DetectedEncoding, EncodingError> {
-        debug_assert!(head.line.tag.value.eq("HEAD"));
+        debug_assert!(head.line.tag.sourced_value.eq("HEAD"));
+        tracing::debug!(version = %self.value, "detecting encoding from HEAD record");
 
         match self.value {
             SupportedGEDCOMVersion::V5_5 | // TODO: this is kinda fake
             SupportedGEDCOMVersion::V5_5_1 => {
                 let encoding = head.subrecord_optional("CHAR").expect("TODO better error");
-                let line_data = match encoding.line.line_value {
-                    Sourced{ value: LineValue::None | LineValue::Ptr(_), ..} => return Err(EncodingError::InvalidHeader{}),
-                    Sourced{ value: LineValue::Str(value), span} => Sourced{
-                        value,
+                let line_data = match encoding.line.value {
+                    Sourced{ sourced_value: LineValue::None | LineValue::Ptr(_), ..} => return Err(EncodingError::InvalidHeader{}),
+                    Sourced{ sourced_value: LineValue::Str(value), span} => Sourced{
+                        sourced_value: value,
                         span,
                     },
                 };
 
-                let file_encoding = parse_encoding_raw(line_data.value).map_err(|source| {
+                let file_encoding = parse_encoding_raw(line_data.sourced_value).map_err(|source| {
                     EncodingError::EncodingUnknown {
                         span: line_data.span,
                         source,
@@ -204,7 +206,7 @@ impl MaybeSourced<SupportedGEDCOMVersion> {
     }
 }
 
-#[derive(derive_more::Error, derive_more::Display, Debug)]
+#[derive(thiserror::Error, derive_more::Display, Debug)]
 #[display("invalid GEDCOM version")]
 pub struct InvalidGEDCOMVersionError {}
 

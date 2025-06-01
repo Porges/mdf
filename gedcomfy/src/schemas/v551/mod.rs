@@ -4,7 +4,7 @@ use super::{
     macros::{define_enum, define_record, define_structure},
     SchemaError, XRef,
 };
-use crate::parser::{records::RawRecord, Sourced};
+use crate::reader::{records::RawRecord, Sourced};
 
 #[derive(Debug)]
 pub struct File {
@@ -28,7 +28,7 @@ impl File {
                 _ => match TopLevelRecord::try_from(record) {
                     Ok(r) => records.push(r),
                     Err(SchemaError::UnknownTopLevelRecord { tag, .. }) if tag.starts_with('_') => {
-                        tracing::warn!(?tag, "Ignoring user-defined top-level record");
+                        tracing::warn!(%tag, "Ignoring user-defined top-level record");
                     }
                     Err(error) => return Err(error),
                 },
@@ -697,7 +697,7 @@ mod test {
     use miette::SourceSpan;
 
     use super::*;
-    use crate::parser::{options::ParseOptions, Parser};
+    use crate::reader::Reader;
 
     #[test]
     fn basic_header() -> miette::Result<()> {
@@ -711,8 +711,7 @@ mod test {
         2 VERS 5.5.1\n\
         2 FORM LINEAGE-LINKED";
 
-        let mut parser = Parser::for_str(lines);
-        let records = parser.raw_records().map_err(|e| e.to_static())?;
+        let records = Reader::default().raw_records(&lines)?;
         let header = Header::try_from(records.into_iter().next().unwrap())?;
         assert_eq!(header.source.approved_system_id, "Test".to_string());
         assert_eq!(header.destination, Some("example".to_string()));
@@ -735,7 +734,7 @@ mod test {
         2 VERS 5.5.1\n\
         2 FORM LINEAGE-LINKED";
 
-        let records = Parser::for_str(lines).raw_records()?;
+        let records = Reader::default().raw_records(&lines)?;
         let err = Header::try_from(records.into_iter().next().unwrap()).unwrap_err();
         assert_eq!(
             SchemaError::UnexpectedTag {
@@ -762,8 +761,7 @@ mod test {
         2 VERS 5.5.1\n\
         2 FORM LINEAGE-LINKED";
 
-        let mut parser = Parser::for_str(lines);
-        let records = parser.raw_records()?;
+        let records = Reader::default().raw_records(&lines)?;
         let _header = Header::try_from(records.into_iter().next().unwrap())?;
 
         Ok(())
@@ -778,7 +776,7 @@ mod test {
         0 INDI\n\
         1 NAME John /Smith/\n";
 
-        let records = Parser::for_str(lines).raw_records()?;
+        let records = Reader::default().raw_records(&lines)?;
         let indi = Individual::try_from(records.into_iter().nth(1).unwrap())?;
 
         assert_eq!(indi.names, vec![Name::new("John /Smith/".to_string())]);
@@ -796,7 +794,7 @@ mod test {
         1 NAME John /Smith/\n\
         1 NAME Jim /Smarth/\n";
 
-        let records = Parser::for_str(lines).raw_records()?;
+        let records = Reader::default().raw_records(&lines)?;
         let indi = Individual::try_from(records.into_iter().nth(1).unwrap())?;
         assert_eq!(
             indi.names,
@@ -820,7 +818,7 @@ mod test {
         1 ADDR it has an address...\n\
         2 CONC which is continued";
 
-        let records = Parser::for_str(lines).raw_records()?;
+        let records = Reader::default().raw_records(&lines)?;
         let corp = Corporate::try_from(records.into_iter().nth(1).unwrap())?;
         assert_eq!(
             corp.name_of_business,

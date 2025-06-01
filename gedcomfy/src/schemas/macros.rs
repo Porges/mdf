@@ -291,7 +291,7 @@ macro_rules! define_record {
 
                 let parent_span = source.span;
 
-                for record in source.value.records {
+                for record in source.sourced_value.records {
                     match record.line.tag.as_str() {
                         $(
                             $tag => {
@@ -328,10 +328,10 @@ macro_rules! define_record {
                     }
                 }
 
-                source.value.records = unused_records;
+                source.sourced_value.records = unused_records;
 
                 $crate::schemas::macros::if_not_provided!(($($value_name)?) {
-                    if !source.value.records.is_empty() {
+                    if !source.sourced_value.records.is_empty() {
                         todo!("CONT not permitted here - no value expected")
                     }
                 });

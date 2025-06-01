@@ -1,15 +1,27 @@
 ---
 source: gedcomfy/tests/tests.rs
 description: "﻿0 HEAD\r\n1 GEDC\r\n2 VERS 5.5.1\r\n1 CHAR UNICODE\r\n0 TRLR\r\n"
-expression: "format!(\"{:?}\", miette::Report::new(err))"
+expression: "shared::render(&err)"
 input_file: gedcomfy/tests/encoding_inputs/utf8_bom.ged
 ---
-gedcom::encoding::external_encoding_mismatch
+gedcomfy::error
 
-  × An error occurred while parsing the GEDCOM file
-  ├─▶ Unable to determine encoding of GEDCOM file
-  ╰─▶ The file’s GEDCOM header specifies the encoding to be UNICODE, but the file encoding was determined to be UTF-8
-
-Advice: gedcom::encoding_reason::bom
-
-  ☞ this encoding was detected from the byte-order mark (BOM) at the start of the file
+  × A problem was found in the GEDCOM file
+  ├─▶ gedcom::encoding::external_encoding_mismatch
+  │   
+  │     × Unable to determine encoding of GEDCOM file
+  │      ╭─[4:8]
+  │    3 │ 2 VERS 5.5.1
+  │    4 │ 1 CHAR UNICODE
+  │      ·        ───┬───
+  │      ·           ╰── encoding was specified here
+  │    5 │ 0 TRLR
+  │      ╰────
+  │   
+  │   Advice: gedcom::encoding_reason::bom
+  │   
+  │     ☞ this encoding was detected from the byte-order mark (BOM) at the
+  │     │ start of the file
+  │   
+  ╰─▶ The file’s GEDCOM header specifies the encoding to be UNICODE, but the
+      file encoding was determined to be UTF-8

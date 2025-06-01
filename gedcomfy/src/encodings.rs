@@ -3,7 +3,7 @@ use std::fmt::Display;
 use itertools::Itertools;
 use miette::Diagnostic;
 
-use crate::parser::{encodings::SupportedEncoding, GEDCOMSource};
+use crate::reader::{encodings::SupportedEncoding, GEDCOMSource};
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum GEDCOMEncoding {
@@ -26,7 +26,7 @@ impl Display for GEDCOMEncoding {
     }
 }
 
-#[derive(derive_more::Error, derive_more::Display, Diagnostic, Debug)]
+#[derive(thiserror::Error, derive_more::Display, Diagnostic, Debug)]
 #[display("GEDCOM encoding {encoding} is ambiguous")]
 #[diagnostic(help("This value could imply any of the following encodings: {}",
     .possibilities.iter().join(", ")))]
@@ -67,7 +67,7 @@ impl From<SupportedEncoding> for GEDCOMEncoding {
         }
     }
 }
-#[derive(derive_more::Error, derive_more::Display, Diagnostic, Debug)]
+#[derive(thiserror::Error, derive_more::Display, Diagnostic, Debug)]
 #[display("invalid GEDCOM encoding")]
 pub struct InvalidGEDCOMEncoding {}
 

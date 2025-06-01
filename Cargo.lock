@@ -1038,7 +1038,7 @@ version = "0.1.0"
 dependencies = [
  "ascii",
  "complex-indifference",
- "derive_more 1.0.0",
+ "derive_more 2.0.1",
  "dunce",
  "encoding_rs",
  "errful",
@@ -1050,6 +1050,7 @@ dependencies = [
  "oem_cp",
  "owo-colors",
  "paste",
+ "thiserror 2.0.12",
  "tracing",
  "vec1",
  "yoke",

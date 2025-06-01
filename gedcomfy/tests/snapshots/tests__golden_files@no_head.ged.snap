@@ -1,12 +1,16 @@
 ---
 source: gedcomfy/tests/tests.rs
 description: "0 TRLR\r\n1 THING\r\n"
-expression: "format!(\"{:?}\", miette::Report::new(err))"
+expression: "shared::render(&err)"
 input_file: gedcomfy/tests/format_inputs/no_head.ged
 ---
-gedcom::encoding::not_gedcom
+gedcomfy::error
 
-  × An error occurred while parsing the GEDCOM file
-  ├─▶ Unable to determine encoding of GEDCOM file
+  × A problem was found in the GEDCOM file
+  ├─▶ gedcom::encoding::not_gedcom
+  │   
+  │     × Unable to determine encoding of GEDCOM file
+  │     help: GEDCOM files must start with a '0 HEAD' record, but this was
+  │           not found
+  │   
   ╰─▶ Input does not appear to be a GEDCOM file
-  help: GEDCOM files must start with a '0 HEAD' record, but this was not found

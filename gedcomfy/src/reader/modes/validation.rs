@@ -1,22 +1,17 @@
-use std::any::Any;
-
 use complex_indifference::{plural, Count};
 use miette::Diagnostic;
 
 use crate::{
-    parser::{
-        records::RawRecord, AnySourceCode, NonFatalHandler, ParseError, ParseMode, ResultBuilder,
-        SharedInput, Sourced,
-    },
+    reader::{records::RawRecord, NonFatalHandler, ReadMode, ReaderError, ResultBuilder, Sourced},
     versions::SupportedGEDCOMVersion,
 };
 
 #[derive(Default)]
-pub(in crate::parser) struct Mode {
-    non_fatals: Vec<ParseError>,
+pub(in crate::reader) struct Mode {
+    non_fatals: Vec<ReaderError>,
 }
 
-#[derive(derive_more::Error, derive_more::Display, Debug, miette::Diagnostic)]
+#[derive(thiserror::Error, derive_more::Display, Debug, miette::Diagnostic)]
 #[display(
     "Validation was {validity}: {} top-level records processed with {}, {}, and {}.",
     record_count,
@@ -25,7 +20,7 @@ pub(in crate::parser) struct Mode {
     advice_count.plural(plural!(piece(s)" of advice"))
 )]
 #[diagnostic(severity(Advice))]
-pub struct ValidationResult<'i> {
+pub struct ValidationResult {
     pub validity: Validity,
 
     pub record_count: usize,
@@ -35,10 +30,7 @@ pub struct ValidationResult<'i> {
     pub advice_count: Count<()>,
 
     #[related]
-    pub errors: Vec<ParseError>,
-
-    #[source_code]
-    source_code: AnySourceCode<'i>,
+    pub errors: Vec<ReaderError>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -59,55 +51,52 @@ impl std::fmt::Display for Validity {
 }
 
 impl NonFatalHandler for Mode {
-    fn non_fatal<E>(&mut self, error: E) -> Result<(), E>
+    fn report<E>(&mut self, error: E) -> Result<(), E>
     where
-        E: Into<ParseError>,
+        E: Into<ReaderError>,
     {
         self.non_fatals.push(error.into());
         Ok(())
     }
 }
 
-impl<'i> ParseMode<'i> for Mode {
-    type ResultBuilder = Builder<'i>;
+impl<'i> ReadMode<'i> for Mode {
+    type ResultBuilder = Builder;
 
-    fn get_result_builder(
+    fn into_result_builder(
         self,
         _version: SupportedGEDCOMVersion,
-        source_code: &AnySourceCode<'i>,
-    ) -> Result<Self::ResultBuilder, ParseError> {
+    ) -> Result<Self::ResultBuilder, ReaderError> {
         Ok(Builder {
             mode: self,
             record_count: 0,
-            source_code: source_code.clone(),
         })
     }
 }
 
-pub(in crate::parser) struct Builder<'i> {
+pub(in crate::reader) struct Builder {
     mode: Mode,
     record_count: usize,
-    source_code: AnySourceCode<'i>,
 }
 
-impl NonFatalHandler for Builder<'_> {
-    fn non_fatal<E>(&mut self, error: E) -> Result<(), E>
+impl NonFatalHandler for Builder {
+    fn report<E>(&mut self, error: E) -> Result<(), E>
     where
-        E: Into<ParseError> + miette::Diagnostic,
+        E: Into<ReaderError> + miette::Diagnostic,
     {
-        self.mode.non_fatal(error)
+        self.mode.report(error)
     }
 }
 
-impl<'i> ResultBuilder<'i> for Builder<'i> {
-    type Result = ValidationResult<'i>;
+impl<'i> ResultBuilder<'i> for Builder {
+    type Result = ValidationResult;
 
-    fn handle_record(&mut self, _record: Sourced<RawRecord<'i>>) -> Result<(), ParseError> {
+    fn handle_record(&mut self, _record: Sourced<RawRecord<'i>>) -> Result<(), ReaderError> {
         self.record_count += 1;
         Ok(())
     }
 
-    fn complete(self) -> Result<Self::Result, ParseError> {
+    fn complete(self) -> Result<Self::Result, ReaderError> {
         let mut error_count = 0;
         let mut warning_count = 0;
         let mut advice_count = 0;
@@ -140,7 +129,6 @@ impl<'i> ResultBuilder<'i> for Builder<'i> {
             error_count: error_count.into(),
             warning_count: warning_count.into(),
             advice_count: advice_count.into(),
-            source_code: self.source_code,
         })
     }
 }
