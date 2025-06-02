@@ -35,9 +35,13 @@ fn produces_expected_allged_tree() -> miette::Result<()> {
 
     let reader = Reader::default();
     let file = reader.decode_file(path)?;
-    let kdl = reader.parse_kdl(&file)?;
 
-    insta::assert_snapshot!(kdl);
+    let kdl = reader.parse_kdl(&file)?;
+    insta::assert_snapshot!("kdl", kdl);
+
+    let ttl = reader.parse_ttl(&file)?;
+    insta::assert_snapshot!("ttl", String::from_utf8_lossy(&ttl));
+
     Ok(())
 }
 

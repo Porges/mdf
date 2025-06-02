@@ -7,10 +7,12 @@ input_file: gedcomfy/tests/encoding_inputs/ansel_specified_malformed_atend.ged
 gedcomfy::error
 
   × A problem was found in the GEDCOM file
+  ├─▶   × GEDCOM file contained data which was invalid in the detected
+  │     │ encoding
+  │   
   ├─▶ gedcom::encoding::invalid_data
   │   
-  │     × GEDCOM file contained data which was invalid in the detected
-  │     │ encoding
+  │     × Invalid data for encoding ANSEL
   │      ╭─[5:9]
   │    4 │ 1 CHAR ANSEL
   │    5 │ 0 SOME t�
@@ -25,9 +27,8 @@ gedcomfy::error
   │    3 │ 2 VERS 5.5.1
   │    4 │ 1 CHAR ANSEL
   │      ·        ──┬──
-  │      ·          ╰── encoding was specified here
+  │      ·          ╰── encoding was set here
   │    5 │ 0 SOME t�
   │      ╰────
   │   
-  ├─▶ Invalid data for encoding ANSEL
   ╰─▶ combining character at end of input

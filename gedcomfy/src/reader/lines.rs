@@ -132,11 +132,12 @@ pub(crate) fn iterate_lines<S: GEDCOMSource + ?Sized>(
     })
 }
 
-fn parse_line<'a, S: GEDCOMSource + ?Sized>(
+pub(crate) fn parse_line<'a, S: GEDCOMSource + ?Sized>(
     source_code: &'a S,
     line: &'a S,
 ) -> Result<(Sourced<usize>, Sourced<RawLine<'a, S>>), LineSyntaxError> {
     debug_assert!(!line.is_empty());
+    // precondition: line must be inside source_code slice
 
     let to_sourced = |s: &'a S| Sourced {
         sourced_value: s,
@@ -249,8 +250,8 @@ fn parse_line<'a, S: GEDCOMSource + ?Sized>(
                         if val.eq("@VOID@".as_ascii_str().unwrap()) {
                             LineValue::Ptr(None)
                         } else {
-                            // TODO: exclude @s
-                            LineValue::Ptr(Some(val))
+                            // TODO: validate pointer content?
+                            LineValue::Ptr(Some(val.except_start_and_end()))
                         }
                     } else {
                         return Err(LineSyntaxError::IncompletePointer {

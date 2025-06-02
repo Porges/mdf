@@ -1,0 +1,911 @@
+---
+source: gedcomfy/tests/tests.rs
+expression: "String::from_utf8_lossy(&ttl)"
+---
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX : <http://porg.es/gedcomfy#>
+
+_:ADOPTIVE_PARENTS
+  :CHIL _:PERSON1;
+  :WIFE _:PERSON6.
+
+_:FAMILY1
+  :ANUL [
+      :DATE "31 DEC 1997";
+      :HUSB [
+          :AGE "42y"];
+      :NOTE "ANNULMENT event note (declaring a marriage void from the beginning (never existed))\nNote continued here. The word TEST should not be broken!";
+      :PLAC "The place";
+      :SOUR _:SOURCE1,
+        [
+          :DATA [
+              :DATE "31 DEC 1900";
+              :TEXT "a sample text\nSample text continued here. The word TEST should not be broken!"];
+          :NOTE "A note\nNote continued here. The word TEST should not be broken!";
+          :PAGE "42";
+          :QUAY "3"];
+      :WIFE [
+          :AGE "42y 6m"]];
+  :CENS [
+      :DATE "31 DEC 1997";
+      :HUSB [
+          :AGE "42y 6m 9d"];
+      :NOTE "CENSUS event note (the event of the periodic count of the population for a designated locality, such as a national or state Census)\nNote continued here. The word TEST should not be broken!";
+      :PLAC "The place";
+      :SOUR _:SOURCE1,
+        [
+          :DATA [
+              :DATE "31 DEC 1900";
+              :TEXT "a sample text\nSample text continued here. The word TEST should not be broken!"];
+          :NOTE "A note\nNote continued here. The word TEST should not be broken!";
+          :PAGE "42";
+          :QUAY "3"];
+      :WIFE [
+          :AGE "6m 9d"]];
+  :CHAN "",
+    [
+      :DATE "1 APR 1998",
+        [
+          :TIME "12:34:56.789"];
+      :NOTE "A note\nNote continued here. The word TEST should not be broken!"];
+  :CHIL _:PERSON3,
+    _:PERSON4;
+  :DIV [
+      :DATE "31 DEC 1997";
+      :HUSB [
+          :AGE "42y 3d"];
+      :NOTE "DIVORCE event note (an event of dissolving a marriage through civil action)\nNote continued here. The word TEST should not be broken!";
+      :PLAC "The place";
+      :SOUR _:SOURCE1,
+        [
+          :DATA [
+              :DATE "31 DEC 1900";
+              :TEXT "a sample text\nSample text continued here. The word TEST should not be broken!"];
+          :NOTE "A note\nNote continued here. The word TEST should not be broken!";
+          :PAGE "42";
+          :QUAY "3"];
+      :WIFE [
+          :AGE "42m"]];
+  :DIVF [
+      :DATE "31 DEC 1997";
+      :HUSB [
+          :AGE "42d"];
+      :NOTE "DIVORCE_FILED event note (an event of filing for a divorce by a spouse)\nNote continued here. The word TEST should not be broken!";
+      :PLAC "The place";
+      :SOUR _:SOURCE1,
+        [
+          :DATA [
+              :DATE "31 DEC 1900";
+              :TEXT "a sample text\nSample text continued here. The word TEST should not be broken!"];
+          :NOTE "A note\nNote continued here. The word TEST should not be broken!";
+          :PAGE "42";
+          :QUAY "3"];
+      :WIFE [
+          :AGE "CHILD"]];
+  :ENGA [
+      :DATE "31 DEC 1997";
+      :HUSB [
+          :AGE "42y"];
+      :NOTE "ENGAGEMENT event note (an event of recording or announcing an agreement between two people to become married)\nNote continued here. The word TEST should not be broken!";
+      :PLAC "The place";
+      :SOUR _:SOURCE1,
+        [
+          :DATA [
+              :DATE "31 DEC 1900";
+              :TEXT "a sample text\nSample text continued here. The word TEST should not be broken!"];
+          :NOTE "A note\nNote continued here. The word TEST should not be broken!";
+          :PAGE "42";
+          :QUAY "3"];
+      :WIFE [
+          :AGE "STILLBORN"]];
+  :EVEN [
+      :DATE "31 DEC 1997";
+      :HUSB [
+          :AGE "42y"];
+      :NOTE "EVENT note (a noteworthy happening related to an individual, a group, or an organization)\nNote continued here. The word TEST should not be broken!";
+      :PLAC "The place";
+      :SOUR _:SOURCE1,
+        [
+          :DATA [
+              :DATE "31 DEC 1900";
+              :TEXT "a sample text\nSample text continued here. The word TEST should not be broken!"];
+          :NOTE "A note\nNote continued here. The word TEST should not be broken!";
+          :PAGE "42";
+          :QUAY "3"];
+      :TYPE "Other event type";
+      :WIFE [
+          :AGE "42y 6m"]];
+  :HUSB _:PERSON1;
+  :MARB [
+      :DATE "31 DEC 1997";
+      :HUSB [
+          :AGE "42y"];
+      :NOTE "MARRIAGE_BANN event note (an event of an official public notice given that two people intend to marry)\nNote continued here. The word TEST should not be broken!";
+      :PLAC "The place";
+      :SOUR _:SOURCE1,
+        [
+          :DATA [
+              :DATE "31 DEC 1900";
+              :TEXT "a sample text\nSample text continued here. The word TEST should not be broken!"];
+          :NOTE "A note\nNote continued here. The word TEST should not be broken!";
+          :PAGE "42";
+          :QUAY "3"];
+      :WIFE [
+          :AGE "42y 6m"]];
+  :MARC [
+      :DATE "31 DEC 1997";
+      :HUSB [
+          :AGE "42y"];
+      :NOTE "MARR_CONTRACT event note (an event of recording a formal agreement of marriage, including the prenuptial agreement in which marriage partners reach agreement about the property rights of one or both, securing property to their children)\nNote continued here. The word TEST should not be broken!";
+      :PLAC "The place";
+      :SOUR _:SOURCE1,
+        [
+          :DATA [
+              :DATE "31 DEC 1900";
+              :TEXT "a sample text\nSample text continued here. The word TEST should not be broken!"];
+          :NOTE "A note\nNote continued here. The word TEST should not be broken!";
+          :PAGE "42";
+          :QUAY "3"];
+      :WIFE [
+          :AGE ">42y 6m"]];
+  :MARL [
+      :DATE "31 DEC 1997";
+      :HUSB [
+          :AGE "42y"];
+      :NOTE "MARR_LICENSE event note (an event of obtaining a legal license to marry)\nNote continued here. The word TEST should not be broken!";
+      :PLAC "The place";
+      :SOUR _:SOURCE1,
+        [
+          :DATA [
+              :DATE "31 DEC 1900";
+              :TEXT "a sample text\nSample text continued here. The word TEST should not be broken!"];
+          :NOTE "A note\nNote continued here. The word TEST should not be broken!";
+          :PAGE "42";
+          :QUAY "3"];
+      :WIFE [
+          :AGE "<42y 6m"]];
+  :MARR [
+      :DATE "31 DEC 1997";
+      :HUSB [
+          :AGE "42y"];
+      :NOTE "MARRIAGE event note (a legal, common-law, or customary event of creating a family unit of a man and a woman as husband and wife)\nNote continued here. The word TEST should not be broken!";
+      :PLAC "The place";
+      :SOUR _:SOURCE1,
+        [
+          :DATA [
+              :DATE "31 DEC 1900";
+              :TEXT "a sample text\nSample text continued here. The word TEST should not be broken!"];
+          :NOTE "A note\nNote continued here. The word TEST should not be broken!";
+          :PAGE "42";
+          :QUAY "3"];
+      :WIFE [
+          :AGE "42y 6m"]];
+  :MARS [
+      :DATE "31 DEC 1997";
+      :HUSB [
+          :AGE "42y"];
+      :NOTE "MARR_SETTLEMENT event note (an event of creating an agreement between two people contemplating marriage, at which time they agree to release or modify property rights that would otherwise arise from the marriage)\nNote continued here. The word TEST should not be broken!";
+      :PLAC "The place";
+      :SOUR _:SOURCE1,
+        [
+          :DATA [
+              :DATE "31 DEC 1900";
+              :TEXT "a sample text\nSample text continued here. The word TEST should not be broken!"];
+          :NOTE "A note\nNote continued here. The word TEST should not be broken!";
+          :PAGE "42";
+          :QUAY "3"];
+      :WIFE [
+          :AGE "INFANT"]];
+  :NCHI "42";
+  :NOTE "A note about the family\nNote continued here. The word TEST should not be broken!";
+  :OBJE [
+      :FILE "\\\\network\\drive\\path\\file name.bmp";
+      :FORM "bmp";
+      :NOTE "A note\nNote continued here. The word TEST should not be broken!";
+      :TITL "A bmp picture"];
+  :SOUR _:SOURCE1,
+    [
+      :DATA [
+          :DATE "31 DEC 1900";
+          :TEXT "a sample text\nSample text continued here. The word TEST should not be broken!"];
+      :NOTE "A note\nNote continued here. The word TEST should not be broken!";
+      :PAGE "42";
+      :QUAY "0"];
+  :WIFE _:PERSON2;
+  :_MYOWNTAG "This is a non-standard tag. Not recommended but allowed".
+
+_:FAMILY2
+  :CHIL _:PERSON7;
+  :HUSB _:PERSON1;
+  :WIFE _:PERSON8.
+
+_:PARENTS
+  :CHIL _:PERSON1;
+  :HUSB _:PERSON5.
+
+_:PERSON1
+  :ADOP [
+      :DATE "CAL 31 DEC 1997";
+      :FAMC _:ADOPTIVE_PARENTS,
+        [
+          :ADOP "BOTH"];
+      :NOTE "ADOPTION event note (pertaining to creation of a child-parent relationship that does not exist biologically)\nNote continued here. The word TEST should not be broken!";
+      :PLAC "The place";
+      :SOUR _:SOURCE1,
+        [
+          :DATA [
+              :DATE "31 DEC 1900";
+              :TEXT "a sample text\nSample text continued here. The word TEST should not be broken!"];
+          :NOTE "A note\nNote continued here. The word TEST should not be broken!";
+          :PAGE "42";
+          :QUAY "3"]];
+  :BAPM [
+      :DATE "EST 31 DEC 1997";
+      :NOTE "BAPTISM event note (the event of baptism (not LDS), performed in infancy or later. See also BAPL, above, and CHR)\nNote continued here. The word TEST should not be broken!";
+      :PLAC "The place";
+      :SOUR _:SOURCE1,
+        [
+          :DATA [
+              :DATE "31 DEC 1900";
+              :TEXT "a sample text\nSample text continued here. The word TEST should not be broken!"];
+          :NOTE "A note\nNote continued here. The word TEST should not be broken!";
+          :PAGE "42";
+          :QUAY "3"]];
+  :BARM [
+      :DATE "INT 31 DEC 1997 (12/31/97)";
+      :NOTE "BAR_MITZVAH event note (the ceremonial event held when a Jewish boy reaches age 13)\nNote continued here. The word TEST should not be broken!";
+      :PLAC "The place";
+      :SOUR _:SOURCE1,
+        [
+          :DATA [
+              :DATE "31 DEC 1900";
+              :TEXT "a sample text\nSample text continued here. The word TEST should not be broken!"];
+          :NOTE "A note\nNote continued here. The word TEST should not be broken!";
+          :PAGE "42";
+          :QUAY "3"]];
+  :BASM [
+      :DATE "FROM 31 DEC 1997";
+      :NOTE "BAS_MITZVAH event note (the ceremonial event held when a Jewish girl reaches age 13, also known as \"Bat Mitzvah.\")\nNote continued here. The word TEST should not be broken!";
+      :PLAC "The place";
+      :SOUR _:SOURCE1,
+        [
+          :DATA [
+              :DATE "31 DEC 1900";
+              :TEXT "a sample text\nSample text continued here. The word TEST should not be broken!"];
+          :NOTE "A note\nNote continued here. The word TEST should not be broken!";
+          :PAGE "42";
+          :QUAY "3"]];
+  :BIRT [
+      :DATE "31 DEC 1997";
+      :FAMC _:PARENTS;
+      :NOTE "BIRTH event note (the event of entering into life)\nNote continued here. The word TEST should not be broken!";
+      :PLAC "The place";
+      :SOUR _:SOURCE1,
+        [
+          :DATA [
+              :DATE "31 DEC 1900";
+              :TEXT "a sample text\nSample text continued here. The word TEST should not be broken!"];
+          :NOTE "A note\nNote continued here. The word TEST should not be broken!";
+          :PAGE "42";
+          :QUAY "2"]];
+  :BLES [
+      :DATE "TO 31 DEC 1997";
+      :NOTE "BLESSING event note (a religious event of bestowing divine care or intercession. Sometimes given in connection with a naming ceremony)\nNote continued here. The word TEST should not be broken!";
+      :PLAC "The place";
+      :SOUR _:SOURCE1,
+        [
+          :DATA [
+              :DATE "31 DEC 1900";
+              :TEXT "a sample text\nSample text continued here. The word TEST should not be broken!"];
+          :NOTE "A note\nNote continued here. The word TEST should not be broken!";
+          :PAGE "42";
+          :QUAY "3"]];
+  :BURI [
+      :DATE "ABT 31 DEC 1997";
+      :NOTE "BURIAL event note (the event of the proper disposing of the mortal remains of a deceased person)\nNote continued here. The word TEST should not be broken!";
+      :PLAC "The place";
+      :SOUR _:SOURCE1,
+        [
+          :DATA [
+              :DATE "31 DEC 1900";
+              :TEXT "a sample text\nSample text continued here. The word TEST should not be broken!"];
+          :NOTE "A note\nNote continued here. The word TEST should not be broken!";
+          :PAGE "42";
+          :QUAY "3"]];
+  :CAST "Cast name",
+    [
+      :DATE "31 DEC 1997";
+      :NOTE "CASTE event note (the name of an individual's rank or status in society, based   on racial or religious differences, or differences in wealth, inherited   rank, profession, occupation, etc)\nNote continued here. The word TEST should not be broken!";
+      :PLAC "The place";
+      :SOUR _:SOURCE1,
+        [
+          :DATA [
+              :DATE "31 DEC 1900";
+              :TEXT "a sample text\nSample text continued here. The word TEST should not be broken!"];
+          :NOTE "A note\nNote continued here. The word TEST should not be broken!";
+          :PAGE "42";
+          :QUAY "3"]];
+  :CENS [
+      :DATE "31 DEC 1997";
+      :NOTE "CENSUS event note (the event of the periodic count of the population for a designated locality, such as a national or state Census)\nNote continued here. The word TEST should not be broken!";
+      :PLAC "The place";
+      :SOUR _:SOURCE1,
+        [
+          :DATA [
+              :DATE "31 DEC 1900";
+              :TEXT "a sample text\nSample text continued here. The word TEST should not be broken!"];
+          :NOTE "A note\nNote continued here. The word TEST should not be broken!";
+          :PAGE "42";
+          :QUAY "3"]];
+  :CHAN "",
+    [
+      :DATE "1 APR 1998",
+        [
+          :TIME "12:34:56.789"];
+      :NOTE "A note\nNote continued here. The word TEST should not be broken!"];
+  :CHR [
+      :DATE "BEF 31 DEC 1997";
+      :NOTE "CHRISTENING event note (the religious event (not LDS) of baptizing and/or naming a child)\nNote continued here. The word TEST should not be broken!";
+      :PLAC "The place";
+      :SOUR _:SOURCE1,
+        [
+          :DATA [
+              :DATE "31 DEC 1900";
+              :TEXT "a sample text\nSample text continued here. The word TEST should not be broken!"];
+          :NOTE "A note\nNote continued here. The word TEST should not be broken!";
+          :PAGE "42";
+          :QUAY "3"]],
+    [
+      :DATE "AFT 30 DEC 1997";
+      :NOTE "Alternative CHRISTENING event note\nNote continued here. The word TEST should not be broken!";
+      :PLAC "The place";
+      :SOUR _:SOURCE1,
+        [
+          :DATA [
+              :DATE "31 DEC 1900";
+              :TEXT "a sample text\nSample text continued here. The word TEST should not be broken!"];
+          :NOTE "A note\nNote continued here. The word TEST should not be broken!";
+          :PAGE "42";
+          :QUAY "3"]];
+  :CHRA [
+      :DATE "FROM 31 DEC 1997 TO 1 FEB 1998";
+      :NOTE "ADULT_CHRISTENING event note (the religious event (not LDS) of baptizing and/or naming an adult person)\nNote continued here. The word TEST should not be broken!";
+      :PLAC "The place";
+      :SOUR _:SOURCE1,
+        [
+          :DATA [
+              :DATE "31 DEC 1900";
+              :TEXT "a sample text\nSample text continued here. The word TEST should not be broken!"];
+          :NOTE "A note\nNote continued here. The word TEST should not be broken!";
+          :PAGE "42";
+          :QUAY "3"]];
+  :CONF [
+      :DATE "@#DGREGORIAN@ 31 DEC 1997";
+      :NOTE "CONFIRMATION event note (the religious event (not LDS) of conferring the gift of the Holy Ghost and, among protestants, full church membership)\nNote continued here. The word TEST should not be broken!";
+      :PLAC "The place";
+      :SOUR _:SOURCE1,
+        [
+          :DATA [
+              :DATE "31 DEC 1900";
+              :TEXT "a sample text\nSample text continued here. The word TEST should not be broken!"];
+          :NOTE "A note\nNote continued here. The word TEST should not be broken!";
+          :PAGE "42";
+          :QUAY "3"]];
+  :CREM "Y",
+    [
+      :NOTE "Cremation event note\nNote continued here. The word TEST should not be broken!";
+      :SOUR _:SOURCE1,
+        [
+          :DATA [
+              :DATE "31 DEC 1900";
+              :TEXT "a sample text\nSample text continued here. The word TEST should not be broken!"];
+          :NOTE "A note\nNote continued here. The word TEST should not be broken!";
+          :PAGE "42";
+          :QUAY "3"]];
+  :DEAT [
+      :DATE "BET 31 DEC 1997 AND 1 JAN 1998";
+      :NOTE "DEATH event note (the event when mortal life terminates)\nNote continued here. The word TEST should not be broken!";
+      :PLAC "The place";
+      :SOUR _:SOURCE1,
+        [
+          :DATA [
+              :DATE "31 DEC 1900";
+              :TEXT "a sample text\nSample text continued here. The word TEST should not be broken!"];
+          :NOTE "A note\nNote continued here. The word TEST should not be broken!";
+          :PAGE "42";
+          :QUAY "3"]];
+  :DSCR "Physical description",
+    [
+      :DATE "31 DEC 1997";
+      :NOTE "PHY_DESCRIPTION event note (the physical characteristics of a person, place, or thing)\nNote continued here. The word TEST should not be broken!";
+      :PLAC "The place";
+      :SOUR _:SOURCE1,
+        [
+          :DATA [
+              :DATE "31 DEC 1900";
+              :TEXT "a sample text\nSample text continued here. The word TEST should not be broken!"];
+          :NOTE "A note\nNote continued here. The word TEST should not be broken!";
+          :PAGE "42";
+          :QUAY "3"]];
+  :EDUC "Education",
+    [
+      :DATE "31 DEC 1997";
+      :NOTE "EDUCATION event note (Indicator of a level of education attained)\nNote continued here. The word TEST should not be broken!";
+      :PLAC "The place";
+      :SOUR _:SOURCE1,
+        [
+          :DATA [
+              :DATE "31 DEC 1900";
+              :TEXT "a sample text\nSample text continued here. The word TEST should not be broken!"];
+          :NOTE "A note\nNote continued here. The word TEST should not be broken!";
+          :PAGE "42";
+          :QUAY "3"]];
+  :EMIG [
+      :DATE "31 DEC 1997";
+      :NOTE "EMIGRATION event note (an event of leaving one's homeland with the intent of residing elsewhere)\nNote continued here. The word TEST should not be broken!";
+      :PLAC "The place";
+      :SOUR _:SOURCE1,
+        [
+          :DATA [
+              :DATE "31 DEC 1900";
+              :TEXT "a sample text\nSample text continued here. The word TEST should not be broken!"];
+          :NOTE "A note\nNote continued here. The word TEST should not be broken!";
+          :PAGE "42";
+          :QUAY "3"]];
+  :EVEN [
+      :DATE "31 DEC 1997";
+      :NOTE "EVENT note (a noteworthy happening related to an individual, a group, or an organization)\nNote continued here. The word TEST should not be broken!";
+      :PLAC "The place";
+      :SOUR _:SOURCE1,
+        [
+          :DATA [
+              :DATE "31 DEC 1900";
+              :TEXT "a sample text\nSample text continued here. The word TEST should not be broken!"];
+          :NOTE "A note\nNote continued here. The word TEST should not be broken!";
+          :PAGE "42";
+          :QUAY "3"];
+      :TYPE "Event type"];
+  :FAMC _:ADOPTIVE_PARENTS,
+    _:PARENTS,
+    [
+      :NOTE "Another note about the link to parents\nNote continued here. The word TEST should not be broken!",
+        "Note about the link to parents\nNote continued here. The word TEST should not be broken!";
+      :PEDI "birth"],
+    [
+      :NOTE "Note about the link to adoptive parents\nNote continued here. The word TEST should not be broken!";
+      :PEDI "adopted"];
+  :FAMS _:FAMILY1,
+    _:FAMILY2,
+    [
+      :NOTE "Another note about the link to spouse\nNote continued here. The word TEST should not be broken!",
+        "Note about the link to spouse\nNote continued here. The word TEST should not be broken!"];
+  :FCOM [
+      :DATE "31 DEC 1997";
+      :NOTE "FIRST_COMMUNION event note (a religious rite, the first act of sharing in the Lord's supper as part of church worship)\nNote continued here. The word TEST should not be broken!";
+      :PLAC "The place";
+      :SOUR _:SOURCE1,
+        [
+          :DATA [
+              :DATE "31 DEC 1900";
+              :TEXT "a sample text\nSample text continued here. The word TEST should not be broken!"];
+          :NOTE "A note\nNote continued here. The word TEST should not be broken!";
+          :PAGE "42";
+          :QUAY "3"]];
+  :GRAD [
+      :DATE "31 DEC 1997";
+      :NOTE "GRADUATION event note (an event of awarding educational diplomas or degrees to individuals)\nNote continued here. The word TEST should not be broken!";
+      :PLAC "The place";
+      :SOUR _:SOURCE1,
+        [
+          :DATA [
+              :DATE "31 DEC 1900";
+              :TEXT "a sample text\nSample text continued here. The word TEST should not be broken!"];
+          :NOTE "A note\nNote continued here. The word TEST should not be broken!";
+          :PAGE "42";
+          :QUAY "3"]];
+  :IDNO "6942",
+    [
+      :DATE "31 DEC 1997";
+      :NOTE "IDENT_NUMBER event note (A number assigned to identify a person within some significant external system)\nNote continued here. The word TEST should not be broken!";
+      :PLAC "The place";
+      :SOUR _:SOURCE1,
+        [
+          :DATA [
+              :DATE "31 DEC 1900";
+              :TEXT "a sample text\nSample text continued here. The word TEST should not be broken!"];
+          :NOTE "A note\nNote continued here. The word TEST should not be broken!";
+          :PAGE "42";
+          :QUAY "3"];
+      :TYPE "type of ID number"];
+  :IMMI [
+      :DATE "31 DEC 1997";
+      :NOTE "IMMIGRATION event note (an event of entering into a new locality with the intent of residing there)\nNote continued here. The word TEST should not be broken!";
+      :PLAC "The place";
+      :SOUR _:SOURCE1,
+        [
+          :DATA [
+              :DATE "31 DEC 1900";
+              :TEXT "a sample text\nSample text continued here. The word TEST should not be broken!"];
+          :NOTE "A note\nNote continued here. The word TEST should not be broken!";
+          :PAGE "42";
+          :QUAY "3"]];
+  :NAME "another name /surname/",
+    "given name /surname/jr.",
+    [
+      :NOTE "Personal Name note\nNote continued here. The word TEST should not be broken!";
+      :SOUR _:SOURCE1,
+        [
+          :DATA [
+              :DATE "BEF 1 JAN 1900";
+              :TEXT "a sample text\nSample text continued here. The word TEST should not be broken!"];
+          :NOTE "A note\nNote continued here. The word TEST should not be broken!";
+          :PAGE "42";
+          :QUAY "0"]],
+    [
+      :NOTE "Personal Name note\nNote continued here. The word TEST should not be broken!";
+      :SOUR _:SOURCE1,
+        [
+          :DATA [
+              :DATE "AFT 1 JAN 1900";
+              :TEXT "a sample text\nSample text continued here. The word TEST should not be broken!"];
+          :NOTE "A note\nNote continued here. The word TEST should not be broken!";
+          :PAGE "42";
+          :QUAY "1"]];
+  :NATI "National or tribe origin",
+    [
+      :DATE "31 DEC 1997";
+      :NOTE "NATIONALITY event note (the national heritage of an individual)\nNote continued here. The word TEST should not be broken!";
+      :PLAC "The place";
+      :SOUR _:SOURCE1,
+        [
+          :DATA [
+              :DATE "31 DEC 1900";
+              :TEXT "a sample text\nSample text continued here. The word TEST should not be broken!"];
+          :NOTE "A note\nNote continued here. The word TEST should not be broken!";
+          :PAGE "42";
+          :QUAY "3"]];
+  :NATU [
+      :DATE "31 DEC 1997";
+      :NOTE "NATURALIZATION event note (the event of obtaining citizenship)\nNote continued here. The word TEST should not be broken!";
+      :PLAC "The place";
+      :SOUR _:SOURCE1,
+        [
+          :DATA [
+              :DATE "31 DEC 1900";
+              :TEXT "a sample text\nSample text continued here. The word TEST should not be broken!"];
+          :NOTE "A note\nNote continued here. The word TEST should not be broken!";
+          :PAGE "42";
+          :QUAY "3"]];
+  :NCHI "42",
+    [
+      :DATE "31 DEC 1997";
+      :NOTE "Children number event note\nNote continued here. The word TEST should not be broken!";
+      :PLAC "The place";
+      :SOUR _:SOURCE1,
+        [
+          :DATA [
+              :DATE "31 DEC 1900";
+              :TEXT "a sample text\nSample text continued here. The word TEST should not be broken!"];
+          :NOTE "A note\nNote continued here. The word TEST should not be broken!";
+          :PAGE "42";
+          :QUAY "3"]];
+  :NMR "42",
+    [
+      :DATE "31 DEC 1997";
+      :NOTE "Marriages number event note\nNote continued here. The word TEST should not be broken!";
+      :PLAC "The place";
+      :SOUR _:SOURCE1,
+        [
+          :DATA [
+              :DATE "31 DEC 1900";
+              :TEXT "a sample text\nSample text continued here. The word TEST should not be broken!"];
+          :NOTE "A note\nNote continued here. The word TEST should not be broken!";
+          :PAGE "42";
+          :QUAY "3"]];
+  :NOTE "A note about the inidvidual\nNote continued here. The word TEST should not be broken!";
+  :OBJE [
+      :FILE "\\\\network\\drive\\path\\file name.gif";
+      :FORM "gif";
+      :NOTE "A note\nNote continued here. The word TEST should not be broken!";
+      :TITL "A gif picture"];
+  :OCCU "Another occupation",
+    "Occupation",
+    [
+      :DATE "31 DEC 1997";
+      :NOTE "OCCUPATION event note (The type of work or profession of an individual)\nNote continued here. The word TEST should not be broken!";
+      :PLAC "The place";
+      :SOUR _:SOURCE1,
+        [
+          :DATA [
+              :DATE "31 DEC 1900";
+              :TEXT "a sample text\nSample text continued here. The word TEST should not be broken!"];
+          :NOTE "A note\nNote continued here. The word TEST should not be broken!";
+          :PAGE "42";
+          :QUAY "3"]],
+    [
+      :DATE "31 DEC 1998";
+      :NOTE "Occupation event note\nNote continued here. The word TEST should not be broken!";
+      :PLAC "The place";
+      :SOUR _:SOURCE1,
+        [
+          :DATA [
+              :DATE "31 DEC 1900";
+              :TEXT "a sample text\nSample text continued here. The word TEST should not be broken!"];
+          :NOTE "A note\nNote continued here. The word TEST should not be broken!";
+          :PAGE "42";
+          :QUAY "3"]];
+  :ORDN [
+      :DATE "31 DEC 1997";
+      :NOTE "ORDINATION event note (a religious event of receiving authority to act in religious matters)\nNote continued here. The word TEST should not be broken!";
+      :PLAC "The place";
+      :SOUR _:SOURCE1,
+        [
+          :DATA [
+              :DATE "31 DEC 1900";
+              :TEXT "a sample text\nSample text continued here. The word TEST should not be broken!"];
+          :NOTE "A note\nNote continued here. The word TEST should not be broken!";
+          :PAGE "42";
+          :QUAY "3"]];
+  :PROB [
+      :DATE "31 DEC 1997";
+      :NOTE "PROBATE event note (an event of judicial determination of the validity of a will. May indicate several related court activities over several dates)\nNote continued here. The word TEST should not be broken!";
+      :PLAC "The place";
+      :SOUR _:SOURCE1,
+        [
+          :DATA [
+              :DATE "31 DEC 1900";
+              :TEXT "a sample text\nSample text continued here. The word TEST should not be broken!"];
+          :NOTE "A note\nNote continued here. The word TEST should not be broken!";
+          :PAGE "42";
+          :QUAY "3"]];
+  :PROP "Possessions",
+    [
+      :DATE "31 DEC 1997";
+      :NOTE "PROPERTY event note (pertaining to possessions such as real estate or other property of interest)\nNote continued here. The word TEST should not be broken!";
+      :PLAC "The place";
+      :SOUR _:SOURCE1,
+        [
+          :DATA [
+              :DATE "31 DEC 1900";
+              :TEXT "a sample text\nSample text continued here. The word TEST should not be broken!"];
+          :NOTE "A note\nNote continued here. The word TEST should not be broken!";
+          :PAGE "42";
+          :QUAY "3"]];
+  :RELI "Religion",
+    [
+      :DATE "31 DEC 1997";
+      :NOTE "RELIGION event note (a religious denomination to which a person is affiliated or for which a record applies)\nNote continued here. The word TEST should not be broken!";
+      :PLAC "The place";
+      :SOUR _:SOURCE1,
+        [
+          :DATA [
+              :DATE "31 DEC 1900";
+              :TEXT "a sample text\nSample text continued here. The word TEST should not be broken!"];
+          :NOTE "A note\nNote continued here. The word TEST should not be broken!";
+          :PAGE "42";
+          :QUAY "3"]];
+  :RESI [
+      :DATE "31 DEC 1997";
+      :NOTE "RESIDENCE event note (The act of dwelling at an address for a period of time)\nNote continued here. The word TEST should not be broken!";
+      :PLAC "The place";
+      :SOUR _:SOURCE1,
+        [
+          :DATA [
+              :DATE "31 DEC 1900";
+              :TEXT "a sample text\nSample text continued here. The word TEST should not be broken!"];
+          :NOTE "A note\nNote continued here. The word TEST should not be broken!";
+          :PAGE "42";
+          :QUAY "3"]];
+  :RETI [
+      :DATE "31 DEC 1997";
+      :NOTE "RETIREMENT event note (an event of exiting an occupational relationship with an employer after a qualifying time period)\nNote continued here. The word TEST should not be broken!";
+      :PLAC "The place";
+      :SOUR _:SOURCE1,
+        [
+          :DATA [
+              :DATE "31 DEC 1900";
+              :TEXT "a sample text\nSample text continued here. The word TEST should not be broken!"];
+          :NOTE "A note\nNote continued here. The word TEST should not be broken!";
+          :PAGE "42";
+          :QUAY "3"]];
+  :SEX "M";
+  :SOUR _:SOURCE1,
+    [
+      :DATA [
+          :DATE "31 DEC 1900";
+          :TEXT "a sample text\nSample text continued here. The word TEST should not be broken!"];
+      :NOTE "A note\nNote continued here. The word TEST should not be broken!";
+      :PAGE "42";
+      :QUAY "0"];
+  :SSN "6942",
+    [
+      :DATE "31 DEC 1997";
+      :NOTE "SOC_SEC_NUMBER event note (a number assigned by the United States Social Security Administration. Used for tax identification purposes)\nNote continued here. The word TEST should not be broken!";
+      :PLAC "The place";
+      :SOUR _:SOURCE1,
+        [
+          :DATA [
+              :DATE "31 DEC 1900";
+              :TEXT "a sample text\nSample text continued here. The word TEST should not be broken!"];
+          :NOTE "A note\nNote continued here. The word TEST should not be broken!";
+          :PAGE "42";
+          :QUAY "3"]];
+  :TITL "Nobility title",
+    [
+      :DATE "31 DEC 1997";
+      :NOTE "TITLE event note (a description of a specific writing or other work, such as the title of a book when used in a source context, or a formal designation used by an individual in connection with positions of royalty or other social status, \nsuch as Grand Duke)\nNote continued here. The word TEST should not be broken!";
+      :PLAC "The place";
+      :SOUR _:SOURCE1,
+        [
+          :DATA [
+              :DATE "31 DEC 1900";
+              :TEXT "a sample text\nSample text continued here. The word TEST should not be broken!"];
+          :NOTE "A note\nNote continued here. The word TEST should not be broken!";
+          :PAGE "42";
+          :QUAY "3"]];
+  :WILL [
+      :DATE "31 DEC 1997";
+      :NOTE "WILL event note (a legal document treated as an event, by which a person disposes of his or her estate, to take effect after death. The event date is the date the will was signed while the person was alive. See also PROBate)\nNote continued here. The word TEST should not be broken!";
+      :PLAC "The place";
+      :SOUR _:SOURCE1,
+        [
+          :DATA [
+              :DATE "31 DEC 1900";
+              :TEXT "a sample text\nSample text continued here. The word TEST should not be broken!"];
+          :NOTE "A note\nNote continued here. The word TEST should not be broken!";
+          :PAGE "42";
+          :QUAY "3"]];
+  :_MYOWNTAG "This is a non-standard tag. Not recommended but allowed".
+
+_:PERSON2
+  :FAMS _:FAMILY1;
+  :NAME "/Wife/";
+  :SEX "F".
+
+_:PERSON3
+  :FAMC _:FAMILY1;
+  :NAME "/Child 1/".
+
+_:PERSON4
+  :FAMC _:FAMILY1;
+  :NAME "/Child 2/".
+
+_:PERSON5
+  :FAMS _:PARENTS;
+  :NAME "/Father/";
+  :SEX "M".
+
+_:PERSON6
+  :FAMS _:ADOPTIVE_PARENTS;
+  :NAME "/Adoptive mother/";
+  :SEX "F".
+
+_:PERSON7
+  :FAMC _:FAMILY2;
+  :NAME "/Child 3/".
+
+_:PERSON8
+  :FAMS _:FAMILY2;
+  :NAME "/2nd Wife/";
+  :SEX "F".
+
+_:SOURCE1
+  :ABBR "Short title";
+  :AUTH "Author of source\nAuthor continued here. The word TEST should not be broken!";
+  :CHAN "",
+    [
+      :DATE "1 APR 1998",
+        [
+          :TIME "12:34:56.789"];
+      :NOTE "A note\nNote continued here. The word TEST should not be broken!"];
+  :DATA [
+      :AGNC "Resposible agency";
+      :EVEN "BIRT, CHR",
+        "DEAT",
+        [
+          :DATE "FROM 1 JAN 1980 TO 1 FEB 1982";
+          :PLAC "Place"],
+        [
+          :DATE "FROM 1 JAN 1980 TO 1 FEB 1982";
+          :PLAC "Another place"];
+      :NOTE "A note about whatever\nNote continued here. The word TEST should not be broken!"];
+  :NOTE "A note about the family\nNote continued here. The word TEST should not be broken!";
+  :OBJE [
+      :FILE "\\\\network\\drive\\path\\file name.bmp";
+      :FORM "bmp";
+      :NOTE "A note\nNote continued here. The word TEST should not be broken!";
+      :TITL "A bmp picture"];
+  :PUBL "Source publication facts\nPublication facts continued here. The word TEST should not be broken!";
+  :TEXT "Citation from source\nCitation continued here. The word TEST should not be broken!";
+  :TITL "Title of source\nTitle continued here. The word TEST should not be broken!";
+  :_MYOWNTAG "This is a non-standard tag. Not recommended but allowed".
+
+_:SUBMISSION
+  :ANCE "1";
+  :DESC "1";
+  :FAMF "NameOfFamilyFile";
+  :ORDI "yes";
+  :SUBM _:SUBMITTER;
+  :TEMP "Abreviated temple code";
+  :_MYOWNTAG "SUBN does not allow NOTE tags :-(( so, here is my not: SUBN seems to be LDS internal data. The sample data I put in here are probably nonsence.".
+
+_:SUBMITTER
+  :ADDR "Submitter address line 1\nSubmitter address line 2\nSubmitter address line 3\nSubmitter address line 4",
+    [
+      :ADR1 "Submitter address line 1";
+      :ADR2 "Submitter address line 2";
+      :CITY "Submitter address city";
+      :CTRY "Submitter address country";
+      :POST "Submitter address ZIP code";
+      :STAE "Submitter address state"];
+  :CHAN "",
+    [
+      :DATE "19 JUN 2000",
+        [
+          :TIME "12:34:56.789"];
+      :NOTE "A note\nNote continued here. The word TEST should not be broken!"];
+  :LANG "English";
+  :NAME "/Submitter-Name/";
+  :PHON "Submitter phone number 1",
+    "Submitter phone number 2",
+    "Submitter phone number 3 (last one!)";
+  :_MYOWNTAG "This is a non-standard tag. Not recommended but allowed".
+
+[]
+  :FAM _:ADOPTIVE_PARENTS,
+    _:FAMILY1,
+    _:FAMILY2,
+    _:PARENTS;
+  :HEAD [
+      :CHAR "ASCII",
+        [
+          :VERS "Version number of ASCII (whatever it means) "];
+      :COPR "(C) 1997-2000 by H. Eichmann. You can use and distribute this file freely as long as you do not charge for it";
+      :DATE "1 JAN 1998",
+        [
+          :TIME "13:57:24.80"];
+      :DEST "Destination of transmission";
+      :FILE "allged.ged";
+      :GEDC [
+          :FORM "LINEAGE-LINKED";
+          :VERS "5.5"];
+      :LANG "language";
+      :NOTE "A general note about this file:\nIt demonstrates most of the data which can be submitted using GEDCOM5.5. It shows the relatives of PERSON1:\nHis 2 wifes (PERSON2, PERSON8), his parents (father: PERSON5, mother not given), \nadoptive parents (mother: PERSON6, father not given) and his 3 children (PERSON3, PERSON4 and PERSON7).\nIn PERSON1, FAMILY1, SUBMITTER, SUBMISSION and SOURCE1 as many datafields as possible are used.\nAll other individuals/families contain no data. Note, that many data tags can appear more than once\n(in this transmission this is demonstrated with tags: NAME, OCCU, PLACE and NOTE. Seek the word 'another'.\nThe data transmitted here do not make sence. Just the HEAD.DATE tag contains the date of the creation\nof this file and will change in future Versions!\nThis file is created by H. Eichmann: h.eichmann@@gmx.de. Feel free to copy and use it for any \nnon-commercial purpose. For the creation the GEDCOM standard Release 5.5 (2 JAN 1996) has been used.\nCopyright: The church of Jesus Christ of latter-day saints, gedcom@@gedcom.org\nDownload it (the GEDCOM 5.5 specs) from: ftp.gedcom.com/pub/genealogy/gedcom.\nSome Specials: This line is very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very long but not too long (255 caharcters is the limit). \nThis @@ (commercial at) character may only appear ONCE!\nNote continued here. The word TEST should not be broken!";
+      :SOUR "APPROVED_SOURCE_NAME",
+        [
+          :CORP "Corporation name",
+            [
+              :ADDR "Corporation address line 1\nCorporation address line 2\nCorporation address line 3\nCorporation address line 4",
+                [
+                  :ADR1 "Corporation address line 1";
+                  :ADR2 "Corporation address line 2";
+                  :CITY "Corporation address city";
+                  :CTRY "Corporation address country";
+                  :POST "Corporation address ZIP code";
+                  :STAE "Corporation address state"];
+              :PHON "Corporation phone number 1",
+                "Corporation phone number 2",
+                "Corporation phone number 3 (last one!)"];
+          :DATA "Name of source data",
+            [
+              :COPR "Copyright of source data";
+              :DATE "1 JAN 1998"];
+          :NAME "Name of source-program";
+          :VERS "Version number of source-program"];
+      :SUBM _:SUBMITTER;
+      :SUBN _:SUBMISSION;
+      :_MYOWNTAG "This is a non-standard tag. Not recommended but allowed"];
+  :INDI _:PERSON1,
+    _:PERSON2,
+    _:PERSON3,
+    _:PERSON4,
+    _:PERSON5,
+    _:PERSON6,
+    _:PERSON7,
+    _:PERSON8;
+  :SOUR _:SOURCE1;
+  :SUBM _:SUBMITTER;
+  :SUBN _:SUBMISSION;
+  :_MYOWNTAG "This is a non-standard tag. Not recommended but allowed".

@@ -286,13 +286,19 @@ fn bad_incorrect_level() {
     gedcomfy::error
 
       × A problem was found in the GEDCOM file
-      ├─▶ gedcom::encoding::not_gedcom
+      ├─▶   × A problem was found while trying to determine the encoding of the
+      │     │ GEDCOM file
       │   
-      │     × Unable to determine encoding of GEDCOM file
-      │     help: GEDCOM files must start with a '0 HEAD' record, but this was
-      │           not found
-      │   
-      ╰─▶ Input does not appear to be a GEDCOM file
+      ╰─▶   × Input file appears to be the trailing part of a multi-volume GEDCOM
+            │ file
+             ╭─[1:1]
+           1 │ 1 HEAD
+             · ───┬──
+             ·    ╰── this record is valid but not the start of a GEDCOM file
+           2 │ 1 TAG
+             ╰────
+            help: GEDCOM files must start with a '0 HEAD' record, but this was
+                  not found
     ");
 }
 

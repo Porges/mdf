@@ -27,9 +27,9 @@ HEAD {
             COPR "Copyright of source data"
         }
     }
-    SUBM see="@SUBMITTER@"
-    SUBN see="@SUBMISSION@"
-    _HME see="@PERSON1@"
+    SUBM see="SUBMITTER"
+    SUBN see="SUBMISSION"
+    _HME see="PERSON1"
     DEST "ANSTFILE"
     DATE "1 JAN 1998" {
         TIME "13:57:24.80"
@@ -161,7 +161,7 @@ HEAD {
     }
 }
 SUBN xref="SUBMISSION" {
-    SUBM see="@SUBMITTER@"
+    SUBM see="SUBMITTER"
     FAMF "NameOfFamilyFile"
     TEMP "Abbreviated Temple Code"
     ANCE "1"
@@ -190,7 +190,7 @@ SUBM xref="SUBMITTER" {
         FORM "jpeg"
         TITL "Submitter Multimedia File"
         FILE "ImgFile.JPG"
-        NOTE see="@N1@"
+        NOTE see="N1"
     }
     RFN "Submitter Registered RFN"
     RIN "1"
@@ -234,9 +234,9 @@ INDI xref="I14" {
     DEAT {
         DATE "5 JUL 1974"
     }
-    FAMS see="@F6@"
-    FAMC see="@F7@"
-    NOTE see="@N24@"
+    FAMS see="F6"
+    FAMC see="F7"
+    NOTE see="N24"
     CHAN {
         DATE "11 Jan 2001" {
             TIME "16:00:06"
@@ -253,8 +253,8 @@ INDI xref="I13" {
     DEAT {
         DATE "31 DEC 1990"
     }
-    FAMS see="@F6@"
-    NOTE see="@N25@"
+    FAMS see="F6"
+    NOTE see="N25"
     CHAN {
         DATE "11 Jan 2001" {
             TIME "16:00:23"
@@ -268,8 +268,8 @@ INDI xref="PERSON6" {
     BIRT {
         DATE "6 JUN 1944"
     }
-    FAMS see="@ADOPTIVE_PARENTS@"
-    NOTE see="@N27@"
+    FAMS see="ADOPTIVE_PARENTS"
+    NOTE see="N27"
     CHAN {
         DATE "11 Jan 2001" {
             TIME "16:03:05"
@@ -283,8 +283,8 @@ INDI xref="I12" {
     BIRT {
         DATE "1875"
     }
-    FAMC see="@F5@"
-    NOTE see="@N23@"
+    FAMC see="F5"
+    NOTE see="N23"
     OBJE {
         FORM "URL"
         TITL "GEDCOM 5.5 documentation web site"
@@ -321,8 +321,8 @@ INDI xref="I11" {
     DEAT {
         DATE "7 DEC 1941"
     }
-    FAMC see="@F5@"
-    NOTE see="@N22@"
+    FAMC see="F5"
+    NOTE see="N22"
     OBJE {
         FORM "TEXT"
         TITL "Plain TEXT document"
@@ -357,9 +357,9 @@ INDI xref="I10" {
         DATE "1870"
     }
     DEAT "Y"
-    FAMS see="@F7@"
-    FAMC see="@F5@"
-    NOTE see="@N21@"
+    FAMS see="F7"
+    FAMC see="F5"
+    NOTE see="N21"
     OBJE {
         FORM "PICT"
         TITL "Macintosh PICT file"
@@ -408,8 +408,8 @@ INDI xref="I9" {
     BIRT {
         DATE "1835"
     }
-    FAMS see="@F5@"
-    NOTE see="@N18@"
+    FAMS see="F5"
+    NOTE see="N18"
     OBJE {
         TITL "Windows bit mapped image file"
         FORM "bmp"
@@ -440,7 +440,7 @@ INDI xref="I9" {
         FORM "wav"
         FILE "force.wav"
     }
-    OBJE see="@M1@"
+    OBJE see="M1"
     CHAN {
         DATE "11 Jan 2001" {
             TIME "16:02:06"
@@ -457,8 +457,8 @@ INDI xref="PERSON2" {
     DEAT {
         DATE "AFT 2000"
     }
-    FAMS see="@FAMILY1@"
-    NOTE see="@N31@"
+    FAMS see="FAMILY1"
+    NOTE see="N31"
     CHAN {
         DATE "11 Jan 2001" {
             TIME "15:58:16"
@@ -475,7 +475,7 @@ INDI xref="I15" {
     DEAT {
         DATE "15 JUN 1915"
     }
-    FAMS see="@F5@"
+    FAMS see="F5"
     CHAN {
         DATE "11 Jan 2001" {
             TIME "16:01:59"
@@ -492,8 +492,8 @@ INDI xref="PERSON8" {
     DEAT {
         DATE "FROM APR 2000 TO 5 MAR 2001"
     }
-    FAMS see="@FAMILY2@"
-    NOTE see="@N32@"
+    FAMS see="FAMILY2"
+    NOTE see="N32"
     CHAN {
         DATE "11 Jan 2001" {
             TIME "15:58:58"
@@ -507,8 +507,8 @@ INDI xref="PERSON3" {
         DATE "MAR 1999"
         PLAC "Las Vegas, Nevada USA"
     }
-    FAMC see="@FAMILY1@"
-    NOTE see="@N20@"
+    FAMC see="FAMILY1"
+    NOTE see="N20"
     CHAN {
         DATE "11 Jan 2001" {
             TIME "15:55:43"
@@ -526,7 +526,7 @@ INDI xref="PERSON1" {
         SPFX "Le"
         SURN "Torture"
         NSFX "Jr."
-        SOUR see="@SOURCE1@" {
+        SOUR see="SOURCE1" {
             PAGE "42"
         }
         NOTE "These are notes about the first NAME structure in this record. These notes are " {
@@ -540,7 +540,7 @@ INDI xref="PERSON1" {
     }
     SEX "M"
     NAME "William John /Smith/" {
-        SOUR see="@SOURCE1@" {
+        SOUR see="SOURCE1" {
             PAGE "55"
             EVEN "Event type cited in source" {
                 ROLE "Role in cited event"
@@ -556,10 +556,10 @@ INDI xref="PERSON1" {
             OBJE {
                 TITL "Multimedia link about this source"
                 FORM "jpeg"
-                NOTE see="@N26@"
+                NOTE see="N26"
                 FILE "ImgFile.JPG"
             }
-            NOTE see="@N7@"
+            NOTE see="N7"
         }
         NOTE "This is a second personal NAME structure in a single INDIVIDUAL record " {
             CONC "which is allowed in GEDCOM. This second NAME structure has all possible "
@@ -582,22 +582,22 @@ INDI xref="PERSON1" {
             FORM "tiff"
             FILE "ImgFile.TIF"
         }
-        SOUR see="@SOURCE1@" {
+        SOUR see="SOURCE1" {
             PAGE "42"
             QUAY "2"
             NOTE "Some notes about this birth source citation which are embedded in the citation " {
                 CONC "structure itself."
             }
         }
-        NOTE see="@N8@"
-        FAMC see="@PARENTS@"
+        NOTE see="N8"
+        FAMC see="PARENTS"
     }
     DEAT {
         DATE "ABT 15 JAN 2001"
         PLAC "New York, New York, USA" {
             FORM "city, state, country"
             NOTE "The place structure has more detail than usually used for places"
-            SOUR see="@SOURCE1@"
+            SOUR see="SOURCE1"
         }
         AGE "76"
         TYPE "slow"
@@ -609,7 +609,7 @@ INDI xref="PERSON1" {
             TITL "Multimedia link about the death event"
             FILE "ImgFile.JPG"
         }
-        SOUR see="@SOURCE1@" {
+        SOUR see="SOURCE1" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -620,16 +620,16 @@ INDI xref="PERSON1" {
         }
         NOTE "A death event note."
     }
-    FAMS see="@FAMILY1@" {
+    FAMS see="FAMILY1" {
         NOTE "Note about the link to the family record with his first spouse."
         NOTE "Another note about the link to the family record with his first spouse."
     }
-    FAMS see="@FAMILY2@"
-    FAMC see="@PARENTS@" {
+    FAMS see="FAMILY2"
+    FAMC see="PARENTS" {
         NOTE "Note about this link to his parents family record."
         NOTE "Another note about this link to his parents family record"
     }
-    FAMC see="@ADOPTIVE_PARENTS@" {
+    FAMC see="ADOPTIVE_PARENTS" {
         PEDI "adopted"
         NOTE "Note about the link to his adoptive parents family record."
     }
@@ -650,7 +650,7 @@ INDI xref="PERSON1" {
             TITL "JPEG File Link"
             FILE "ImgFile.JPG"
         }
-        SOUR see="@SOURCE1@" {
+        SOUR see="SOURCE1" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -665,7 +665,7 @@ INDI xref="PERSON1" {
         DATE "CAL 31 DEC 1997"
         PLAC "The place"
         TYPE "CHR"
-        SOUR see="@SOURCE1@" {
+        SOUR see="SOURCE1" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -677,13 +677,13 @@ INDI xref="PERSON1" {
         NOTE "Christening event note (the religious event (not LDS) of baptizing and/or naming a " {
             CONC "child)."
         }
-        FAMC see="@ADOPTIVE_PARENTS@"
+        FAMC see="ADOPTIVE_PARENTS"
     }
     CHR {
         DATE "EST 30 DEC 1997"
         PLAC "The place"
         TYPE "CHR"
-        SOUR see="@SOURCE1@" {
+        SOUR see="SOURCE1" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -702,7 +702,7 @@ INDI xref="PERSON1" {
         DATE "BEF 31 DEC 1997"
         PLAC "The place"
         TYPE "BLES"
-        SOUR see="@SOURCE1@" {
+        SOUR see="SOURCE1" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -719,7 +719,7 @@ INDI xref="PERSON1" {
         DATE "AFT 31 DEC 1997"
         PLAC "The place"
         TYPE "BARM"
-        SOUR see="@SOURCE1@" {
+        SOUR see="SOURCE1" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -736,7 +736,7 @@ INDI xref="PERSON1" {
         DATE "FROM 31 DEC 1997"
         PLAC "The place"
         TYPE "BASM"
-        SOUR see="@SOURCE1@" {
+        SOUR see="SOURCE1" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -753,7 +753,7 @@ INDI xref="PERSON1" {
         DATE "TO 31 DEC 1997"
         PLAC "The place"
         TYPE "ADOP"
-        SOUR see="@SOURCE1@" {
+        SOUR see="SOURCE1" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -765,7 +765,7 @@ INDI xref="PERSON1" {
         NOTE "Adoption event note (pertaining to creation of a child-parent relationship that does " {
             CONC "not exist biologically)."
         }
-        FAMC see="@ADOPTIVE_PARENTS@" {
+        FAMC see="ADOPTIVE_PARENTS" {
             ADOP "BOTH"
         }
     }
@@ -773,7 +773,7 @@ INDI xref="PERSON1" {
         DATE "BET 31 DEC 1997 AND 1 FEB 1998"
         PLAC "The place"
         TYPE "CHRA"
-        SOUR see="@SOURCE1@" {
+        SOUR see="SOURCE1" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -790,7 +790,7 @@ INDI xref="PERSON1" {
         DATE "FROM 31 DEC 1997 TO 2 JAN 1998"
         PLAC "The place"
         TYPE "CONF"
-        SOUR see="@SOURCE1@" {
+        SOUR see="SOURCE1" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -805,7 +805,7 @@ INDI xref="PERSON1" {
         DATE "INT 31 DEC 1997 (a test)"
         PLAC "The place"
         TYPE "FCOM"
-        SOUR see="@SOURCE1@" {
+        SOUR see="SOURCE1" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -822,7 +822,7 @@ INDI xref="PERSON1" {
         DATE "(No idea of the date)"
         PLAC "The place"
         TYPE "ORDN"
-        SOUR see="@SOURCE1@" {
+        SOUR see="SOURCE1" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -839,7 +839,7 @@ INDI xref="PERSON1" {
         DATE "31 DEC 1997"
         PLAC "The place"
         TYPE "GRAD"
-        SOUR see="@SOURCE1@" {
+        SOUR see="SOURCE1" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -856,7 +856,7 @@ INDI xref="PERSON1" {
         DATE "1997"
         PLAC "The place"
         TYPE "EMIG"
-        SOUR see="@SOURCE1@" {
+        SOUR see="SOURCE1" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -873,7 +873,7 @@ INDI xref="PERSON1" {
         DATE "DEC 1997"
         PLAC "The place"
         TYPE "IMMI"
-        SOUR see="@SOURCE1@" {
+        SOUR see="SOURCE1" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -890,7 +890,7 @@ INDI xref="PERSON1" {
         DATE "5 AUG 1100 B.C."
         PLAC "The place"
         TYPE "NATU"
-        SOUR see="@SOURCE1@" {
+        SOUR see="SOURCE1" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -905,7 +905,7 @@ INDI xref="PERSON1" {
         DATE "2 TVT 5758"
         PLAC "The place"
         TYPE "CENS"
-        SOUR see="@SOURCE1@" {
+        SOUR see="SOURCE1" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -922,7 +922,7 @@ INDI xref="PERSON1" {
         DATE "11 NIVO 0006"
         PLAC "The place"
         TYPE "RETI"
-        SOUR see="@SOURCE1@" {
+        SOUR see="SOURCE1" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -939,7 +939,7 @@ INDI xref="PERSON1" {
         DATE "FROM 25 SVN 5757 TO 26 IYR 5757"
         PLAC "The place"
         TYPE "PROB"
-        SOUR see="@SOURCE1@" {
+        SOUR see="SOURCE1" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -956,7 +956,7 @@ INDI xref="PERSON1" {
         DATE "5 VEND 0010"
         PLAC "The place"
         TYPE "BURI"
-        SOUR see="@SOURCE1@" {
+        SOUR see="SOURCE1" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -973,7 +973,7 @@ INDI xref="PERSON1" {
         DATE "INT 2 TVT 5758 (interpreted Hebrew date)"
         PLAC "The place"
         TYPE "WILL"
-        SOUR see="@SOURCE1@" {
+        SOUR see="SOURCE1" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -992,7 +992,7 @@ INDI xref="PERSON1" {
         DATE "5 MAY 0005"
         PLAC "The place"
         TYPE "EVEN"
-        SOUR see="@SOURCE1@" {
+        SOUR see="SOURCE1" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -1010,8 +1010,8 @@ INDI xref="PERSON1" {
         PLAC "Salt Lake City"
         STAT "Cleared"
         TEMP "Mormon Temple"
-        SOUR see="@SOURCE1@"
-        NOTE see="@N5@"
+        SOUR see="SOURCE1"
+        NOTE see="N5"
     }
     CONL "Y"
     ENDL {
@@ -1019,7 +1019,7 @@ INDI xref="PERSON1" {
     }
     SLGC {
         DATE "27 OCT 1699/00"
-        FAMC see="@PARENTS@"
+        FAMC see="PARENTS"
     }
     RESI {
         DATE "31 DEC 1997"
@@ -1039,7 +1039,7 @@ INDI xref="PERSON1" {
         PHON "+1-800-555-5555"
         CAUS "Needed housing"
         AGNC "None"
-        SOUR see="@SOURCE1@" {
+        SOUR see="SOURCE1" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -1066,7 +1066,7 @@ INDI xref="PERSON1" {
             TITL "GIF Image File"
             FILE "ImgFile.GIF"
         }
-        SOUR see="@SOURCE1@" {
+        SOUR see="SOURCE1" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -1081,7 +1081,7 @@ INDI xref="PERSON1" {
         DATE "31 DEC 1998"
         PLAC "The place"
         TYPE "OCCU"
-        SOUR see="@SOURCE1@" {
+        SOUR see="SOURCE1" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -1096,7 +1096,7 @@ INDI xref="PERSON1" {
         DATE "31 DEC 1997"
         PLAC "The place"
         TYPE "EDUC"
-        SOUR see="@SOURCE1@" {
+        SOUR see="SOURCE1" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -1111,7 +1111,7 @@ INDI xref="PERSON1" {
         DATE "31 DEC 1997"
         PLAC "The place"
         TYPE "PHYS"
-        SOUR see="@SOURCE1@" {
+        SOUR see="SOURCE1" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -1128,7 +1128,7 @@ INDI xref="PERSON1" {
         DATE "31 DEC 1997"
         PLAC "The place"
         TYPE "RELI"
-        SOUR see="@SOURCE1@" {
+        SOUR see="SOURCE1" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -1145,7 +1145,7 @@ INDI xref="PERSON1" {
         DATE "31 DEC 1997"
         PLAC "The place"
         TYPE "SSN"
-        SOUR see="@SOURCE1@" {
+        SOUR see="SOURCE1" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -1162,7 +1162,7 @@ INDI xref="PERSON1" {
         DATE "31 DEC 1997"
         PLAC "The place"
         TYPE "IDNO"
-        SOUR see="@SOURCE1@" {
+        SOUR see="SOURCE1" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -1179,14 +1179,14 @@ INDI xref="PERSON1" {
         DATE "31 DEC 1997"
         PLAC "The place"
         TYPE "PROP"
-        SOUR see="@SOURCE1@" {
+        SOUR see="SOURCE1" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
                 TEXT "Some possessions source text."
             }
             QUAY "3"
-            NOTE see="@N11@"
+            NOTE see="N11"
         }
         NOTE "Possessions or property attribute note (pertaining to possessions such as real estate " {
             CONC "or other property of interest)."
@@ -1196,7 +1196,7 @@ INDI xref="PERSON1" {
         DATE "31 DEC 1997"
         PLAC "The place"
         TYPE "CAST"
-        SOUR see="@SOURCE1@" {
+        SOUR see="SOURCE1" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -1214,7 +1214,7 @@ INDI xref="PERSON1" {
         DATE "31 DEC 1997"
         PLAC "The place"
         TYPE "NCHI"
-        SOUR see="@SOURCE1@" {
+        SOUR see="SOURCE1" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -1229,7 +1229,7 @@ INDI xref="PERSON1" {
         DATE "31 DEC 1997"
         PLAC "The place"
         TYPE "NMR"
-        SOUR see="@SOURCE1@" {
+        SOUR see="SOURCE1" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -1244,7 +1244,7 @@ INDI xref="PERSON1" {
         DATE "31 DEC 1997"
         PLAC "The place"
         TYPE "TITL"
-        SOUR see="@SOURCE1@" {
+        SOUR see="SOURCE1" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -1263,7 +1263,7 @@ INDI xref="PERSON1" {
         DATE "31 DEC 1997"
         PLAC "The place"
         TYPE "NATI"
-        SOUR see="@SOURCE1@" {
+        SOUR see="SOURCE1" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -1274,17 +1274,17 @@ INDI xref="PERSON1" {
         }
         NOTE "Nationality attribute note (the national heritage of an individual)."
     }
-    NOTE see="@N4@" {
-        SOUR see="@SOURCE1@"
+    NOTE see="N4" {
+        SOUR see="SOURCE1"
     }
     NOTE "This is a second set of notes for this single individual record. It is embedded in the " {
         CONC "INDIVIDUAL record instead of being in a separate NOTE record."
         CONT ""
         CONT "These notes also have a source citation to a SOURCE record. In GEDCOM "
         CONC "this source can only be a single line and links to a SOURCE record."
-        SOUR see="@SOURCE1@"
+        SOUR see="SOURCE1"
     }
-    SOUR see="@SOURCE1@" {
+    SOUR see="SOURCE1" {
         PAGE "42"
         DATA {
             DATE "31 DEC 1900"
@@ -1293,8 +1293,8 @@ INDI xref="PERSON1" {
         QUAY "0"
         NOTE "A source note."
     }
-    SOUR see="@SR2@" {
-        NOTE see="@N12@"
+    SOUR see="SR2" {
+        NOTE see="N12"
     }
     SOUR "This source is embedded in the record instead of being a link to a " {
         CONC "separate SOURCE record."
@@ -1303,17 +1303,17 @@ INDI xref="PERSON1" {
             CONC "links to SOURCE records."
             CONT "Here is a new line of text from the source."
         }
-        NOTE see="@N17@"
+        NOTE see="N17"
     }
     OBJE {
         FORM "gif"
         TITL "GIF Image File"
         FILE "ImgFile.GIF"
     }
-    ALIA see="@I9@"
-    ASSO see="@I9@" {
+    ALIA see="I9"
+    ASSO see="I9" {
         RELA "Has multimedia links"
-        SOUR see="@SOURCE1@" {
+        SOUR see="SOURCE1" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -1322,12 +1322,12 @@ INDI xref="PERSON1" {
         }
         NOTE "Note on association link."
     }
-    ASSO see="@PERSON5@" {
+    ASSO see="PERSON5" {
         RELA "Father"
     }
-    SUBM see="@SUBMITTER@"
-    ANCI see="@SUBMITTER@"
-    DESI see="@SUBMITTER@"
+    SUBM see="SUBMITTER"
+    ANCI see="SUBMITTER"
+    DESI see="SUBMITTER"
     REFN "User reference number" {
         TYPE "Type of user number"
     }
@@ -1346,8 +1346,8 @@ INDI xref="PERSON7" {
         DATE "1 JAN 2001"
         PLAC "London, UK"
     }
-    FAMC see="@FAMILY2@"
-    NOTE see="@N30@"
+    FAMC see="FAMILY2"
+    NOTE see="N30"
     CHAN {
         DATE "11 Jan 2001" {
             TIME "15:56:49"
@@ -1362,8 +1362,8 @@ INDI xref="PERSON4" {
         DATE "15 FEB 2000"
         PLAC "Chicago, IL, USA"
     }
-    FAMC see="@FAMILY1@"
-    NOTE see="@N29@"
+    FAMC see="FAMILY1"
+    NOTE see="N29"
     CHAN {
         DATE "11 Jan 2001" {
             TIME "15:56:15"
@@ -1382,9 +1382,9 @@ INDI xref="PERSON5" {
         AGE "65"
         CAUS "Old age"
     }
-    FAMS see="@PARENTS@"
-    FAMC see="@F6@"
-    NOTE see="@N28@"
+    FAMS see="PARENTS"
+    FAMC see="F6"
+    NOTE see="N28"
     CHAN {
         DATE "11 Jan 2001" {
             TIME "15:59:40"
@@ -1393,8 +1393,8 @@ INDI xref="PERSON5" {
     RIN "15"
 }
 FAM xref="FAMILY1" {
-    HUSB see="@PERSON1@"
-    WIFE see="@PERSON2@"
+    HUSB see="PERSON1"
+    WIFE see="PERSON2"
     MARR {
         DATE "31 DEC 1997"
         PLAC "The place"
@@ -1415,7 +1415,7 @@ FAM xref="FAMILY1" {
             TITL "Multimedia link about the marriage event"
             FILE "ImgFile.JPG"
         }
-        SOUR see="@SOURCE1@" {
+        SOUR see="SOURCE1" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -1428,8 +1428,8 @@ FAM xref="FAMILY1" {
             CONC "unit of a man and a woman as husband and wife)."
         }
     }
-    CHIL see="@PERSON3@"
-    CHIL see="@PERSON4@"
+    CHIL see="PERSON3"
+    CHIL see="PERSON4"
     NCHI "42"
     ENGA "Y" {
         DATE "31 DEC 1997"
@@ -1452,7 +1452,7 @@ FAM xref="FAMILY1" {
             TITL "BMP Image File"
             FILE "ImgFile.BMP"
         }
-        SOUR see="@SOURCE1@" {
+        SOUR see="SOURCE1" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -1475,7 +1475,7 @@ FAM xref="FAMILY1" {
         WIFE {
             AGE "42y 6m"
         }
-        SOUR see="@SOURCE1@" {
+        SOUR see="SOURCE1" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -1498,7 +1498,7 @@ FAM xref="FAMILY1" {
         WIFE {
             AGE ">42y 6m"
         }
-        SOUR see="@SOURCE1@" {
+        SOUR see="SOURCE1" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -1522,7 +1522,7 @@ FAM xref="FAMILY1" {
         WIFE {
             AGE "<42y 6m"
         }
-        SOUR see="@SOURCE1@" {
+        SOUR see="SOURCE1" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -1543,7 +1543,7 @@ FAM xref="FAMILY1" {
         WIFE {
             AGE "INFANT"
         }
-        SOUR see="@SOURCE1@" {
+        SOUR see="SOURCE1" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -1567,7 +1567,7 @@ FAM xref="FAMILY1" {
         WIFE {
             AGE "42m"
         }
-        SOUR see="@SOURCE1@" {
+        SOUR see="SOURCE1" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -1587,7 +1587,7 @@ FAM xref="FAMILY1" {
         WIFE {
             AGE "CHILD"
         }
-        SOUR see="@SOURCE1@" {
+        SOUR see="SOURCE1" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -1611,7 +1611,7 @@ FAM xref="FAMILY1" {
         WIFE {
             AGE "6m 9d"
         }
-        SOUR see="@SOURCE1@" {
+        SOUR see="SOURCE1" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -1634,7 +1634,7 @@ FAM xref="FAMILY1" {
         WIFE {
             AGE "42y 6m"
         }
-        SOUR see="@SOURCE1@" {
+        SOUR see="SOURCE1" {
             PAGE "42"
             DATA {
                 DATE "31 DEC 1900"
@@ -1652,13 +1652,13 @@ FAM xref="FAMILY1" {
         PLAC "Temple"
         STAT "Child"
         TEMP "Temple Code"
-        SOUR see="@SOURCE1@" {
+        SOUR see="SOURCE1" {
             DATA {
                 TEXT "Sample text from LDS spouse sealing source."
             }
-            NOTE see="@N19@"
+            NOTE see="N19"
         }
-        NOTE see="@N6@"
+        NOTE see="N6"
     }
     NOTE "Comments on \"Joseph Tag Torture-Mary First Jones\" FAMILY Record." {
         CONT ""
@@ -1691,7 +1691,7 @@ FAM xref="FAMILY1" {
         CONT "7. This record has all remaining tags allowed in FAMILY records for user reference "
         CONC "number, record ID, and the changed date."
     }
-    SOUR see="@SOURCE1@" {
+    SOUR see="SOURCE1" {
         PAGE "42"
         DATA {
             DATE "31 DEC 1900"
@@ -1705,7 +1705,7 @@ FAM xref="FAMILY1" {
         TITL "BMP Image File"
         FILE "ImgFile.BMP"
     }
-    SUBM see="@SUBMITTER@"
+    SUBM see="SUBMITTER"
     REFN "User Reference Number" {
         TYPE "Type of user number"
     }
@@ -1717,9 +1717,9 @@ FAM xref="FAMILY1" {
     }
 }
 FAM xref="PARENTS" {
-    HUSB see="@PERSON5@"
-    CHIL see="@PERSON1@"
-    NOTE see="@N33@"
+    HUSB see="PERSON5"
+    CHIL see="PERSON1"
+    NOTE see="N33"
     CHAN {
         DATE "13 Jun 2000" {
             TIME "17:00:35"
@@ -1728,9 +1728,9 @@ FAM xref="PARENTS" {
     RIN "2"
 }
 FAM xref="ADOPTIVE_PARENTS" {
-    WIFE see="@PERSON6@"
-    CHIL see="@PERSON1@"
-    NOTE see="@N34@"
+    WIFE see="PERSON6"
+    CHIL see="PERSON1"
+    NOTE see="N34"
     CHAN {
         DATE "13 Jun 2000" {
             TIME "17:01:18"
@@ -1739,10 +1739,10 @@ FAM xref="ADOPTIVE_PARENTS" {
     RIN "3"
 }
 FAM xref="FAMILY2" {
-    HUSB see="@PERSON1@"
-    WIFE see="@PERSON8@"
-    CHIL see="@PERSON7@"
-    NOTE see="@N35@"
+    HUSB see="PERSON1"
+    WIFE see="PERSON8"
+    CHIL see="PERSON7"
+    NOTE see="N35"
     CHAN {
         DATE "13 Jun 2000" {
             TIME "17:01:46"
@@ -1751,12 +1751,12 @@ FAM xref="FAMILY2" {
     RIN "4"
 }
 FAM xref="F5" {
-    HUSB see="@I9@"
-    WIFE see="@I15@"
-    CHIL see="@I10@"
-    CHIL see="@I11@"
-    CHIL see="@I12@"
-    NOTE see="@N36@"
+    HUSB see="I9"
+    WIFE see="I15"
+    CHIL see="I10"
+    CHIL see="I11"
+    CHIL see="I12"
+    NOTE see="N36"
     RIN "5"
     CHAN {
         DATE "11 Jan 2001" {
@@ -1765,10 +1765,10 @@ FAM xref="F5" {
     }
 }
 FAM xref="F6" {
-    HUSB see="@I14@"
-    WIFE see="@I13@"
-    CHIL see="@PERSON5@"
-    NOTE see="@N37@"
+    HUSB see="I14"
+    WIFE see="I13"
+    CHIL see="PERSON5"
+    NOTE see="N37"
     RIN "6"
     CHAN {
         DATE "11 Jan 2001" {
@@ -1777,9 +1777,9 @@ FAM xref="F6" {
     }
 }
 FAM xref="F7" {
-    WIFE see="@I10@"
-    CHIL see="@I14@"
-    NOTE see="@N38@"
+    WIFE see="I10"
+    CHIL see="I14"
+    NOTE see="N38"
     RIN "7"
     CHAN {
         DATE "11 Jan 2001" {
@@ -1801,7 +1801,7 @@ SOUR xref="SOURCE1" {
         CONC "if necessary."
         CONT "Here is a new line in this field"
     }
-    REPO see="@R1@" {
+    REPO see="R1" {
         CALN "920.23" {
             MEDI "Book (or other description of this source)"
         }
@@ -1833,14 +1833,14 @@ SOUR xref="SOURCE1" {
             CONC "of notes."
         }
     }
-    NOTE see="@N15@"
+    NOTE see="N15"
     NOTE "These are notes embedded in the SOURCE Record instead of in a separate NOTE " {
         CONC "RECORD."
     }
     OBJE {
         TITL "JPEG image file link"
         FORM "jpeg"
-        NOTE see="@N14@"
+        NOTE see="N14"
         FILE "ImgFile.JPG"
     }
     REFN "User Reference Number" {
@@ -1857,7 +1857,7 @@ SOUR xref="SR2" {
     TITL "All I Know About GEDCOM, I Learned on the Internet"
     ABBR "What I Know About GEDCOM"
     AUTH "Second Source Author"
-    NOTE see="@N16@"
+    NOTE see="N16"
     CHAN {
         DATE "11 Jan 2001" {
             TIME "16:21:39"
@@ -1880,7 +1880,7 @@ REPO xref="R1" {
     PHON "+1-801-240-2331 (information)"
     PHON "+1-801-240-1278 (gifts & donations)"
     PHON "+1-801-240-2584 (support)"
-    NOTE see="@N2@"
+    NOTE see="N2"
     REFN "User Ref Number" {
         TYPE "Sample"
     }
@@ -1910,7 +1910,7 @@ NOTE xref="N2" {
     CONC "specific about parts of the address. Is everything imported?"
     CONT ""
     CONT "2. There are multiple phone numbers. Are they all imported?"
-    SOUR see="@SOURCE1@" {
+    SOUR see="SOURCE1" {
         PAGE "1"
         DATA {
             DATE "1 MAY 1999"
@@ -2014,7 +2014,7 @@ NOTE xref="N5" {
 }
 NOTE xref="N6" {
     CONC "Notes on this LDS Spouse Sealing Event."
-    SOUR see="@SOURCE1@"
+    SOUR see="SOURCE1"
     CHAN {
         DATE "26 May 1999" {
             TIME "22:38:25"
@@ -2038,7 +2038,7 @@ NOTE xref="N8" {
     CONT ""
     CONT "These notes are in a separate NOTE record. These notes also have their own source "
     CONC "citation structure."
-    SOUR see="@SR2@" {
+    SOUR see="SR2" {
         DATA {
             DATE "1 JUN 1945"
             TEXT "Here is some text from the source. The source is about the notes " {
@@ -2046,7 +2046,7 @@ NOTE xref="N8" {
             }
         }
         QUAY "3"
-        NOTE see="@N9@"
+        NOTE see="N9"
         PAGE "102"
         EVEN "Event type cited in source" {
             ROLE "Role in cited event"

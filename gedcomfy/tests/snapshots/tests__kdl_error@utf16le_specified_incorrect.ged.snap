@@ -7,16 +7,17 @@ input_file: gedcomfy/tests/encoding_inputs/utf16le_specified_incorrect.ged
 gedcomfy::error
 
   × A problem was found in the GEDCOM file
-  ├─▶ gedcom::encoding::file_encoding_mismatch
+  ├─▶   × A problem was found while trying to determine the encoding of the
+  │     │ GEDCOM file
   │   
-  │     × Unable to determine encoding of GEDCOM file
-  │      ╭─[4:8]
-  │    3 │ 2 VERS 5.5.1
-  │    4 │ 1 CHAR UNICODE
-  │      ·        ───┬───
-  │      ·           ╰── encoding was specified here
-  │    5 │ 0 TRLR
-  │      ╰────
-  │   
-  ╰─▶ The file’s GEDCOM header specifies the encoding to be UNICODE, but the
-      file is in an unknown ASCII-compatible encoding
+  ╰─▶ gedcom::encoding::file_encoding_mismatch
+      
+        × The file’s GEDCOM header specifies the encoding to be UNICODE, but
+        │ the file is in an unknown ASCII-compatible encoding
+         ╭─[4:8]
+       3 │ 2 VERS 5.5.1
+       4 │ 1 CHAR UNICODE
+         ·        ───┬───
+         ·           ╰── encoding was specified here
+       5 │ 0 TRLR
+         ╰────

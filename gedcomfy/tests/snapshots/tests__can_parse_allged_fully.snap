@@ -81,13 +81,13 @@ V551(
             ),
             submitter: XRef {
                 xref: Some(
-                    "@SUBMITTER@",
+                    "SUBMITTER",
                 ),
             },
             submission: Some(
                 XRef {
                     xref: Some(
-                        "@SUBMISSION@",
+                        "SUBMISSION",
                     ),
                 },
             ),
@@ -175,7 +175,7 @@ V551(
                     submitter: Some(
                         XRef {
                             xref: Some(
-                                "@SUBMITTER@",
+                                "SUBMITTER",
                             ),
                         },
                     ),
@@ -224,7 +224,7 @@ V551(
                                                 SourceCitation {
                                                     source: XRef {
                                                         xref: Some(
-                                                            "@SOURCE1@",
+                                                            "SOURCE1",
                                                         ),
                                                     },
                                                     page: Some(
@@ -262,7 +262,7 @@ V551(
                                 family: Some(
                                     XRef {
                                         xref: Some(
-                                            "@PARENTS@",
+                                            "PARENTS",
                                         ),
                                     },
                                 ),
@@ -290,7 +290,7 @@ V551(
                                                 SourceCitation {
                                                     source: XRef {
                                                         xref: Some(
-                                                            "@SOURCE1@",
+                                                            "SOURCE1",
                                                         ),
                                                     },
                                                     page: Some(
@@ -350,7 +350,7 @@ V551(
                                                 SourceCitation {
                                                     source: XRef {
                                                         xref: Some(
-                                                            "@SOURCE1@",
+                                                            "SOURCE1",
                                                         ),
                                                     },
                                                     page: Some(
@@ -410,7 +410,7 @@ V551(
                                                 SourceCitation {
                                                     source: XRef {
                                                         xref: Some(
-                                                            "@SOURCE1@",
+                                                            "SOURCE1",
                                                         ),
                                                     },
                                                     page: Some(
@@ -468,7 +468,7 @@ V551(
                                                 SourceCitation {
                                                     source: XRef {
                                                         xref: Some(
-                                                            "@SOURCE1@",
+                                                            "SOURCE1",
                                                         ),
                                                     },
                                                     page: Some(
@@ -524,7 +524,7 @@ V551(
                                                 SourceCitation {
                                                     source: XRef {
                                                         xref: Some(
-                                                            "@SOURCE1@",
+                                                            "SOURCE1",
                                                         ),
                                                     },
                                                     page: Some(
@@ -577,7 +577,7 @@ V551(
                                                 SourceCitation {
                                                     source: XRef {
                                                         xref: Some(
-                                                            "@SOURCE1@",
+                                                            "SOURCE1",
                                                         ),
                                                     },
                                                     page: Some(
@@ -616,7 +616,7 @@ V551(
                                     AdoptionFamily {
                                         family: XRef {
                                             xref: Some(
-                                                "@ADOPTIVE_PARENTS@",
+                                                "ADOPTIVE_PARENTS",
                                             ),
                                         },
                                         adoption_parent: Some(
@@ -647,7 +647,7 @@ V551(
                                                 SourceCitation {
                                                     source: XRef {
                                                         xref: Some(
-                                                            "@SOURCE1@",
+                                                            "SOURCE1",
                                                         ),
                                                     },
                                                     page: Some(
@@ -705,7 +705,7 @@ V551(
                                                 SourceCitation {
                                                     source: XRef {
                                                         xref: Some(
-                                                            "@SOURCE1@",
+                                                            "SOURCE1",
                                                         ),
                                                     },
                                                     page: Some(
@@ -763,7 +763,7 @@ V551(
                                                 SourceCitation {
                                                     source: XRef {
                                                         xref: Some(
-                                                            "@SOURCE1@",
+                                                            "SOURCE1",
                                                         ),
                                                     },
                                                     page: Some(
@@ -821,7 +821,7 @@ V551(
                                                 SourceCitation {
                                                     source: XRef {
                                                         xref: Some(
-                                                            "@SOURCE1@",
+                                                            "SOURCE1",
                                                         ),
                                                     },
                                                     page: Some(
@@ -879,7 +879,7 @@ V551(
                                                 SourceCitation {
                                                     source: XRef {
                                                         xref: Some(
-                                                            "@SOURCE1@",
+                                                            "SOURCE1",
                                                         ),
                                                     },
                                                     page: Some(
@@ -937,7 +937,7 @@ V551(
                                                 SourceCitation {
                                                     source: XRef {
                                                         xref: Some(
-                                                            "@SOURCE1@",
+                                                            "SOURCE1",
                                                         ),
                                                     },
                                                     page: Some(
@@ -995,7 +995,7 @@ V551(
                                                 SourceCitation {
                                                     source: XRef {
                                                         xref: Some(
-                                                            "@SOURCE1@",
+                                                            "SOURCE1",
                                                         ),
                                                     },
                                                     page: Some(
@@ -1053,7 +1053,7 @@ V551(
                                                 SourceCitation {
                                                     source: XRef {
                                                         xref: Some(
-                                                            "@SOURCE1@",
+                                                            "SOURCE1",
                                                         ),
                                                     },
                                                     page: Some(
@@ -1111,7 +1111,7 @@ V551(
                                                 SourceCitation {
                                                     source: XRef {
                                                         xref: Some(
-                                                            "@SOURCE1@",
+                                                            "SOURCE1",
                                                         ),
                                                     },
                                                     page: Some(
@@ -1169,7 +1169,7 @@ V551(
                                                 SourceCitation {
                                                     source: XRef {
                                                         xref: Some(
-                                                            "@SOURCE1@",
+                                                            "SOURCE1",
                                                         ),
                                                     },
                                                     page: Some(
@@ -1227,7 +1227,7 @@ V551(
                                                 SourceCitation {
                                                     source: XRef {
                                                         xref: Some(
-                                                            "@SOURCE1@",
+                                                            "SOURCE1",
                                                         ),
                                                     },
                                                     page: Some(
@@ -1285,7 +1285,7 @@ V551(
                                                 SourceCitation {
                                                     source: XRef {
                                                         xref: Some(
-                                                            "@SOURCE1@",
+                                                            "SOURCE1",
                                                         ),
                                                     },
                                                     page: Some(
@@ -1343,7 +1343,7 @@ V551(
                                                 SourceCitation {
                                                     source: XRef {
                                                         xref: Some(
-                                                            "@SOURCE1@",
+                                                            "SOURCE1",
                                                         ),
                                                     },
                                                     page: Some(
@@ -1401,7 +1401,7 @@ V551(
                                                 SourceCitation {
                                                     source: XRef {
                                                         xref: Some(
-                                                            "@SOURCE1@",
+                                                            "SOURCE1",
                                                         ),
                                                     },
                                                     page: Some(
@@ -1459,7 +1459,7 @@ V551(
                                                 SourceCitation {
                                                     source: XRef {
                                                         xref: Some(
-                                                            "@SOURCE1@",
+                                                            "SOURCE1",
                                                         ),
                                                     },
                                                     page: Some(
@@ -1517,7 +1517,7 @@ V551(
                                                 SourceCitation {
                                                     source: XRef {
                                                         xref: Some(
-                                                            "@SOURCE1@",
+                                                            "SOURCE1",
                                                         ),
                                                     },
                                                     page: Some(
@@ -1578,7 +1578,7 @@ V551(
                                                 SourceCitation {
                                                     source: XRef {
                                                         xref: Some(
-                                                            "@SOURCE1@",
+                                                            "SOURCE1",
                                                         ),
                                                     },
                                                     page: Some(
@@ -1639,7 +1639,7 @@ V551(
                                                 SourceCitation {
                                                     source: XRef {
                                                         xref: Some(
-                                                            "@SOURCE1@",
+                                                            "SOURCE1",
                                                         ),
                                                     },
                                                     page: Some(
@@ -1698,7 +1698,7 @@ V551(
                                                 SourceCitation {
                                                     source: XRef {
                                                         xref: Some(
-                                                            "@SOURCE1@",
+                                                            "SOURCE1",
                                                         ),
                                                     },
                                                     page: Some(
@@ -1757,7 +1757,7 @@ V551(
                                                 SourceCitation {
                                                     source: XRef {
                                                         xref: Some(
-                                                            "@SOURCE1@",
+                                                            "SOURCE1",
                                                         ),
                                                     },
                                                     page: Some(
@@ -1818,7 +1818,7 @@ V551(
                                                 SourceCitation {
                                                     source: XRef {
                                                         xref: Some(
-                                                            "@SOURCE1@",
+                                                            "SOURCE1",
                                                         ),
                                                     },
                                                     page: Some(
@@ -1877,7 +1877,7 @@ V551(
                                                 SourceCitation {
                                                     source: XRef {
                                                         xref: Some(
-                                                            "@SOURCE1@",
+                                                            "SOURCE1",
                                                         ),
                                                     },
                                                     page: Some(
@@ -1936,7 +1936,7 @@ V551(
                                                 SourceCitation {
                                                     source: XRef {
                                                         xref: Some(
-                                                            "@SOURCE1@",
+                                                            "SOURCE1",
                                                         ),
                                                     },
                                                     page: Some(
@@ -1995,7 +1995,7 @@ V551(
                                                 SourceCitation {
                                                     source: XRef {
                                                         xref: Some(
-                                                            "@SOURCE1@",
+                                                            "SOURCE1",
                                                         ),
                                                     },
                                                     page: Some(
@@ -2054,7 +2054,7 @@ V551(
                                                 SourceCitation {
                                                     source: XRef {
                                                         xref: Some(
-                                                            "@SOURCE1@",
+                                                            "SOURCE1",
                                                         ),
                                                     },
                                                     page: Some(
@@ -2113,7 +2113,7 @@ V551(
                                                 SourceCitation {
                                                     source: XRef {
                                                         xref: Some(
-                                                            "@SOURCE1@",
+                                                            "SOURCE1",
                                                         ),
                                                     },
                                                     page: Some(
@@ -2172,7 +2172,7 @@ V551(
                                                 SourceCitation {
                                                     source: XRef {
                                                         xref: Some(
-                                                            "@SOURCE1@",
+                                                            "SOURCE1",
                                                         ),
                                                     },
                                                     page: Some(
@@ -2231,7 +2231,7 @@ V551(
                                                 SourceCitation {
                                                     source: XRef {
                                                         xref: Some(
-                                                            "@SOURCE1@",
+                                                            "SOURCE1",
                                                         ),
                                                     },
                                                     page: Some(
@@ -2289,7 +2289,7 @@ V551(
                                                 SourceCitation {
                                                     source: XRef {
                                                         xref: Some(
-                                                            "@SOURCE1@",
+                                                            "SOURCE1",
                                                         ),
                                                     },
                                                     page: Some(
@@ -2348,7 +2348,7 @@ V551(
                                                 SourceCitation {
                                                     source: XRef {
                                                         xref: Some(
-                                                            "@SOURCE1@",
+                                                            "SOURCE1",
                                                         ),
                                                     },
                                                     page: Some(
@@ -2407,7 +2407,7 @@ V551(
                                                 SourceCitation {
                                                     source: XRef {
                                                         xref: Some(
-                                                            "@SOURCE1@",
+                                                            "SOURCE1",
                                                         ),
                                                     },
                                                     page: Some(
@@ -2464,7 +2464,7 @@ V551(
                                         SourceCitation {
                                             source: XRef {
                                                 xref: Some(
-                                                    "@SOURCE1@",
+                                                    "SOURCE1",
                                                 ),
                                             },
                                             page: Some(
@@ -2512,7 +2512,7 @@ V551(
                                         SourceCitation {
                                             source: XRef {
                                                 xref: Some(
-                                                    "@SOURCE1@",
+                                                    "SOURCE1",
                                                 ),
                                             },
                                             page: Some(
@@ -2551,7 +2551,7 @@ V551(
                         ChildFamilyLink {
                             family: XRef {
                                 xref: Some(
-                                    "@PARENTS@",
+                                    "PARENTS",
                                 ),
                             },
                             pedigree_linkage_type: Some(
@@ -2566,7 +2566,7 @@ V551(
                         ChildFamilyLink {
                             family: XRef {
                                 xref: Some(
-                                    "@ADOPTIVE_PARENTS@",
+                                    "ADOPTIVE_PARENTS",
                                 ),
                             },
                             pedigree_linkage_type: Some(
@@ -2582,7 +2582,7 @@ V551(
                         SpouseFamilyLink {
                             family: XRef {
                                 xref: Some(
-                                    "@FAMILY1@",
+                                    "FAMILY1",
                                 ),
                             },
                             notes: [
@@ -2593,7 +2593,7 @@ V551(
                         SpouseFamilyLink {
                             family: XRef {
                                 xref: Some(
-                                    "@FAMILY2@",
+                                    "FAMILY2",
                                 ),
                             },
                             notes: [],
@@ -2627,7 +2627,7 @@ V551(
                         SourceCitation {
                             source: XRef {
                                 xref: Some(
-                                    "@SOURCE1@",
+                                    "SOURCE1",
                                 ),
                             },
                             page: Some(
@@ -2691,7 +2691,7 @@ V551(
                         SpouseFamilyLink {
                             family: XRef {
                                 xref: Some(
-                                    "@FAMILY1@",
+                                    "FAMILY1",
                                 ),
                             },
                             notes: [],
@@ -2730,7 +2730,7 @@ V551(
                         ChildFamilyLink {
                             family: XRef {
                                 xref: Some(
-                                    "@FAMILY1@",
+                                    "FAMILY1",
                                 ),
                             },
                             pedigree_linkage_type: None,
@@ -2772,7 +2772,7 @@ V551(
                         ChildFamilyLink {
                             family: XRef {
                                 xref: Some(
-                                    "@FAMILY1@",
+                                    "FAMILY1",
                                 ),
                             },
                             pedigree_linkage_type: None,
@@ -2817,7 +2817,7 @@ V551(
                         SpouseFamilyLink {
                             family: XRef {
                                 xref: Some(
-                                    "@PARENTS@",
+                                    "PARENTS",
                                 ),
                             },
                             notes: [],
@@ -2859,7 +2859,7 @@ V551(
                         SpouseFamilyLink {
                             family: XRef {
                                 xref: Some(
-                                    "@ADOPTIVE_PARENTS@",
+                                    "ADOPTIVE_PARENTS",
                                 ),
                             },
                             notes: [],
@@ -2898,7 +2898,7 @@ V551(
                         ChildFamilyLink {
                             family: XRef {
                                 xref: Some(
-                                    "@FAMILY2@",
+                                    "FAMILY2",
                                 ),
                             },
                             pedigree_linkage_type: None,
@@ -2943,7 +2943,7 @@ V551(
                         SpouseFamilyLink {
                             family: XRef {
                                 xref: Some(
-                                    "@FAMILY2@",
+                                    "FAMILY2",
                                 ),
                             },
                             notes: [],
@@ -2988,7 +2988,7 @@ V551(
                                                     SourceCitation {
                                                         source: XRef {
                                                             xref: Some(
-                                                                "@SOURCE1@",
+                                                                "SOURCE1",
                                                             ),
                                                         },
                                                         page: Some(
@@ -3057,7 +3057,7 @@ V551(
                                                     SourceCitation {
                                                         source: XRef {
                                                             xref: Some(
-                                                                "@SOURCE1@",
+                                                                "SOURCE1",
                                                             ),
                                                         },
                                                         page: Some(
@@ -3126,7 +3126,7 @@ V551(
                                                     SourceCitation {
                                                         source: XRef {
                                                             xref: Some(
-                                                                "@SOURCE1@",
+                                                                "SOURCE1",
                                                             ),
                                                         },
                                                         page: Some(
@@ -3195,7 +3195,7 @@ V551(
                                                     SourceCitation {
                                                         source: XRef {
                                                             xref: Some(
-                                                                "@SOURCE1@",
+                                                                "SOURCE1",
                                                             ),
                                                         },
                                                         page: Some(
@@ -3264,7 +3264,7 @@ V551(
                                                     SourceCitation {
                                                         source: XRef {
                                                             xref: Some(
-                                                                "@SOURCE1@",
+                                                                "SOURCE1",
                                                             ),
                                                         },
                                                         page: Some(
@@ -3334,7 +3334,7 @@ V551(
                                                     SourceCitation {
                                                         source: XRef {
                                                             xref: Some(
-                                                                "@SOURCE1@",
+                                                                "SOURCE1",
                                                             ),
                                                         },
                                                         page: Some(
@@ -3403,7 +3403,7 @@ V551(
                                                     SourceCitation {
                                                         source: XRef {
                                                             xref: Some(
-                                                                "@SOURCE1@",
+                                                                "SOURCE1",
                                                             ),
                                                         },
                                                         page: Some(
@@ -3472,7 +3472,7 @@ V551(
                                                     SourceCitation {
                                                         source: XRef {
                                                             xref: Some(
-                                                                "@SOURCE1@",
+                                                                "SOURCE1",
                                                             ),
                                                         },
                                                         page: Some(
@@ -3541,7 +3541,7 @@ V551(
                                                     SourceCitation {
                                                         source: XRef {
                                                             xref: Some(
-                                                                "@SOURCE1@",
+                                                                "SOURCE1",
                                                             ),
                                                         },
                                                         page: Some(
@@ -3610,7 +3610,7 @@ V551(
                                                     SourceCitation {
                                                         source: XRef {
                                                             xref: Some(
-                                                                "@SOURCE1@",
+                                                                "SOURCE1",
                                                             ),
                                                         },
                                                         page: Some(
@@ -3682,7 +3682,7 @@ V551(
                                                     SourceCitation {
                                                         source: XRef {
                                                             xref: Some(
-                                                                "@SOURCE1@",
+                                                                "SOURCE1",
                                                             ),
                                                         },
                                                         page: Some(
@@ -3734,26 +3734,26 @@ V551(
                     husband: Some(
                         XRef {
                             xref: Some(
-                                "@PERSON1@",
+                                "PERSON1",
                             ),
                         },
                     ),
                     wife: Some(
                         XRef {
                             xref: Some(
-                                "@PERSON2@",
+                                "PERSON2",
                             ),
                         },
                     ),
                     children: [
                         XRef {
                             xref: Some(
-                                "@PERSON3@",
+                                "PERSON3",
                             ),
                         },
                         XRef {
                             xref: Some(
-                                "@PERSON4@",
+                                "PERSON4",
                             ),
                         },
                     ],
@@ -3783,7 +3783,7 @@ V551(
                         SourceCitation {
                             source: XRef {
                                 xref: Some(
-                                    "@SOURCE1@",
+                                    "SOURCE1",
                                 ),
                             },
                             page: Some(
@@ -3832,7 +3832,7 @@ V551(
                     husband: Some(
                         XRef {
                             xref: Some(
-                                "@PERSON5@",
+                                "PERSON5",
                             ),
                         },
                     ),
@@ -3840,7 +3840,7 @@ V551(
                     children: [
                         XRef {
                             xref: Some(
-                                "@PERSON1@",
+                                "PERSON1",
                             ),
                         },
                     ],
@@ -3862,14 +3862,14 @@ V551(
                     wife: Some(
                         XRef {
                             xref: Some(
-                                "@PERSON6@",
+                                "PERSON6",
                             ),
                         },
                     ),
                     children: [
                         XRef {
                             xref: Some(
-                                "@PERSON1@",
+                                "PERSON1",
                             ),
                         },
                     ],
@@ -3890,21 +3890,21 @@ V551(
                     husband: Some(
                         XRef {
                             xref: Some(
-                                "@PERSON1@",
+                                "PERSON1",
                             ),
                         },
                     ),
                     wife: Some(
                         XRef {
                             xref: Some(
-                                "@PERSON8@",
+                                "PERSON8",
                             ),
                         },
                     ),
                     children: [
                         XRef {
                             xref: Some(
-                                "@PERSON7@",
+                                "PERSON7",
                             ),
                         },
                     ],

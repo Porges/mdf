@@ -1,4 +1,5 @@
 use miette::SourceSpan;
+use owo_colors::OwoColorize;
 use vec1::Vec1;
 
 use crate::{
@@ -53,19 +54,20 @@ pub enum EncodingReason {
     #[display("this encoding was used because it was specified in the GEDCOM header")]
     #[diagnostic(severity(Advice), code(gedcom::encoding_reason::header))]
     SpecifiedInHeader {
-        #[label("encoding was specified here")]
+        #[label("encoding was set here")]
         span: SourceSpan,
     },
 
     #[display(
-        "this encoding was used because it is required by the GEDCOM version used: {version}{}",
+        "this encoding is {} by GEDCOM version {version}{}",
+        "required".bold(),
         if span.is_none() { " (this version was selected explicitly in the options)" } else { "" }
     )]
     #[diagnostic(severity(Advice))]
     DeterminedByVersion {
         version: SupportedGEDCOMVersion,
 
-        #[label("version was specified here")]
+        #[label("version was set here")]
         span: Option<SourceSpan>,
     },
 
@@ -80,19 +82,26 @@ pub enum EncodingReason {
     Forced {},
 }
 
-#[derive(thiserror::Error, derive_more::Display, Debug, miette::Diagnostic)]
+#[derive(thiserror::Error, Debug, miette::Diagnostic)]
 pub enum EncodingError {
-    #[display("Invalid HEADER")]
+    #[error("Invalid HEADER")]
     InvalidHeader {}, // TODO
 
-    #[display("Input does not appear to be a GEDCOM file")]
-    #[diagnostic(
-        code(gedcom::encoding::not_gedcom),
-        help("GEDCOM files must start with a '0 HEAD' record, but this was not found")
-    )]
-    NotGedcomFile {},
+    #[error("Input file does not appear to be valid GEDCOM")]
+    #[diagnostic(help("GEDCOM files must start with a '0 HEAD' record, but this was not found"))]
+    NotGedcomFile {
+        #[label("first line of file")]
+        start: SourceSpan,
+    },
 
-    #[display(
+    #[error("Input file appears to be the trailing part of a multi-volume GEDCOM file")]
+    #[diagnostic(help("GEDCOM files must start with a '0 HEAD' record, but this was not found"))]
+    MultiVolume {
+        #[label("this record is valid but not the start of a GEDCOM file")]
+        start: SourceSpan,
+    },
+
+    #[error(
         "GEDCOM version {version}{} requires the encoding to be {version_encoding}, but the file encoding was determined to be {external_encoding}",
         if version_span.is_none() { " (this version was selected explicitly in the options)" } else { "" }
     )]
@@ -110,7 +119,7 @@ pub enum EncodingError {
         reason: Vec1<EncodingReason>,
     },
 
-    #[display(
+    #[error(
         "The file’s GEDCOM header specifies the encoding to be {file_encoding}, but the file encoding was determined to be {external_encoding}"
     )]
     #[diagnostic(code(gedcom::encoding::external_encoding_mismatch))]
@@ -125,7 +134,7 @@ pub enum EncodingError {
         reason: Vec1<EncodingReason>,
     },
 
-    #[display(
+    #[error(
         "The file’s GEDCOM header specifies the encoding to be {file_encoding}, but the file is in an unknown ASCII-compatible encoding"
     )]
     #[diagnostic(code(gedcom::encoding::file_encoding_mismatch))]
@@ -136,7 +145,7 @@ pub enum EncodingError {
         span: SourceSpan,
     },
 
-    #[display("Unknown encoding specified in GEDCOM file")]
+    #[error("An unknown encoding was specified in the GEDCOM file")]
     #[diagnostic(code(gedcom::encoding::invalid_encoding))]
     EncodingUnknown {
         #[diagnostic_source]
@@ -146,7 +155,7 @@ pub enum EncodingError {
         span: SourceSpan,
     },
 
-    #[display("Detected byte-order mark (BOM) for unsupported encoding {encoding}")]
+    #[error("The byte-order mark (BOM) detected is for an unsupported encoding {encoding}")]
     #[diagnostic(help("UTF-32 is not permitted as an encoding by any GEDCOM specification"))]
     #[diagnostic(code(gedcom::encoding::invalid_bom))]
     BOMInvalid { encoding: &'static str },

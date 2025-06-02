@@ -7,10 +7,14 @@ input_file: gedcomfy/tests/encoding_inputs/not_ged.ged
 gedcomfy::error
 
   × A problem was found in the GEDCOM file
-  ├─▶ gedcom::encoding::not_gedcom
+  ├─▶   × A problem was found while trying to determine the encoding of the
+  │     │ GEDCOM file
   │   
-  │     × Unable to determine encoding of GEDCOM file
-  │     help: GEDCOM files must start with a '0 HEAD' record, but this was
-  │           not found
-  │   
-  ╰─▶ Input does not appear to be a GEDCOM file
+  ╰─▶   × Input file does not appear to be valid GEDCOM
+         ╭────
+       1 │ Hello, world!
+         · ──────┬──────
+         ·       ╰── first line of file
+         ╰────
+        help: GEDCOM files must start with a '0 HEAD' record, but this was
+              not found

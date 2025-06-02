@@ -1,13 +1,14 @@
-use std::{borrow::Cow, ops::Deref};
+use std::{borrow::Cow, io::Read, ops::Deref};
 
 use ascii::AsAsciiStr;
+use itertools::Itertools;
 use miette::SourceSpan;
 use owo_colors::{OwoColorize, Stream};
 use vec1::Vec1;
 
 use super::{
     encodings::{ansel, EncodingError, EncodingReason, SupportedEncoding},
-    lines::LineSyntaxError,
+    lines::{self, LineSyntaxError},
     records::RecordStructureError,
     versions::VersionError,
 };
@@ -19,17 +20,26 @@ pub enum DecodingError {
     #[diagnostic(transparent)]
     VersionError(#[from] VersionError),
 
-    #[error("Unable to determine encoding of GEDCOM file")]
-    #[diagnostic(transparent)]
-    EncodingError(#[from] EncodingError),
+    #[error("A problem was found while trying to determine the encoding of the GEDCOM file")]
+    EncodingError(
+        #[from]
+        #[diagnostic_source]
+        EncodingError,
+    ),
 
     #[error("GEDCOM file contained data which was invalid in the detected encoding")]
-    #[diagnostic(transparent)]
-    InvalidDataForEncoding(#[from] InvalidDataForEncodingError),
+    InvalidDataForEncoding(
+        #[from]
+        #[diagnostic_source]
+        InvalidDataForEncodingError,
+    ),
 
     #[error("GEDCOM file structure is invalid")]
-    #[diagnostic(transparent)]
-    FileStructureError(#[from] FileStructureError),
+    FileStructureError(
+        #[from]
+        #[diagnostic_source]
+        FileStructureError,
+    ),
 
     #[error(transparent)]
     #[diagnostic(transparent)]
@@ -131,7 +141,24 @@ pub fn detect_external_encoding(input: &[u8]) -> Result<Option<DetectedEncoding>
         // otherwise it’s probably not a GEDCOM file (at least in supported versions)
         // TODO: it could be the non-first GEDCOM file in a volume?
         //       - check for '0 ' and then produce an error about that?
-        _ => return Err(EncodingError::NotGedcomFile {}),
+        _ => {
+            let line = input
+                .split(|c| matches!(c, b'\r' | b'\n'))
+                .next()
+                .unwrap_or(input);
+
+            let span_until = if line.len() < 100 { line.len() } else { 0 };
+
+            if lines::parse_line(input, line).is_ok() {
+                return Err(EncodingError::MultiVolume {
+                    start: SourceSpan::from((0, span_until)),
+                });
+            }
+
+            return Err(EncodingError::NotGedcomFile {
+                start: SourceSpan::from((0, span_until)),
+            });
+        }
     };
 
     Ok(Some(result))

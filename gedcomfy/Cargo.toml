@@ -6,29 +6,32 @@ license.workspace = true
 authors.workspace = true
 
 [features]
-default = ["miette-highlighting", "kdl"]
-miette-highlighting = ["miette/fancy-no-backtrace"]
-legacy-encodings = ["dep:oem_cp"]
+default = ["miette-highlighting", "kdl", "turtle"]
 kdl = ["dep:kdl"]
+legacy-encodings = ["dep:oem_cp"]
+miette-highlighting = ["miette/fancy-no-backtrace"]
+turtle = ["dep:sophia_api", "dep:sophia_turtle"]
 
 [dependencies]
 ascii = "1.1.0"
 complex-indifference = { path = "../complex-indifference" }
 derive_more = { version = "2.0.1", features = ["from", "display"] }
-errful = { path = "../errful" }
+dunce = "1.0.5"
 encoding_rs = "0.8.34"
+errful = { path = "../errful" }
+itertools = "0.14.0"
 kdl = { version = "4.6.0", optional = true }
+memmap2 = "0.9.5"
 miette = { version = "7.4.0", features = ["fancy-no-backtrace"] }
 oem_cp = { version = "2.0.0", optional = true }
 owo-colors = { version = "4.0.0", features = ["supports-colors"] }
 paste = "1.0.15"
+sophia_api = { version = "0.9.0", optional = true }
+sophia_turtle = { version = "0.9.0", optional = true }
+thiserror = "2.0.12"
 tracing = { version = "0.1", features = ["attributes"] }
 vec1 = "1.12.1"
 yoke = { version = "0.7.4", features = ["derive"] }
-itertools = "0.14.0"
-memmap2 = "0.9.5"
-dunce = "1.0.5"
-thiserror = "2.0.12"
 
 
 [dev-dependencies]

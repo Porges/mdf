@@ -7,21 +7,22 @@ input_file: gedcomfy/tests/encoding_inputs/utf8_bom.ged
 gedcomfy::error
 
   × A problem was found in the GEDCOM file
-  ├─▶ gedcom::encoding::external_encoding_mismatch
+  ├─▶   × A problem was found while trying to determine the encoding of the
+  │     │ GEDCOM file
   │   
-  │     × Unable to determine encoding of GEDCOM file
-  │      ╭─[4:8]
-  │    3 │ 2 VERS 5.5.1
-  │    4 │ 1 CHAR UNICODE
-  │      ·        ───┬───
-  │      ·           ╰── encoding was specified here
-  │    5 │ 0 TRLR
-  │      ╰────
-  │   
-  │   Advice: gedcom::encoding_reason::bom
-  │   
-  │     ☞ this encoding was detected from the byte-order mark (BOM) at the
-  │     │ start of the file
-  │   
-  ╰─▶ The file’s GEDCOM header specifies the encoding to be UNICODE, but the
-      file encoding was determined to be UTF-8
+  ╰─▶ gedcom::encoding::external_encoding_mismatch
+      
+        × The file’s GEDCOM header specifies the encoding to be UNICODE, but
+        │ the file encoding was determined to be UTF-8
+         ╭─[4:8]
+       3 │ 2 VERS 5.5.1
+       4 │ 1 CHAR UNICODE
+         ·        ───┬───
+         ·           ╰── encoding was specified here
+       5 │ 0 TRLR
+         ╰────
+      
+      Advice: gedcom::encoding_reason::bom
+      
+        ☞ this encoding was detected from the byte-order mark (BOM) at the
+        │ start of the file

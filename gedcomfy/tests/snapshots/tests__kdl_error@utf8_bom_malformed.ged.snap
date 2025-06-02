@@ -7,10 +7,12 @@ input_file: gedcomfy/tests/encoding_inputs/utf8_bom_malformed.ged
 gedcomfy::error
 
   × A problem was found in the GEDCOM file
+  ├─▶   × GEDCOM file contained data which was invalid in the detected
+  │     │ encoding
+  │   
   ├─▶ gedcom::encoding::invalid_data
   │   
-  │     × GEDCOM file contained data which was invalid in the detected
-  │     │ encoding
+  │     × Invalid data for encoding UTF-8
   │      ╭─[5:16]
   │    4 │ 1 CHAR UTF-8
   │    5 │ 0 MALFORMED hê�ér
@@ -23,5 +25,4 @@ gedcomfy::error
   │     ☞ this encoding was detected from the byte-order mark (BOM) at the
   │     │ start of the file
   │   
-  ├─▶ Invalid data for encoding UTF-8
   ╰─▶ invalid utf-8 sequence of 1 bytes from index 59

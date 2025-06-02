@@ -47,6 +47,7 @@ pub trait GEDCOMSource: ascii::AsAsciiStr + PartialEq<AsciiStr> {
     fn span_of(&self, source: &Self) -> SourceSpan;
     fn starts_with(&self, char: AsciiChar) -> bool;
     fn ends_with(&self, char: AsciiChar) -> bool;
+    fn except_start_and_end(&self) -> &Self;
     fn is_empty(&self) -> bool;
     fn slice_from(&self, offset: usize) -> &Self;
 }
@@ -90,6 +91,10 @@ impl GEDCOMSource for str {
     fn split_once(&self, char: AsciiChar) -> Option<(&Self, &Self)> {
         (*self).split_once(char.as_char())
     }
+
+    fn except_start_and_end(&self) -> &Self {
+        &self[1..self.len() - 1]
+    }
 }
 
 impl GEDCOMSource for [u8] {
@@ -132,6 +137,10 @@ impl GEDCOMSource for [u8] {
         let ix = self.iter().position(|&x| x == char.as_byte())?;
         let (before, after) = self.split_at(ix);
         Some((before, &after[1..]))
+    }
+
+    fn except_start_and_end(&self) -> &Self {
+        &self[1..self.len() - 1]
     }
 }
 
@@ -608,6 +617,15 @@ impl Reader {
         input: &'i (impl Input<'s> + ?Sized),
     ) -> Result<kdl::KdlDocument, WithSourceCode<'s, ReaderError>> {
         self.build_result::<modes::kdl::Mode>(input)
+    }
+
+    #[cfg(feature = "turtle")]
+    /// Parses a GEDCOM file into Turtle format.
+    pub fn parse_ttl<'i, 's>(
+        &self,
+        input: &'i (impl Input<'s> + ?Sized),
+    ) -> Result<Vec<u8>, WithSourceCode<'s, ReaderError>> {
+        self.build_result::<modes::ttl::Mode>(input)
     }
 
     #[instrument(skip_all)]
