@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{self, Path, PathBuf};
 
 use gedcomfy::reader::{Reader, decoding::detect_external_encoding, input::File};
 use rstest::*;
@@ -103,4 +103,14 @@ fn test_encodings(#[files("tests/encoding_inputs/*.ged")] path: PathBuf) {
             },
         };
     });
+}
+
+#[test]
+fn assess_ged() {
+    let reader = Reader::default();
+    let decoded = reader
+        .decode_file("tests/external/others/assess.ged")
+        .unwrap();
+    let kdl = reader.parse_kdl(&decoded).unwrap();
+    insta::assert_snapshot!(kdl);
 }

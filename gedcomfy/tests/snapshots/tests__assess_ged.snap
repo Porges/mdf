@@ -1,0 +1,2252 @@
+---
+source: gedcomfy/tests/tests.rs
+expression: kdl
+---
+HEAD {
+    GEDC {
+        VERS "5.5.1"
+        FORM "LINEAGE-LINKED"
+    }
+    CHAR "UTF-8"
+    SOUR "ASSESSMENT" {
+        VERS "1.05"
+    }
+    LANG "English"
+    COPR "Copyright (C) 2020 by John Cardinal. All rights reserved."
+    NOTE "Everyone is permitted to download and use this GEDCOM file," {
+        CONT "assess.ged. There is no usage fee. You may edit assess.ged"
+        CONT "for your own use. You may not distribute copies of assess.ged,"
+        CONT "in any form, amended or not."
+    }
+    SUBM see="SUBM"
+}
+SUBM xref="SUBM" {
+    NAME "John Cardinal"
+}
+INDI xref="I1" {
+    NAME "01-Family Event Husband /Age/"
+    SEX "M"
+    FAMS see="F1"
+}
+INDI xref="I2" {
+    NAME "01-Family Event Wife /Age/"
+    SEX "F"
+    FAMS see="F1"
+}
+FAM xref="F1" {
+    HUSB see="I1"
+    WIFE see="I2"
+    MARR {
+        DATE "1901"
+        HUSB {
+            AGE "22y"
+        }
+        WIFE {
+            AGE "21y"
+        }
+    }
+}
+INDI xref="I3" {
+    NAME "02-Individual Attribute (YYy) /Age/"
+    SEX "M"
+    EDUC "Medical School Graduate" {
+        AGE "28y"
+    }
+}
+INDI xref="I4" {
+    NAME "03-Individual Event (YYy MMm DDd) /Age/"
+    SEX "M"
+    DEAT {
+        DATE "1903"
+        AGE "88y 10m 17d"
+    }
+}
+INDI xref="I5" {
+    NAME "04-Individual Event (YYy) /Age/"
+    SEX "M"
+    DEAT {
+        DATE "1904"
+        AGE "88y"
+    }
+}
+INDI xref="I6" {
+    NAME "05-Individual Event (Mmm) /Age/"
+    SEX "M"
+    DEAT {
+        DATE "1905"
+        AGE "10m"
+    }
+}
+INDI xref="I7" {
+    NAME "06-Individual Event (DDd) /Age/"
+    SEX "M"
+    DEAT {
+        DATE "1906"
+        AGE "17d"
+    }
+}
+INDI xref="I8" {
+    NAME "07-Individual Event (YYy MMm) /Age/"
+    SEX "M"
+    DEAT {
+        DATE "1907"
+        AGE "88y 10m"
+    }
+}
+INDI xref="I9" {
+    NAME "08-Individual Event (YYy DDd) /Age/"
+    SEX "M"
+    DEAT {
+        DATE "1908"
+        AGE "88y 21d"
+    }
+}
+INDI xref="I10" {
+    NAME "09-Individual Event (Mmm DDd) /Age/"
+    SEX "M"
+    DEAT {
+        DATE "1909"
+        AGE "10m 17d"
+    }
+}
+INDI xref="I11" {
+    NAME "10-Individual Event (LT YYy) /Age/"
+    SEX "M"
+    DEAT {
+        DATE "1910"
+        AGE "<60y"
+    }
+}
+INDI xref="I12" {
+    NAME "11-Individual Event (GT YYy) /Age/"
+    SEX "M"
+    DEAT {
+        DATE "1911"
+        AGE ">59y"
+    }
+}
+INDI xref="I13" {
+    NAME "12-Individual Event (CHILD) /Age/"
+    SEX "M"
+    DEAT {
+        DATE "1912"
+        AGE "CHILD"
+    }
+}
+INDI xref="I14" {
+    NAME "13-Individual Event (INFANT) /Age/"
+    SEX "M"
+    DEAT {
+        DATE "1913"
+        AGE "INFANT"
+    }
+}
+INDI xref="I15" {
+    NAME "14-Individual Event (STILLBORN) /Age/"
+    SEX "M"
+    DEAT {
+        DATE "1914"
+        AGE "STILLBORN"
+    }
+}
+INDI xref="I16" {
+    NAME "01-CAST (Caste) /Attribute Dictionary/"
+    SEX "M"
+    CAST "Brahmin"
+}
+INDI xref="I17" {
+    NAME "02-DSCR (Physical Description) /Attribute Dictionary/"
+    SEX "M"
+    DSCR "Medium height with brown eyes and a scar o" {
+        CONC "n his right cheek."
+        CONT "He went bald in his twenties."
+    }
+}
+INDI xref="I18" {
+    NAME "03-EDUC (Education) /Attribute Dictionary/"
+    SEX "M"
+    EDUC "PhD in Economics"
+}
+INDI xref="I19" {
+    NAME "04-FACT (Skills) /Attribute Dictionary/"
+    SEX "M"
+    FACT "Woodworking" {
+        TYPE "Skills"
+    }
+}
+INDI xref="I20" {
+    NAME "05-IDNO (ID Number) /Attribute Dictionary/"
+    SEX "M"
+    IDNO "43-456-1899" {
+        TYPE "Canadian Health Registration"
+    }
+}
+INDI xref="I21" {
+    NAME "06-NATI (National Origin) /Attribute Dictionary/"
+    SEX "M"
+    NATI "Irish"
+}
+INDI xref="I22" {
+    NAME "07-NCHI (Number of Children) /Attribute Dictionary/"
+    SEX "M"
+    NCHI "3"
+}
+INDI xref="I23" {
+    NAME "08-NMR (Number of Marriages) /Attribute Dictionary/"
+    SEX "M"
+    NMR "2"
+}
+INDI xref="I24" {
+    NAME "09-OCCU (Occupation) /Attribute Dictionary/"
+    SEX "M"
+    OCCU "Farmer"
+}
+INDI xref="I25" {
+    NAME "10-PROP (Possessions) /Attribute Dictionary/"
+    SEX "M"
+    PROP "Drafting tools handed down from his uncle"
+}
+INDI xref="I26" {
+    NAME "11-RELI (Religion) /Attribute Dictionary/"
+    SEX "M"
+    RELI "Presbyterian"
+}
+INDI xref="I27" {
+    NAME "12-RESI (Residence) /Attribute Dictionary/"
+    SEX "M"
+    RESI {
+        PLAC "221B Baker St., London, UK"
+    }
+}
+INDI xref="I28" {
+    NAME "13-SSN (Social Security Number) /Attribute Dictionary/"
+    SEX "M"
+    SSN "123-12-1234"
+}
+INDI xref="I29" {
+    NAME "14-TITL (Nobility Title) /Attribute Dictionary/"
+    SEX "M"
+    TITL "Ruler of the Jellies"
+}
+INDI xref="I30" {
+    NAME "01-INDI Change Date /Change Date/"
+    SEX "M"
+    CHAN {
+        DATE "1 JAN 2020"
+    }
+}
+INDI xref="I31" {
+    NAME "02-INDI Change Date Note /Change Date/"
+    SEX "M"
+    CHAN {
+        DATE "1 JAN 2020"
+        NOTE "Note for INDI.CHAN record."
+    }
+}
+INDI xref="I32" {
+    NAME "03-INDI Change Date Time1 /Change Date/"
+    SEX "M"
+    CHAN {
+        DATE "2 JAN 2020" {
+            TIME "11:12"
+        }
+    }
+}
+INDI xref="I33" {
+    NAME "04-INDI Change Date Time2 /Change Date/"
+    SEX "M"
+    CHAN {
+        DATE "2 JAN 2020" {
+            TIME "11:12:13"
+        }
+    }
+}
+INDI xref="I34" {
+    NAME "05-INDI Change Date Time3 /Change Date/"
+    SEX "M"
+    CHAN {
+        DATE "2 JAN 2020" {
+            TIME "11:12:13.12"
+        }
+    }
+}
+INDI xref="I35" {
+    NAME "01-CONC (Recommended) /Continuation/"
+    SEX "M"
+    BIRT {
+        DATE "1801"
+        NOTE "CONC tag in the middle of a wo" {
+            CONC "rd."
+        }
+    }
+}
+INDI xref="I36" {
+    NAME "02-CONC (Leading space) /Continuation/"
+    SEX "M"
+    BIRT {
+        DATE "1801"
+        NOTE "CONC after a word with a" {
+            CONC " leading space in the CONC text."
+        }
+    }
+}
+INDI xref="I37" {
+    NAME "03-CONC (Trailing space) /Continuation/"
+    SEX "M"
+    BIRT {
+        DATE "1801"
+        NOTE "CONC after a trailing space" {
+            CONC "before the next word."
+        }
+    }
+}
+INDI xref="I38" {
+    NAME "04-CONC (Gender) /Continuation/"
+    SEX {
+        CONC "F"
+    }
+}
+INDI xref="I39" {
+    NAME "05-CONT (Simple) /Continuation/"
+    SEX "M"
+    BIRT {
+        DATE "1801"
+        NOTE "Line 1" {
+            CONT "Line 2"
+        }
+    }
+}
+INDI xref="I40" {
+    NAME "06-CONT (1st line empty) /Continuation/"
+    SEX "M"
+    BIRT {
+        DATE "1801"
+        NOTE {
+            CONT "Line 2"
+        }
+    }
+}
+INDI xref="I41" {
+    NAME "07-CONT (2nd line empty) /Continuation/"
+    SEX "M"
+    BIRT {
+        DATE "1801"
+        NOTE "Line 1" {
+            CONT
+            CONT "Line 3"
+        }
+    }
+}
+INDI xref="I42" {
+    NAME "01-11 FEB 1721_22 /Date Dual Year/"
+    SEX "M"
+    BIRT {
+        DATE "11 FEB 1721/22"
+    }
+}
+INDI xref="I43" {
+    NAME "02-11 FEB 1721_2 /Date Dual Year/"
+    SEX "M"
+    BIRT {
+        DATE "11 FEB 1721/2"
+    }
+}
+INDI xref="I44" {
+    NAME "03-17 FEB 1719_20 /Date Dual Year/"
+    SEX "M"
+    BIRT {
+        DATE "17 FEB 1719/20"
+    }
+}
+INDI xref="I45" {
+    NAME "04-14 FEB 1699_00 /Date Dual Year/"
+    SEX "M"
+    BIRT {
+        DATE "14 FEB 1699/00"
+    }
+}
+INDI xref="I46" {
+    NAME "01-INT 1911 /Date Invalid/"
+    SEX "M"
+    BIRT {
+        DATE "INT 1911"
+    }
+}
+INDI xref="I47" {
+    NAME "02-Invalid Phrase /Date Invalid/"
+    SEX "M"
+    BIRT {
+        DATE "Invalid Phrase"
+    }
+}
+INDI xref="I48" {
+    NAME "03-MAR /Date Invalid/"
+    SEX "M"
+    BIRT {
+        DATE "MAR"
+    }
+}
+INDI xref="I49" {
+    NAME "04-8 MAR /Date Invalid/"
+    SEX "M"
+    BIRT {
+        DATE "8 MAR"
+    }
+}
+INDI xref="I50" {
+    NAME "01-Feb 1801 /Date Questionable/"
+    SEX "M"
+    BIRT {
+        DATE "Feb 1801"
+    }
+}
+INDI xref="I51" {
+    NAME "01-Anecdote before Biography /Date Sort/"
+    SEX "M"
+    EVEN {
+        TYPE "Biography"
+        DATE "1901"
+    }
+    EVEN {
+        TYPE "Anecdote"
+        DATE "1902"
+        _SDATE "1900"
+    }
+}
+INDI xref="I52" {
+    NAME "01-1801 /Date Valid/"
+    SEX "M"
+    BIRT {
+        DATE "1801"
+    }
+}
+INDI xref="I53" {
+    NAME "02-FEB 1802 /Date Valid/"
+    SEX "M"
+    BIRT {
+        DATE "FEB 1802"
+    }
+}
+INDI xref="I54" {
+    NAME "03-3 MAR 1803 /Date Valid/"
+    SEX "M"
+    BIRT {
+        DATE "3 MAR 1803"
+    }
+}
+INDI xref="I55" {
+    NAME "04-BEF 1811 /Date Valid/"
+    SEX "M"
+    BIRT {
+        DATE "BEF 1811"
+    }
+}
+INDI xref="I56" {
+    NAME "05-BEF FEB 1812 /Date Valid/"
+    SEX "M"
+    BIRT {
+        DATE "BEF FEB 1812"
+    }
+}
+INDI xref="I57" {
+    NAME "06-BEF 3 MAR 1813 /Date Valid/"
+    SEX "M"
+    BIRT {
+        DATE "BEF 3 MAR 1813"
+    }
+}
+INDI xref="I58" {
+    NAME "07-AFT 1821 /Date Valid/"
+    SEX "M"
+    BIRT {
+        DATE "AFT 1821"
+    }
+}
+INDI xref="I59" {
+    NAME "08-AFT FEB 1822 /Date Valid/"
+    SEX "M"
+    BIRT {
+        DATE "AFT FEB 1822"
+    }
+}
+INDI xref="I60" {
+    NAME "09-AFT 3 MAR 1833 /Date Valid/"
+    SEX "M"
+    BIRT {
+        DATE "AFT 3 MAR 1833"
+    }
+}
+INDI xref="I61" {
+    NAME "10-BET 1831 AND 1841 /Date Valid/"
+    SEX "M"
+    BIRT {
+        DATE "BET 1831 AND 1841"
+    }
+}
+INDI xref="I62" {
+    NAME "11-BET FEB 1832 AND FEB 1842 /Date Valid/"
+    SEX "M"
+    BIRT {
+        DATE "BET FEB 1832 AND FEB 1842"
+    }
+}
+INDI xref="I63" {
+    NAME "12-BET 3 MAR 1833 AND 3 MAR 1843 /Date Valid/"
+    SEX "M"
+    BIRT {
+        DATE "BET 3 MAR 1833 AND 3 MAR 1843"
+    }
+}
+INDI xref="I64" {
+    NAME "13-FROM 1851 /Date Valid/"
+    SEX "M"
+    BIRT {
+        DATE "FROM 1851"
+    }
+}
+INDI xref="I65" {
+    NAME "14-FROM FEB 1852 /Date Valid/"
+    SEX "M"
+    BIRT {
+        DATE "FROM FEB 1852"
+    }
+}
+INDI xref="I66" {
+    NAME "15-FROM 3 MAR 1853 /Date Valid/"
+    SEX "M"
+    BIRT {
+        DATE "FROM 3 MAR 1853"
+    }
+}
+INDI xref="I67" {
+    NAME "16-FROM 1851 TO 1861 /Date Valid/"
+    SEX "M"
+    BIRT {
+        DATE "FROM 1851 TO 1861"
+    }
+}
+INDI xref="I68" {
+    NAME "17-FROM FEB 1852 TO FEB 1862 /Date Valid/"
+    SEX "M"
+    BIRT {
+        DATE "FROM FEB 1852 TO FEB 1862"
+    }
+}
+INDI xref="I69" {
+    NAME "18-FROM 3 MAR 1853 TO 3 MAR 1863 /Date Valid/"
+    SEX "M"
+    BIRT {
+        DATE "FROM 3 MAR 1853 TO 3 MAR 1863"
+    }
+}
+INDI xref="I70" {
+    NAME "19-TO 1871 /Date Valid/"
+    SEX "M"
+    BIRT {
+        DATE "TO 1871"
+    }
+}
+INDI xref="I71" {
+    NAME "20-TO FEB 1872 /Date Valid/"
+    SEX "M"
+    BIRT {
+        DATE "TO FEB 1872"
+    }
+}
+INDI xref="I72" {
+    NAME "21-TO 3 MAR 1873 /Date Valid/"
+    SEX "M"
+    BIRT {
+        DATE "TO 3 MAR 1873"
+    }
+}
+INDI xref="I73" {
+    NAME "22-ABT 1881 /Date Valid/"
+    SEX "M"
+    BIRT {
+        DATE "ABT 1881"
+    }
+}
+INDI xref="I74" {
+    NAME "23-ABT FEB 1882 /Date Valid/"
+    SEX "M"
+    BIRT {
+        DATE "ABT FEB 1882"
+    }
+}
+INDI xref="I75" {
+    NAME "24-ABT 3 MAR 1883 /Date Valid/"
+    SEX "M"
+    BIRT {
+        DATE "ABT 3 MAR 1883"
+    }
+}
+INDI xref="I76" {
+    NAME "25-CAL 1891 /Date Valid/"
+    SEX "M"
+    BIRT {
+        DATE "CAL 1891"
+    }
+}
+INDI xref="I77" {
+    NAME "26-CAL FEB 1892 /Date Valid/"
+    SEX "M"
+    BIRT {
+        DATE "CAL FEB 1892"
+    }
+}
+INDI xref="I78" {
+    NAME "27-CAL 3 MAR 1893 /Date Valid/"
+    SEX "M"
+    BIRT {
+        DATE "CAL 3 MAR 1893"
+    }
+}
+INDI xref="I79" {
+    NAME "28-EST 1901 /Date Valid/"
+    SEX "M"
+    BIRT {
+        DATE "EST 1901"
+    }
+}
+INDI xref="I80" {
+    NAME "29-EST FEB 1902 /Date Valid/"
+    SEX "M"
+    BIRT {
+        DATE "EST FEB 1902"
+    }
+}
+INDI xref="I81" {
+    NAME "30-EST 3 MAR 1903 /Date Valid/"
+    SEX "M"
+    BIRT {
+        DATE "EST 3 MAR 1903"
+    }
+}
+INDI xref="I82" {
+    NAME "31-INT 1912 (Phrase) /Date Valid/"
+    SEX "M"
+    BIRT {
+        DATE "INT 1912 (Phrase)"
+    }
+}
+INDI xref="I83" {
+    NAME "32-INT FEB 1913 (Phrase) /Date Valid/"
+    SEX "M"
+    BIRT {
+        DATE "INT FEB 1913 (Phrase)"
+    }
+}
+INDI xref="I84" {
+    NAME "33-INT 3 MAR 1914 (Phrase) /Date Valid/"
+    SEX "M"
+    BIRT {
+        DATE "INT 3 MAR 1914 (Phrase)"
+    }
+}
+INDI xref="I85" {
+    NAME "34-(Phrase) /Date Valid/"
+    SEX "M"
+    BIRT {
+        DATE "(Phrase)"
+    }
+}
+INDI xref="I86" {
+    NAME "01-Character U+20AC /Encoding/"
+    SEX "M"
+    OCCU "€ (U+20AC) EURO SIGN"
+}
+INDI xref="I87" {
+    NAME "02-Character U+201A /Encoding/"
+    SEX "M"
+    OCCU "‚ (U+201A) SINGLE LOW-9 QUOTATION MARK"
+}
+INDI xref="I88" {
+    NAME "03-Character U+0192 /Encoding/"
+    SEX "M"
+    OCCU "ƒ (U+0192) LATIN SMALL LETTER F WITH HOOK"
+}
+INDI xref="I89" {
+    NAME "04-Character U+201E /Encoding/"
+    SEX "M"
+    OCCU "„ (U+201E) DOUBLE LOW-9 QUOTATION MARK"
+}
+INDI xref="I90" {
+    NAME "05-Character U+2026 /Encoding/"
+    SEX "M"
+    OCCU "… (U+2026) HORIZONTAL ELLIPSIS"
+}
+INDI xref="I91" {
+    NAME "06-Character U+2020 /Encoding/"
+    SEX "M"
+    OCCU "† (U+2020) DAGGER"
+}
+INDI xref="I92" {
+    NAME "07-Character U+2021 /Encoding/"
+    SEX "M"
+    OCCU "‡ (U+2021) DOUBLE DAGGER"
+}
+INDI xref="I93" {
+    NAME "08-Character U+02C6 /Encoding/"
+    SEX "M"
+    OCCU "ˆ (U+02C6) MODIFIER LETTER CIRCUMFLEX ACCENT"
+}
+INDI xref="I94" {
+    NAME "09-Character U+2030 /Encoding/"
+    SEX "M"
+    OCCU "‰ (U+2030) PER MILLE SIGN"
+}
+INDI xref="I95" {
+    NAME "10-Character U+0160 /Encoding/"
+    SEX "M"
+    OCCU "Š (U+0160) LATIN CAPITAL LETTER S WITH CARON"
+}
+INDI xref="I96" {
+    NAME "11-Character U+2039 /Encoding/"
+    SEX "M"
+    OCCU "‹ (U+2039) SINGLE LEFT-POINTING ANGLE QUOTATION MARK"
+}
+INDI xref="I97" {
+    NAME "12-Character U+0152 /Encoding/"
+    SEX "M"
+    OCCU "Œ (U+0152) LATIN CAPITAL LIGATURE OE"
+}
+INDI xref="I98" {
+    NAME "13-Character U+017D /Encoding/"
+    SEX "M"
+    OCCU "Ž (U+017D) LATIN CAPITAL LETTER Z WITH CARON"
+}
+INDI xref="I99" {
+    NAME "14-Character U+2018 /Encoding/"
+    SEX "M"
+    OCCU "‘ (U+2018) LEFT SINGLE QUOTATION MARK"
+}
+INDI xref="I100" {
+    NAME "15-Character U+2019 /Encoding/"
+    SEX "M"
+    OCCU "’ (U+2019) RIGHT SINGLE QUOTATION MARK"
+}
+INDI xref="I101" {
+    NAME "16-Character U+201C /Encoding/"
+    SEX "M"
+    OCCU "“ (U+201C) LEFT DOUBLE QUOTATION MARK"
+}
+INDI xref="I102" {
+    NAME "17-Character U+201D /Encoding/"
+    SEX "M"
+    OCCU "” (U+201D) RIGHT DOUBLE QUOTATION MARK"
+}
+INDI xref="I103" {
+    NAME "18-Character U+2022 /Encoding/"
+    SEX "M"
+    OCCU "• (U+2022) BULLET"
+}
+INDI xref="I104" {
+    NAME "19-Character U+2013 /Encoding/"
+    SEX "M"
+    OCCU "– (U+2013) EN DASH"
+}
+INDI xref="I105" {
+    NAME "20-Character U+2014 /Encoding/"
+    SEX "M"
+    OCCU "— (U+2014) EM DASH"
+}
+INDI xref="I106" {
+    NAME "21-Character U+02DC /Encoding/"
+    SEX "M"
+    OCCU "˜ (U+02DC) SMALL TILDE"
+}
+INDI xref="I107" {
+    NAME "22-Character U+2122 /Encoding/"
+    SEX "M"
+    OCCU "™ (U+2122) TRADE MARK SIGN"
+}
+INDI xref="I108" {
+    NAME "23-Character U+0161 /Encoding/"
+    SEX "M"
+    OCCU "š (U+0161) LATIN SMALL LETTER S WITH CARON"
+}
+INDI xref="I109" {
+    NAME "24-Character U+203A /Encoding/"
+    SEX "M"
+    OCCU "› (U+203A) SINGLE RIGHT-POINTING ANGLE QUOTATION MARK"
+}
+INDI xref="I110" {
+    NAME "25-Character U+0153 /Encoding/"
+    SEX "M"
+    OCCU "œ (U+0153) LATIN SMALL LIGATURE OE"
+}
+INDI xref="I111" {
+    NAME "26-Character U+017E /Encoding/"
+    SEX "M"
+    OCCU "ž (U+017E) LATIN SMALL LETTER Z WITH CARON"
+}
+INDI xref="I112" {
+    NAME "27-Character U+0178 /Encoding/"
+    SEX "M"
+    OCCU "Ÿ (U+0178) LATIN CAPITAL LETTER Y WITH DIAERESIS"
+}
+INDI xref="I113" {
+    NAME "01-BIRT-Y /Event Description Y/"
+    SEX "M"
+    BIRT "Y"
+}
+INDI xref="I114" {
+    NAME "02-CHR-Y /Event Description Y/"
+    SEX "M"
+    CHR "Y"
+}
+INDI xref="I115" {
+    NAME "03-DEAT-Y /Event Description Y/"
+    SEX "M"
+    DEAT "Y"
+}
+INDI xref="I116" {
+    NAME "01-ADOP (Adoption) /Event Dictionary/"
+    SEX "M"
+    ADOP {
+        DATE "1800"
+    }
+}
+INDI xref="I117" {
+    NAME "02-ANUL (Annulment) Husband /Event Dictionary/"
+    SEX "M"
+    FAMS see="F117"
+}
+INDI xref="I118" {
+    NAME "02-ANUL (Annulment) Wife /Event Dictionary/"
+    SEX "F"
+    FAMS see="F117"
+}
+FAM xref="F117" {
+    HUSB see="I117"
+    WIFE see="I118"
+    ANUL {
+        DATE "1901"
+    }
+}
+INDI xref="I119" {
+    NAME "03-BAPM (Baptism) /Event Dictionary/"
+    SEX "M"
+    BAPM {
+        DATE "1800"
+    }
+}
+INDI xref="I120" {
+    NAME "04-BARM (Bar Mitzvah) /Event Dictionary/"
+    SEX "M"
+    BARM {
+        DATE "1800"
+    }
+}
+INDI xref="I121" {
+    NAME "05-BASM (Bat Mitzvah) /Event Dictionary/"
+    SEX "F"
+    BASM {
+        DATE "1800"
+    }
+}
+INDI xref="I122" {
+    NAME "06-BIRT (Birth) /Event Dictionary/"
+    SEX "M"
+    BIRT {
+        DATE "1800"
+    }
+}
+INDI xref="I123" {
+    NAME "07-BLES (Blessing) /Event Dictionary/"
+    SEX "M"
+    BLES {
+        DATE "1800"
+    }
+}
+INDI xref="I124" {
+    NAME "08-BURI (Burial) /Event Dictionary/"
+    SEX "M"
+    BURI {
+        DATE "1800"
+    }
+}
+INDI xref="I125" {
+    NAME "09-CENS (Census) /Event Dictionary/"
+    SEX "M"
+    CENS {
+        DATE "1800"
+    }
+}
+INDI xref="I126" {
+    NAME "10-CENS (Census) Husband /Event Dictionary/"
+    SEX "M"
+    FAMS see="F126"
+}
+INDI xref="I127" {
+    NAME "10-CENS (Census) Wife /Event Dictionary/"
+    SEX "F"
+    FAMS see="F126"
+}
+FAM xref="F126" {
+    HUSB see="I126"
+    WIFE see="I127"
+    CENS {
+        DATE "1901"
+    }
+}
+INDI xref="I128" {
+    NAME "11-CHR (Christening) /Event Dictionary/"
+    SEX "M"
+    CHR {
+        DATE "1800"
+    }
+}
+INDI xref="I129" {
+    NAME "12-CHRA (Adult Christening) /Event Dictionary/"
+    SEX "M"
+    CHRA {
+        DATE "1800"
+    }
+}
+INDI xref="I130" {
+    NAME "13-CONF (Confirmation) /Event Dictionary/"
+    SEX "M"
+    CONF {
+        DATE "1800"
+    }
+}
+INDI xref="I131" {
+    NAME "14-CREM (Cremation) /Event Dictionary/"
+    SEX "M"
+    CREM {
+        DATE "1800"
+    }
+}
+INDI xref="I132" {
+    NAME "15-DEAT (Death) /Event Dictionary/"
+    SEX "M"
+    DEAT {
+        DATE "1800"
+    }
+}
+INDI xref="I133" {
+    NAME "16-DIV (Divorce) Husband /Event Dictionary/"
+    SEX "M"
+    FAMS see="F133"
+}
+INDI xref="I134" {
+    NAME "16-DIV (Divorce) Wife /Event Dictionary/"
+    SEX "F"
+    FAMS see="F133"
+}
+FAM xref="F133" {
+    HUSB see="I133"
+    WIFE see="I134"
+    DIV {
+        DATE "1901"
+    }
+}
+INDI xref="I135" {
+    NAME "17-DIVF (Divorce Filing) Husband /Event Dictionary/"
+    SEX "M"
+    FAMS see="F135"
+}
+INDI xref="I136" {
+    NAME "17-DIVF (Divorce Filing) Wife /Event Dictionary/"
+    SEX "F"
+    FAMS see="F135"
+}
+FAM xref="F135" {
+    HUSB see="I135"
+    WIFE see="I136"
+    DIVF {
+        DATE "1901"
+    }
+}
+INDI xref="I137" {
+    NAME "18-EMIG (Emigration) /Event Dictionary/"
+    SEX "M"
+    EMIG {
+        DATE "1800"
+    }
+}
+INDI xref="I138" {
+    NAME "19-ENGA (Engagement) Husband /Event Dictionary/"
+    SEX "M"
+    FAMS see="F138"
+}
+INDI xref="I139" {
+    NAME "19-ENGA (Engagement) Wife /Event Dictionary/"
+    SEX "F"
+    FAMS see="F138"
+}
+FAM xref="F138" {
+    HUSB see="I138"
+    WIFE see="I139"
+    ENGA {
+        DATE "1901"
+    }
+}
+INDI xref="I140" {
+    NAME "20-EVEN (Illness) /Event Dictionary/"
+    SEX "M"
+    EVEN {
+        TYPE "Illness"
+        DATE "1800"
+    }
+}
+INDI xref="I141" {
+    NAME "21-EVEN (Anniversary) Husband /Event Dictionary/"
+    SEX "M"
+    FAMS see="F141"
+}
+INDI xref="I142" {
+    NAME "21-EVEN (Anniversary) Wife /Event Dictionary/"
+    SEX "F"
+    FAMS see="F141"
+}
+FAM xref="F141" {
+    HUSB see="I141"
+    WIFE see="I142"
+    EVEN {
+        DATE "1901"
+        TYPE "Anniversary"
+    }
+}
+INDI xref="I143" {
+    NAME "22-FCOM (First Communion) /Event Dictionary/"
+    SEX "M"
+    FCOM {
+        DATE "1800"
+    }
+}
+INDI xref="I144" {
+    NAME "23-GRAD (Graduation) /Event Dictionary/"
+    SEX "M"
+    GRAD {
+        DATE "1800"
+    }
+}
+INDI xref="I145" {
+    NAME "24-IMMI (Immigration) /Event Dictionary/"
+    SEX "M"
+    IMMI {
+        DATE "1800"
+    }
+}
+INDI xref="I146" {
+    NAME "25-MARB (Marriage Bann) Husband /Event Dictionary/"
+    SEX "M"
+    FAMS see="F146"
+}
+INDI xref="I147" {
+    NAME "25-MARB (Marriage Bann) Wife /Event Dictionary/"
+    SEX "F"
+    FAMS see="F146"
+}
+FAM xref="F146" {
+    HUSB see="I146"
+    WIFE see="I147"
+    MARB {
+        DATE "1901"
+    }
+}
+INDI xref="I148" {
+    NAME "26-MARC (Marriage Contract) Husband /Event Dictionary/"
+    SEX "M"
+    FAMS see="F148"
+}
+INDI xref="I149" {
+    NAME "26-MARC (Marriage Contract) Wife /Event Dictionary/"
+    SEX "F"
+    FAMS see="F148"
+}
+FAM xref="F148" {
+    HUSB see="I148"
+    WIFE see="I149"
+    MARC {
+        DATE "1901"
+    }
+}
+INDI xref="I150" {
+    NAME "27-MARL (Marriage License) Husband /Event Dictionary/"
+    SEX "M"
+    FAMS see="F150"
+}
+INDI xref="I151" {
+    NAME "27-MARL (Marriage License) Wife /Event Dictionary/"
+    SEX "F"
+    FAMS see="F150"
+}
+FAM xref="F150" {
+    HUSB see="I150"
+    WIFE see="I151"
+    MARL {
+        DATE "1901"
+    }
+}
+INDI xref="I152" {
+    NAME "28-MARR (Marriage) Husband /Event Dictionary/"
+    SEX "M"
+    FAMS see="F152"
+}
+INDI xref="I153" {
+    NAME "28-MARR (Marriage) Wife /Event Dictionary/"
+    SEX "F"
+    FAMS see="F152"
+}
+FAM xref="F152" {
+    HUSB see="I152"
+    WIFE see="I153"
+    MARR {
+        DATE "1901"
+    }
+}
+INDI xref="I154" {
+    NAME "29-MARS (Marriage Settlement) Husband /Event Dictionary/"
+    SEX "M"
+    FAMS see="F154"
+}
+INDI xref="I155" {
+    NAME "29-MARS (Marriage Settlement) Wife /Event Dictionary/"
+    SEX "F"
+    FAMS see="F154"
+}
+FAM xref="F154" {
+    HUSB see="I154"
+    WIFE see="I155"
+    MARS {
+        DATE "1901"
+    }
+}
+INDI xref="I156" {
+    NAME "30-NATU (Naturalization) /Event Dictionary/"
+    SEX "M"
+    NATU {
+        DATE "1800"
+    }
+}
+INDI xref="I157" {
+    NAME "31-ORDN (Ordination) /Event Dictionary/"
+    SEX "M"
+    ORDN {
+        DATE "1800"
+    }
+}
+INDI xref="I158" {
+    NAME "32-PROB (Probate) /Event Dictionary/"
+    SEX "M"
+    PROB {
+        DATE "1800"
+    }
+}
+INDI xref="I159" {
+    NAME "33-RESI (Residence) Husband /Event Dictionary/"
+    SEX "M"
+    FAMS see="F159"
+}
+INDI xref="I160" {
+    NAME "33-RESI (Residence) Wife /Event Dictionary/"
+    SEX "F"
+    FAMS see="F159"
+}
+FAM xref="F159" {
+    HUSB see="I159"
+    WIFE see="I160"
+    RESI {
+        DATE "1901"
+        PLAC "19 N Square, Boston, Massachusetts"
+    }
+}
+INDI xref="I161" {
+    NAME "34-RETI (Retirement) /Event Dictionary/"
+    SEX "M"
+    RETI {
+        DATE "1800"
+    }
+}
+INDI xref="I162" {
+    NAME "35-WILL (Will) /Event Dictionary/"
+    SEX "M"
+    WILL {
+        DATE "1800"
+    }
+}
+INDI xref="I163" {
+    NAME "01-Birth-1804 /Event Primary/"
+    SEX "M"
+    BIRT {
+        DATE "1805"
+    }
+    BIRT {
+        DATE "1804"
+        _PRIM "Y"
+    }
+}
+INDI xref="I164" {
+    NAME "02-Birth-1805 /Event Primary/"
+    SEX "M"
+    BIRT {
+        DATE "1805"
+    }
+    BIRT {
+        DATE "1804"
+    }
+}
+INDI xref="I165" {
+    NAME "01-Principal _SHAR ROLE /Event Shared/"
+    SEX "M"
+    CENS {
+        DATE "1900"
+        _SHAR see="I166" {
+            ROLE "WitnessRole"
+        }
+    }
+}
+INDI xref="I166" {
+    NAME "01-Witness _SHAR ROLE /Event Shared/"
+    SEX "M"
+}
+INDI xref="I167" {
+    NAME "02-Principal _WITN TYPE /Event Shared/"
+    SEX "M"
+    CENS {
+        DATE "1900"
+        _WITN see="I168" {
+            TYPE "WitnessRole"
+        }
+    }
+}
+INDI xref="I168" {
+    NAME "02-Witness _WITN TYPE /Event Shared/"
+    SEX "M"
+}
+INDI xref="I169" {
+    NAME "03-Principal _ASSO RELA /Event Shared/"
+    SEX "M"
+    CENS {
+        DATE "1900"
+        _ASSO see="I170" {
+            RELA "WitnessRole"
+        }
+    }
+}
+INDI xref="I170" {
+    NAME "03-Witness _ASSO RELA /Event Shared/"
+    SEX "M"
+}
+INDI xref="I171" {
+    NAME "01-Note Value Only /Event Text/"
+    SEX "M"
+    EVEN {
+        TYPE "Anecdote"
+        NOTE "Note value for \"01-Note Value Only Event Text\""
+    }
+}
+INDI xref="I172" {
+    NAME "02-Text Value Only /Event Text/"
+    SEX "M"
+    EVEN "Text value for \"02-Text Value Only Event Text\"" {
+        TYPE "Anecdote"
+    }
+}
+INDI xref="I173" {
+    NAME "03-Note and Text Values /Event Text/"
+    SEX "M"
+    EVEN "Text value for \"03-Note and Text Values Event Text\"" {
+        TYPE "Anecdote"
+        NOTE "Note value for \"03-Note and Text Values Event Text\""
+    }
+}
+INDI xref="I174" {
+    NAME "04-Note Value with @@ /Event Text/"
+    SEX "M"
+    EVEN {
+        TYPE "Anecdote"
+        NOTE "He used the email address \"John@@example.com\""
+    }
+}
+INDI xref="I175" {
+    NAME "05-Text Value with @@ /Event Text/"
+    SEX "M"
+    OCCU "He used the email address \"John@@example.com\""
+}
+INDI xref="I176" {
+    NAME "06-Linked Note /Event Text/"
+    SEX "M"
+    WILL {
+        DATE "1801"
+        NOTE see="N176"
+    }
+}
+NOTE xref="N176" "Line 1" {
+    CONT "Line 2"
+}
+INDI xref="I177" {
+    NAME "01-BIRT with TYPE /Event with TYPE/"
+    SEX "M"
+    BIRT {
+        TYPE "BirthAlternate"
+        DATE "1711"
+    }
+}
+INDI xref="I178" {
+    NAME "02-DEAT with TYPE /Event with TYPE/"
+    SEX "M"
+    DEAT {
+        TYPE "DeathAlternate"
+        DATE "1801"
+    }
+}
+INDI xref="I179" {
+    NAME "03-CENS with TYPE /Event with TYPE/"
+    SEX "M"
+    CENS {
+        TYPE "1900 Census"
+        DATE "1900"
+    }
+}
+INDI xref="I180" {
+    NAME "01-5.5.1 Linked (v1) /Exhibit Person/"
+    SEX "M"
+    OBJE see="OP180" {
+        _PRIM "Y"
+    }
+    OBJE see="ON180"
+}
+OBJE xref="OP180" {
+    FILE "C:\\GedcomAssessment\\exhibit-person-01P.jpg" {
+        FORM "JPG"
+        TITL "01-5.5.1 Linked (v1) Primary Title"
+    }
+    NOTE "01-5.5.1 Linked (v1) Primary Note"
+}
+OBJE xref="ON180" {
+    FILE "C:\\GedcomAssessment\\exhibit-person-01N.jpg" {
+        FORM "JPG"
+        TITL "01-5.5.1 Linked (v1) Title"
+    }
+    NOTE "01-5.5.1 Linked (v1) Note"
+}
+INDI xref="I181" {
+    NAME "02-5.5.1 Linked (v2) /Exhibit Person/"
+    SEX "M"
+    OBJE see="OP181" {
+        _PRIM "Y"
+    }
+    OBJE see="ON181"
+}
+OBJE xref="OP181" {
+    FILE "C:\\GedcomAssessment\\exhibit-person-02P.jpg" {
+        FORM "JPG"
+    }
+    TITL "02-5.5.1 Linked (v2) Primary Title"
+    NOTE "02-5.5.1 Linked (v2) Primary Note"
+}
+OBJE xref="ON181" {
+    FILE "C:\\GedcomAssessment\\exhibit-person-02N.jpg" {
+        FORM "JPG"
+    }
+    TITL "02-5.5.1 Linked (v2) Title"
+    NOTE "02-5.5.1 Linked (v2) Note"
+}
+INDI xref="I182" {
+    NAME "03-5.5.1 Direct (v1) /Exhibit Person/"
+    SEX "M"
+    OBJE {
+        FILE "C:\\GedcomAssessment\\exhibit-person-03P.jpg" {
+            FORM "JPG"
+        }
+        TITL "03-5.5.1 Direct (v1) Primary Title"
+        NOTE "03-5.5.1 Direct (v1) Primary Note"
+        _PRIM "Y"
+    }
+    OBJE {
+        FILE "C:\\GedcomAssessment\\exhibit-person-03N.jpg" {
+            FORM "JPG"
+        }
+        TITL "03-5.5.1 Direct (v1) Title"
+        NOTE "03-5.5.1 Direct (v1) Note"
+    }
+}
+INDI xref="I183" {
+    NAME "04-5.5.1 Direct (v2) /Exhibit Person/"
+    SEX "M"
+    OBJE {
+        FILE "C:\\GedcomAssessment\\exhibit-person-04P.jpg" {
+            FORM "JPG"
+            TITL "04-5.5.1 Direct (v2) Primary Title"
+        }
+        NOTE "04-5.5.1 Direct (v2) Primary Note"
+        _PRIM "Y"
+    }
+    OBJE {
+        FILE "C:\\GedcomAssessment\\exhibit-person-04N.jpg" {
+            FORM "JPG"
+            TITL "04-5.5.1 Direct (v2) Title"
+        }
+        NOTE "04-5.5.1 Direct (v2) Note"
+    }
+}
+INDI xref="I184" {
+    NAME "05-5.5 Direct /Exhibit Person/"
+    SEX "M"
+    OBJE {
+        FILE "C:\\GedcomAssessment\\exhibit-person-05P.jpg"
+        FORM "JPG"
+        TITL "05-5.5 Direct Primary Title"
+        NOTE "05-5.5 Direct Primary Note"
+        _PRIM "Y"
+    }
+    OBJE {
+        FILE "C:\\GedcomAssessment\\exhibit-person-05N.jpg"
+        FORM "JPG"
+        TITL "05-5.5 Direct Title"
+        NOTE "05-5.5 Direct Note"
+    }
+}
+INDI xref="I185" {
+    NAME "06-5.5 Linked /Exhibit Person/"
+    SEX "M"
+    OBJE see="OP185" {
+        _PRIM "Y"
+    }
+    OBJE see="ON185"
+}
+OBJE xref="OP185" {
+    FILE "C:\\GedcomAssessment\\exhibit-person-06P.jpg"
+    FORM "JPG"
+    TITL "06-5.5 Linked Primary Title"
+    NOTE "06-5.5 Linked Primary Note"
+}
+OBJE xref="ON185" {
+    FILE "C:\\GedcomAssessment\\exhibit-person-06N.jpg"
+    FORM "JPG"
+    TITL "06-5.5 Linked Title"
+    NOTE "06-5.5 Linked Note"
+}
+INDI xref="I186" {
+    NAME "01-Export as Fact-Type /Flag/"
+    SEX "M"
+    FACT "Y" {
+        TYPE "CustomFactFlag"
+    }
+}
+INDI xref="I187" {
+    NAME "02-Export as Fact-Type (VP) /Flag/"
+    SEX "M"
+    FACT "V:Y" {
+        TYPE "CustomFactFlag"
+    }
+}
+INDI xref="I188" {
+    NAME "03-Export as Even-Type /Flag/"
+    SEX "M"
+    EVEN "Y" {
+        TYPE "CustomEventFlag"
+    }
+}
+INDI xref="I189" {
+    NAME "04-Export as Even-Type (VP) /Flag/"
+    SEX "M"
+    EVEN "V:Y" {
+        TYPE "CustomEventFlag"
+    }
+}
+INDI xref="I190" {
+    NAME "05-Export as Even-Type-Note /Flag/"
+    SEX "M"
+    EVEN {
+        TYPE "CustomEventFlag"
+        NOTE "Y"
+    }
+}
+INDI xref="I191" {
+    NAME "01-Alias Principal /Link/"
+    SEX "M"
+    ALIA see="I192"
+}
+INDI xref="I192" {
+    NAME "01-Alias Target /Link/"
+    SEX "M"
+}
+INDI xref="I193" {
+    NAME "02-Alias Name /Link/"
+    SEX "M"
+    ALIA "John D. Sample"
+}
+INDI xref="I194" {
+    NAME "03-Alias Name with Delimiters /Link/"
+    SEX "M"
+    ALIA "John D. /Sample/"
+}
+INDI xref="I195" {
+    NAME "04-Associate1 /Link/"
+    SEX "M"
+    ASSO see="I196" {
+        RELA "friend"
+        NOTE "They met in grade school."
+    }
+}
+INDI xref="I196" {
+    NAME "04-Associate2 /Link/"
+    SEX "M"
+}
+INDI xref="I197" {
+    NAME "01-Same-Sex Partner 1 /Marriage/"
+    SEX "M"
+    FAMS see="F197"
+}
+INDI xref="I198" {
+    NAME "01-Same-Sex Partner 2 /Marriage/"
+    SEX "M"
+    FAMS see="F197"
+}
+FAM xref="F197" {
+    HUSB see="I197"
+    WIFE see="I198"
+}
+INDI xref="I199" {
+    NAME "01-Link by Place /Master Place/"
+    SEX "M"
+    BIRT {
+        DATE "1900"
+        PLAC "Boston, Massachusetts"
+    }
+}
+_PLAC "Boston, Massachusetts" {
+    MAP {
+        LATI "N42.366401"
+        LONG "W71.054714"
+    }
+    NOTE "Note for Boston, Massachusetts"
+    OBJE see="O199"
+}
+OBJE xref="O199" {
+    FILE "C:\\GedcomAssessment\\master-place-01.jpg" {
+        FORM "JPG"
+        TITL "01-Link by Place Master Place Exhibit Title"
+    }
+    NOTE "01-Link by Place Master Place Exhibit Note"
+}
+INDI xref="I200" {
+    NAME "02-Link by XREF (L2) /Master Place/"
+    SEX "M"
+    BIRT {
+        DATE "1900"
+        PLAC "New York, New York"
+        _PLAC see="P200"
+    }
+}
+_PLAC xref="P200" "New York, New York" {
+    MAP {
+        LATI "N40.74844"
+        LONG "W73.98564"
+    }
+    NOTE "Note for New York, New York"
+    OBJE see="O200"
+}
+OBJE xref="O200" {
+    FILE "C:\\GedcomAssessment\\master-place-02.jpg" {
+        FORM "JPG"
+        TITL "02-Link by XREF (L2) Master Place Exhibit Title"
+    }
+    NOTE "02-Link by XREF (L2) Master Place Exhibit Note"
+}
+INDI xref="I201" {
+    NAME "03-Link by XREF (L3) /Master Place/"
+    SEX "M"
+    BIRT {
+        DATE "1900"
+        PLAC "Paris, France" {
+            _PLAC see="P201"
+        }
+    }
+}
+_PLAC xref="P201" "Paris, France" {
+    MAP {
+        LATI "N48.85882"
+        LONG "E2.294528"
+    }
+    NOTE "Note for Paris, France"
+    OBJE see="O201"
+}
+OBJE xref="O201" {
+    FILE "C:\\GedcomAssessment\\master-place-03.jpg" {
+        FORM "JPG"
+        TITL "03-Link by XREF (L3) Master Place Exhibit Title"
+    }
+    NOTE "03-Link by XREF (L3) Master Place Exhibit Note"
+}
+INDI xref="I202" {
+    SEX "M"
+    NAME "01-Primary Name with Type /Name/" {
+        TYPE "NameBirth"
+    }
+}
+INDI xref="I203" {
+    SEX "M"
+    NAME "02-More than One Name /Name/"
+    NAME "02-Additional /Name/"
+}
+INDI xref="I204" {
+    SEX "M"
+    NAME "03-Secondary Name with Type /Name/"
+    NAME "03-Secondary /Name/" {
+        TYPE "NameMarried"
+    }
+}
+INDI xref="I205" {
+    SEX "M"
+    NAME "04-Name with Nickname \"Jack\" /Name/" {
+        GIVN "04-Name with Nickname"
+        NICK "Jack"
+        SURN "Name"
+    }
+}
+INDI xref="I206" {
+    SEX "M"
+    NAME "05-Name with Suffix /Name/ Jr" {
+        GIVN "05-Name with Suffix"
+        SURN "Name"
+        NSFX "Jr"
+    }
+}
+INDI xref="I207" {
+    SEX "M"
+    NAME "06-Name with Comma-Suffix (1) /Name/, Jr" {
+        GIVN "06-Name with Comma-Suffix (1)"
+        SURN "Name"
+        NSFX "Jr"
+    }
+}
+INDI xref="I208" {
+    SEX "M"
+    NAME "07-Name with Comma-Suffix (2) /Name/, Jr" {
+        GIVN "07-Name with Comma-Suffix (2)"
+        SURN "Name"
+        NSFX ", Jr"
+    }
+}
+INDI xref="I209" {
+    SEX "M"
+    NAME "08-Name with Double @@ /Name/"
+}
+INDI xref="I210" {
+    SEX "M"
+    NAME "09-Primary Name with Memo /Name/" {
+        NOTE "This is a note added to the primary name."
+    }
+}
+INDI xref="I211" {
+    SEX "M"
+    NAME "10-Secondary Name with Memo /Name/"
+    NAME "10-Additional /Name/" {
+        NOTE "This is a note added to the secondary name."
+    }
+}
+INDI xref="I212" {
+    NAME "01-Latitude Longitude /Place/"
+    SEX "M"
+    BIRT {
+        DATE "1900"
+        PLAC "Washington, DC" {
+            MAP {
+                LATI "N38.88923"
+                LONG "W77.05020"
+            }
+        }
+    }
+}
+INDI xref="I213" {
+    NAME "02-Place Note /Place/"
+    SEX "M"
+    BIRT {
+        DATE "1900"
+        PLAC "Philadelphia, PA" {
+            NOTE "Note for Philadelphia, PA"
+        }
+    }
+}
+INDI xref="I214" {
+    NAME "03-Place Exhibit /Place/"
+    SEX "M"
+    BIRT {
+        DATE "1900"
+        PLAC "Philadelphia, PA" {
+            OBJE see="O214"
+        }
+    }
+}
+OBJE xref="O214" {
+    FILE "C:\\GedcomAssessment\\place-03.jpg" {
+        FORM "JPG"
+        TITL "03-Place Exhibit Title"
+    }
+    NOTE "03-Place Exhibit Note"
+}
+INDI xref="I215" {
+    NAME "04-PLAC and ADDR /Place/"
+    SEX "M"
+    BIRT {
+        DATE "1900"
+        PLAC "Chicago, IL"
+        ADDR "Wrigley Field" {
+            CONT "1060 W Addison St"
+        }
+    }
+}
+INDI xref="I216" {
+    NAME "05-ADDR Label /Place/"
+    SEX "M"
+    BIRT {
+        DATE "1900"
+        ADDR "Jane Smith" {
+            CONT "Assessor's Dept"
+            CONT "610 Main Street"
+            CONT "Waltham, Massachusetts 02452"
+        }
+    }
+}
+INDI xref="I217" {
+    NAME "06-ADDR Label and Fields /Place/"
+    SEX "M"
+    BIRT {
+        DATE "1900"
+        ADDR "John Doe" {
+            CONT "c/o City Hall"
+            CONT "1000 Commonwealth Avenue"
+            CONT "Newton Centre, Massachusetts 02459 USA"
+            ADR1 "John Doe"
+            ADR2 "c/o City Hall"
+            ADR3 "1000 Commonwealth Avenue"
+            CITY "Newton Centre"
+            STAE "Massachusetts"
+            POST "02459"
+            CTRY "USA"
+        }
+    }
+}
+INDI xref="I218" {
+    NAME "07-PHON /Place/"
+    SEX "M"
+    OCCU "Clerk" {
+        DATE "1900"
+        ADDR "Public Works Dept." {
+            CONT "610 Main Street"
+            CONT "Waltham, Massachusetts 02452"
+            ADR1 "Public Works Dept."
+            ADR2 "610 Main Street"
+            CITY "Waltham"
+            STAE "Massachusetts"
+            POST "02452"
+        }
+        PHON "(617) 555-1234"
+    }
+}
+INDI xref="I219" {
+    NAME "08-EMAIL /Place/"
+    SEX "M"
+    OCCU "Clerk" {
+        DATE "1900"
+        ADDR "Mayor's Office" {
+            CONT "610 Main Street"
+            CONT "Waltham, Massachusetts 02452"
+            ADR1 "Mayor's Office"
+            ADR2 "610 Main Street"
+            CITY "Waltham"
+            STAE "Massachusetts"
+            POST "02452"
+        }
+        EMAIL "dpw@@example.com"
+    }
+}
+INDI xref="I220" {
+    NAME "09-EMAI /Place/"
+    SEX "M"
+    OCCU "Clerk" {
+        DATE "1900"
+        ADDR "Zoning Dept." {
+            CONT "610 Main Street"
+            CONT "Waltham, Massachusetts 02452"
+            ADR1 "Zoning Dept."
+            ADR2 "610 Main Street"
+            CITY "Waltham"
+            STAE "Massachusetts"
+            POST "02452"
+        }
+        EMAI "zoning@@example.com"
+    }
+}
+INDI xref="I221" {
+    NAME "10-WWW /Place/"
+    SEX "M"
+    OCCU "Clerk" {
+        DATE "1900"
+        ADDR "City Hall" {
+            CONT "610 Main Street"
+            CONT "Waltham, Massachusetts 02452"
+            ADR1 "City Hall"
+            ADR2 "610 Main Street"
+            CITY "Waltham"
+            STAE "Massachusetts"
+            POST "02452"
+        }
+        WWW "http://example.com"
+    }
+}
+INDI xref="I222" {
+    NAME "01-PEDI Adoptive Father /Relationship/"
+    SEX "M"
+    FAMS see="F222"
+}
+INDI xref="I223" {
+    NAME "01-PEDI Adoptive Mother /Relationship/"
+    SEX "F"
+    FAMS see="F222"
+}
+INDI xref="I224" {
+    NAME "01-PEDI Adopted Child /Relationship/"
+    SEX "M"
+    FAMC see="F222" {
+        PEDI "adopted"
+    }
+}
+FAM xref="F222" {
+    HUSB see="I222"
+    WIFE see="I223"
+    CHIL see="I224"
+}
+INDI xref="I225" {
+    NAME "02-PEDI Birth Father /Relationship/"
+    SEX "M"
+    FAMS see="F225"
+}
+INDI xref="I226" {
+    NAME "02-PEDI Birth Mother /Relationship/"
+    SEX "F"
+    FAMS see="F225"
+}
+INDI xref="I227" {
+    NAME "02-PEDI Adoptive Father /Relationship/"
+    SEX "M"
+    FAMS see="F227"
+}
+INDI xref="I228" {
+    NAME "02-PEDI Adoptive Mother /Relationship/"
+    SEX "F"
+    FAMS see="F227"
+}
+INDI xref="I229" {
+    NAME "02-PEDI Child /Relationship/"
+    SEX "M"
+    FAMC see="F227" {
+        PEDI "adopted"
+    }
+    FAMC see="F225" {
+        PEDI "birth"
+    }
+}
+FAM xref="F225" {
+    HUSB see="I225"
+    WIFE see="I226"
+    CHIL see="I229"
+}
+FAM xref="F227" {
+    HUSB see="I227"
+    WIFE see="I228"
+    CHIL see="I229"
+}
+INDI xref="I230" {
+    NAME "03-PEDI Foster Father /Relationship/"
+    SEX "M"
+    FAMS see="F230"
+}
+INDI xref="I231" {
+    NAME "03-PEDI Foster Mother /Relationship/"
+    SEX "F"
+    FAMS see="F230"
+}
+INDI xref="I232" {
+    NAME "03-PEDI Foster Child /Relationship/"
+    SEX "M"
+    FAMC see="F230" {
+        PEDI "foster"
+    }
+}
+FAM xref="F230" {
+    HUSB see="I230"
+    WIFE see="I231"
+    CHIL see="I232"
+}
+INDI xref="I233" {
+    NAME "04-XREL Step Father /Relationship/"
+    SEX "M"
+    FAMS see="F233"
+}
+INDI xref="I234" {
+    NAME "04-XREL Birth Mother /Relationship/"
+    SEX "F"
+    FAMS see="F233"
+}
+INDI xref="I235" {
+    NAME "04-XREL Child /Relationship/"
+    SEX "M"
+    FAMC see="F233"
+}
+FAM xref="F233" {
+    HUSB see="I233"
+    WIFE see="I234"
+    CHIL see="I235" {
+        _FREL "step"
+    }
+}
+INDI xref="I236" {
+    NAME "05-XREL Step Mother /Relationship/"
+    SEX "F"
+    FAMS see="F236"
+}
+INDI xref="I237" {
+    NAME "05-XREL Birth Father /Relationship/"
+    SEX "M"
+    FAMS see="F236"
+}
+INDI xref="I238" {
+    NAME "05-XREL Child /Relationship/"
+    SEX "M"
+    FAMC see="F236"
+}
+FAM xref="F236" {
+    WIFE see="I236"
+    HUSB see="I237"
+    CHIL see="I238" {
+        _MREL "step"
+    }
+}
+INDI xref="I239" {
+    NAME "06-XREL Step Father /Relationship/"
+    SEX "M"
+    FAMS see="F239"
+}
+INDI xref="I240" {
+    NAME "06-XREL Step Mother /Relationship/"
+    SEX "F"
+    FAMS see="F239"
+}
+INDI xref="I241" {
+    NAME "06-XREL Child /Relationship/"
+    SEX "M"
+    FAMC see="F239"
+}
+FAM xref="F239" {
+    HUSB see="I239"
+    WIFE see="I240"
+    CHIL see="I241" {
+        _FREL "step"
+        _MREL "step"
+    }
+}
+INDI xref="I242" {
+    NAME "01-Basic /Repository/"
+    SEX "M"
+    BIRT {
+        DATE "1911"
+        SOUR see="242"
+    }
+}
+SOUR xref="242" {
+    TITL "Birth Registers, 1911"
+    AUTH "Boston (Mass.) City Registrar"
+    PUBL "Salt Lake City, UT: Gen. Soc. of Utah, 1970"
+    REPO see="R242" {
+        CALN "US/CAN 740463"
+    }
+}
+REPO xref="R242" {
+    NAME "Family History Library (Basic)"
+    ADDR "Salt Lake City, Utah"
+}
+INDI xref="I243" {
+    NAME "02-Full /Repository/"
+    SEX "M"
+    BIRT {
+        DATE "1912"
+        SOUR see="243"
+    }
+}
+SOUR xref="243" {
+    TITL "Birth Registers, 1912"
+    AUTH "Boston (Mass.) City Registrar"
+    PUBL "Salt Lake City, UT: Gen. Soc. of Utah, 1970"
+    REPO see="R243" {
+        NOTE "Note value for R243 reference"
+        CALN "US/CAN 740463" {
+            MEDI "film"
+        }
+    }
+}
+REPO xref="R243" {
+    NAME "Family History Library (Full)"
+    ADDR "35 N West Temple" {
+        CONT "Salt Lake City, Utah 84150"
+    }
+    PHON "(801) 240-6996"
+    EMAIL "support@@familysearch.org"
+    WWW "https://familysearch.org"
+    NOTE "Note value for R243 record"
+    REFN "R243" {
+        TYPE "folder name"
+    }
+    RIN "d4ffb019-f08f-4f44-a875-ce39cd322217"
+    CHAN {
+        DATE "14 NOV 2019"
+        NOTE "Note for R243 change date"
+    }
+}
+INDI xref="I244" {
+    NAME "01-FAM Confidential1 /Restriction/"
+    SEX "M"
+    FAMS see="F244"
+}
+INDI xref="I245" {
+    NAME "01-FAM Confidential2 /Restriction/"
+    SEX "F"
+    FAMS see="F244"
+}
+FAM xref="F244" {
+    RESN "confidential"
+    HUSB see="I244"
+    WIFE see="I245"
+    MARR {
+        DATE "01 JAN 2000"
+    }
+}
+INDI xref="I246" {
+    NAME "02-FAM Locked1 /Restriction/"
+    SEX "M"
+    FAMS see="F246"
+}
+INDI xref="I247" {
+    NAME "02-FAM Locked2 /Restriction/"
+    SEX "F"
+    FAMS see="F246"
+}
+FAM xref="F246" {
+    RESN "locked"
+    HUSB see="I246"
+    WIFE see="I247"
+    MARR {
+        DATE "02 JAN 2000"
+    }
+}
+INDI xref="I248" {
+    NAME "03-FAM Private1 /Restriction/"
+    SEX "M"
+    FAMS see="F248"
+}
+INDI xref="I249" {
+    NAME "03-FAM Private2 /Restriction/"
+    SEX "F"
+    FAMS see="F248"
+}
+FAM xref="F248" {
+    RESN "privacy"
+    HUSB see="I248"
+    WIFE see="I249"
+    MARR {
+        DATE "03 JAN 2000"
+    }
+}
+INDI xref="I250" {
+    NAME "04-INDI Confidential /Restriction/"
+    SEX "M"
+    RESN "confidential"
+    BIRT {
+        DATE "04 JAN 2000"
+    }
+}
+INDI xref="I251" {
+    NAME "05-INDI Locked /Restriction/"
+    SEX "M"
+    RESN "locked"
+    BIRT {
+        DATE "05 JAN 2000"
+    }
+}
+INDI xref="I252" {
+    NAME "06-INDI Private /Restriction/"
+    SEX "M"
+    RESN "privacy"
+    BIRT {
+        DATE "06 JAN 2000"
+    }
+}
+INDI xref="I253" {
+    NAME "07-BIRT Confidential /Restriction/"
+    SEX "M"
+    BIRT {
+        DATE "07 JAN 2000"
+        RESN "confidential"
+    }
+}
+INDI xref="I254" {
+    NAME "08-BIRT Locked /Restriction/"
+    SEX "M"
+    BIRT {
+        DATE "08 JAN 2000"
+        RESN "locked"
+    }
+}
+INDI xref="I255" {
+    NAME "09-BIRT Private /Restriction/"
+    SEX "M"
+    BIRT {
+        DATE "09 JAN 2000"
+        RESN "privacy"
+    }
+}
+INDI xref="I256" {
+    NAME "10-NAME Confidential /Restriction/" {
+        RESN "confidential"
+    }
+    SEX "M"
+    BIRT {
+        DATE "10 JAN 2000"
+    }
+}
+INDI xref="I257" {
+    NAME "11-NAME Locked /Restriction/" {
+        RESN "locked"
+    }
+    SEX "M"
+    BIRT {
+        DATE "11 JAN 2000"
+    }
+}
+INDI xref="I258" {
+    NAME "12-NAME Private /Restriction/" {
+        RESN "privacy"
+    }
+    SEX "M"
+    BIRT {
+        DATE "12 JAN 2000"
+    }
+}
+INDI xref="I259" {
+    NAME "01-Linked (Basic) /Source/"
+    SEX "M"
+    BIRT {
+        DATE "1901"
+        SOUR see="259" {
+            PAGE "Citation-specific PAGE information for 01-Linked (Basic)"
+            NOTE "Citation-specific NOTE for 01-Linked (Basic)"
+        }
+    }
+}
+SOUR xref="259" {
+    TITL "The Smith Family of Narragansett Bay"
+    AUTH "Archibald Smith, III"
+    PUBL "Boston, MA: Genealogy Press, 1932"
+}
+INDI xref="I260" {
+    NAME "02-Linked (Full) /Source/"
+    SEX "M"
+    BIRT {
+        DATE "1901"
+        SOUR see="S260" {
+            PAGE "Citation-specific PAGE information for 02-Linked (Full)"
+            EVEN "BIRT" {
+                ROLE "CHIL"
+            }
+            DATA {
+                DATE "6 JUN 1901"
+                TEXT "Citation-specifi" {
+                    CONC "c TEXT"
+                    CONT "for 02-Linked (Full)"
+                }
+            }
+            OBJE see="OC260"
+            NOTE "Citation-specific NOTE for 02-Linked (Full)"
+            QUAY "1"
+        }
+    }
+}
+OBJE xref="OC260" {
+    FILE "C:\\GedcomAssessment\\citation-02.jpg" {
+        FORM "JPG"
+        TITL "02-Linked (Full) Citation Exhibit Title"
+    }
+    NOTE "02-Linked (Full) Citation Exhibit Note"
+}
+SOUR xref="S260" {
+    DATA {
+        EVEN "BIRT" {
+            DATE "FROM 1740 TO 1930"
+            PLAC "New England"
+        }
+        AGNC "Massachusetts County Vital Records Offices"
+        NOTE "Data Note"
+    }
+    AUTH "Massachusetts Count" {
+        CONC "y Clerks"
+    }
+    TITL "Births in Massachusetts"
+    ABBR "Mass Births"
+    PUBL "Boston, MA: Genealogy Pr" {
+        CONC "ess, 1932"
+    }
+    TEXT "A copy of original records kept in county cler" {
+        CONC "k offices"
+        CONT "Originals 1740 to 1920, Corrections to 1930"
+    }
+    REFN "S260" {
+        TYPE "Source ID"
+    }
+    CHAN {
+        DATE "1 JUN 1962"
+        NOTE "Reprint"
+    }
+    NOTE "Note for source S260"
+    OBJE see="OS260"
+}
+OBJE xref="OS260" {
+    FILE "C:\\GedcomAssessment\\source-02.jpg" {
+        FORM "JPG"
+        TITL "02-Linked (Full) Source Exhibit Title"
+    }
+    NOTE "02-Linked (Full) Source Exhibit Note"
+}
+INDI xref="I261" {
+    NAME "03-Direct (Basic) /Source/"
+    SEX "M"
+    BIRT {
+        DATE "1901"
+        SOUR "Hell's Bells: The Quasimodo Family Chronicl" {
+            CONC "e and Family Diary"
+            CONT "Angus Ainsley Pillsbury"
+        }
+    }
+}
+INDI xref="I262" {
+    NAME "04-Direct (Full) /Source/"
+    SEX "M"
+    BIRT {
+        DATE "1901"
+        SOUR "Under the Armpit of Celebrit" {
+            CONC "y: Life on the Front Page"
+            CONT "Brittney Danica Ambivilaqua"
+            TEXT "I was born to rich and famous parents on th" {
+                CONC "e 1st of April, 1927."
+                CONT "That is my burden."
+            }
+            NOTE "A fascinating read, but not believable."
+            QUAY "0"
+            OBJE see="OS262"
+        }
+    }
+}
+OBJE xref="OS262" {
+    FILE "C:\\GedcomAssessment\\source-04.jpg" {
+        FORM "JPG"
+        TITL "04-Direct (Full) Source Exhibit Title"
+    }
+    NOTE "04-Direct (Full) Source Exhibit Note"
+}
+TRLR
