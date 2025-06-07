@@ -236,7 +236,7 @@ define_enum!(
         FirstCommunion,
         Ordination,
         Naturalization,
-        Emmigration,
+        Emigration,
         Immigration,
         CensusIndividual,
         Probate,
@@ -249,7 +249,7 @@ define_enum!(
 
 define_enum!(
     enum FamilyEvent {
-        Anulment,
+        Annulment,
         CensusFamily,
         Divorce,
         DivorceFiled,
@@ -407,7 +407,7 @@ indi_event!("CHRA" AdultChristening);
 indi_event!("FCOM" FirstCommunion);
 indi_event!("ORDN" Ordination);
 indi_event!("NATU" Naturalization);
-indi_event!("EMIG" Emmigration);
+indi_event!("EMIG" Emigration);
 indi_event!("IMMI" Immigration);
 indi_event!("CENS" CensusIndividual);
 indi_event!("PROB" Probate);
@@ -431,7 +431,7 @@ define_record!(
     }
 );
 
-fam_event!("ANUL" Anulment);
+fam_event!("ANUL" Annulment);
 fam_event!("CENS" CensusFamily);
 fam_event!("DIV" Divorce);
 fam_event!("DIVF" DivorceFiled);

@@ -1148,8 +1148,8 @@ V551(
                                 ),
                             },
                         ),
-                        Emmigration(
-                            Emmigration {
+                        Emigration(
+                            Emigration {
                                 detail: Some(
                                     IndividualEventDetail {
                                         detail: EventDetail {
@@ -2966,8 +2966,8 @@ V551(
             Family(
                 Family {
                     events: [
-                        Anulment(
-                            Anulment {
+                        Annulment(
+                            Annulment {
                                 detail: Some(
                                     FamilyEventDetail {
                                         detail: Some(
