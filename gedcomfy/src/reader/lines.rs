@@ -67,7 +67,9 @@ pub enum LineSyntaxError {
     #[error("Invalid character in tag")]
     #[diagnostic(
         code(gedcom::parse_error::invalid_tag),
-        help("tag names must begin with either an uppercase letter or underscore, followed by letters or numbers")
+        help(
+            "tag names must begin with either an uppercase letter or underscore, followed by letters or numbers"
+        )
     )]
     InvalidTagCharacter {
         #[label("this character is not permitted in a tag")]
@@ -139,15 +141,10 @@ pub(crate) fn parse_line<'a, S: GEDCOMSource + ?Sized>(
     debug_assert!(!line.is_empty());
     // precondition: line must be inside source_code slice
 
-    let to_sourced = |s: &'a S| Sourced {
-        sourced_value: s,
-        span: source_code.span_of(s),
-    };
+    let to_sourced = |s: &'a S| Sourced { sourced_value: s, span: source_code.span_of(s) };
 
     let Some((level_part, rest_part)) = line.split_once(AsciiChar::Space) else {
-        return Err(LineSyntaxError::NoTag {
-            span: source_code.span_of(line),
-        });
+        return Err(LineSyntaxError::NoTag { span: source_code.span_of(line) });
     };
 
     let level_str = level_part
@@ -174,9 +171,7 @@ pub(crate) fn parse_line<'a, S: GEDCOMSource + ?Sized>(
 
     let (xref, rest_part) = if rest_part.starts_with(AsciiChar::At) {
         let Some((xref_part, rest_part)) = rest_part.slice_from(1).split_once(AsciiChar::At) else {
-            return Err(LineSyntaxError::NoSpace {
-                span: source_code.span_of(line),
-            });
+            return Err(LineSyntaxError::NoSpace { span: source_code.span_of(line) });
         };
 
         // tag may not be the reserved 'null' value
@@ -203,9 +198,7 @@ pub(crate) fn parse_line<'a, S: GEDCOMSource + ?Sized>(
 
     let (tag_part, rest_part) = rest_part.split_once_opt(AsciiChar::Space);
     if tag_part.is_empty() {
-        return Err(LineSyntaxError::NoTag {
-            span: source_code.span_of(line),
-        });
+        return Err(LineSyntaxError::NoTag { span: source_code.span_of(line) });
     }
 
     // ensure tag is valid (only ASCII uppercase alphanum, may have underscore at start)
@@ -275,11 +268,7 @@ pub(crate) fn parse_line<'a, S: GEDCOMSource + ?Sized>(
         level,
         Sourced {
             span: source_code.span_of(line),
-            sourced_value: RawLine {
-                tag,
-                xref,
-                value: line_value,
-            },
+            sourced_value: RawLine { tag, xref, value: line_value },
         },
     ))
 }

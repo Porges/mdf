@@ -1,7 +1,7 @@
 use crate::{
-    reader::{records::RawRecord, NonFatalHandler, ReadMode, ReaderError, ResultBuilder, Sourced},
+    reader::{NonFatalHandler, ReadMode, ReaderError, ResultBuilder, Sourced, records::RawRecord},
     schemas::AnyFileVersion,
-    versions::SupportedGEDCOMVersion,
+    versions::KnownVersion,
 };
 
 #[derive(Default)]
@@ -35,19 +35,15 @@ impl<'i> ReadMode<'i> for Mode {
 
     fn into_result_builder(
         self,
-        version: SupportedGEDCOMVersion,
+        version: KnownVersion,
     ) -> Result<Self::ResultBuilder, ReaderError> {
-        Ok(Builder {
-            mode: self,
-            version,
-            records: Vec::new(),
-        })
+        Ok(Builder { mode: self, version, records: Vec::new() })
     }
 }
 
 pub(in crate::reader) struct Builder<'i> {
     mode: Mode,
-    version: SupportedGEDCOMVersion,
+    version: KnownVersion,
     records: Vec<Sourced<RawRecord<'i>>>,
 }
 

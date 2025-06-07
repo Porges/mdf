@@ -5,7 +5,7 @@ use std::{
 };
 
 use ascii::{AsciiChar, AsciiStr};
-use decoding::{detect_external_encoding, DecodingError, DetectedEncoding};
+use decoding::{DecodingError, DetectedEncoding, detect_external_encoding};
 use encodings::EncodingReason;
 use input::{Input, RawInput};
 use lines::LineValue;
@@ -17,9 +17,9 @@ use versions::VersionError;
 use yoke::{Yoke, Yokeable};
 
 use crate::{
-    schemas::SchemaError,
-    versions::{parse_version_head_gedc_vers, GEDCOMVersion, SupportedGEDCOMVersion},
     FileStructureError,
+    schemas::SchemaError,
+    versions::{FileVersion, KnownVersion, parse_version_head_gedc_vers},
 };
 
 pub mod decoding;
@@ -166,10 +166,7 @@ pub struct MaybeSourced<T> {
 
 impl<T> From<Sourced<T>> for MaybeSourced<T> {
     fn from(value: Sourced<T>) -> Self {
-        Self {
-            value: value.sourced_value,
-            span: Some(value.span),
-        }
+        Self { value: value.sourced_value, span: Some(value.span) }
     }
 }
 
@@ -186,10 +183,7 @@ impl<T> Sourced<T> {
         T: TryInto<U>,
     {
         match self.sourced_value.try_into() {
-            Ok(value) => Ok(Sourced {
-                sourced_value: value,
-                span: self.span,
-            }),
+            Ok(value) => Ok(Sourced { sourced_value: value, span: self.span }),
             Err(err) => Err(err),
         }
     }
@@ -211,9 +205,7 @@ pub struct Reader {
 
 impl Reader {
     pub fn with_options(parse_options: ParseOptions) -> Self {
-        Self {
-            opts: parse_options,
-        }
+        Self { opts: parse_options }
     }
 }
 
@@ -274,10 +266,8 @@ pub trait NonFatalHandler {
 
 pub trait ReadMode<'i>: Default + NonFatalHandler {
     type ResultBuilder: ResultBuilder<'i>;
-    fn into_result_builder(
-        self,
-        version: SupportedGEDCOMVersion,
-    ) -> Result<Self::ResultBuilder, ReaderError>;
+    fn into_result_builder(self, version: KnownVersion)
+    -> Result<Self::ResultBuilder, ReaderError>;
 }
 
 pub trait ResultBuilder<'i>: NonFatalHandler {
@@ -332,20 +322,14 @@ trait AttachSourceCode<'a> {
 impl<'a> AttachSourceCode<'a> for ReaderError {
     type Output = WithSourceCode<'a, ReaderError>;
     fn attach_source_code(self, source_code: impl Into<AnySourceCode<'a>>) -> Self::Output {
-        Self::Output {
-            source: self,
-            source_code: source_code.into(),
-        }
+        Self::Output { source: self, source_code: source_code.into() }
     }
 }
 
 impl<'a> AttachSourceCode<'a> for DecodingError {
     type Output = WithSourceCode<'a, DecodingError>;
     fn attach_source_code(self, source_code: impl Into<AnySourceCode<'a>>) -> Self::Output {
-        Self::Output {
-            source: self,
-            source_code: source_code.into(),
-        }
+        Self::Output { source: self, source_code: source_code.into() }
     }
 }
 
@@ -358,7 +342,7 @@ impl<'a, T, E: AttachSourceCode<'a>> AttachSourceCode<'a> for Result<T, E> {
 
 #[derive(Yokeable)]
 struct DecodedInput<'i> {
-    version: SupportedGEDCOMVersion,
+    version: KnownVersion,
     output: Cow<'i, str>,
 }
 
@@ -432,7 +416,7 @@ impl Reader {
             fn source_code(&self) -> AnySourceCode<'static> {
                 self.0.backing_cart().source_code()
             }
-            fn version(&self) -> Option<SupportedGEDCOMVersion> {
+            fn version(&self) -> Option<KnownVersion> {
                 Some(self.0.get().version)
             }
         }
@@ -452,8 +436,8 @@ impl Reader {
             .attach_source_code(data.source_code())?;
 
         enum D<'s> {
-            Owned(Arc<String>, Option<SupportedGEDCOMVersion>),
-            Borrowed(&'s str, Option<SupportedGEDCOMVersion>),
+            Owned(Arc<String>, Option<KnownVersion>),
+            Borrowed(&'s str, Option<KnownVersion>),
         }
 
         impl AsRef<str> for D<'_> {
@@ -473,7 +457,7 @@ impl Reader {
                 }
             }
 
-            fn version(&self) -> Option<SupportedGEDCOMVersion> {
+            fn version(&self) -> Option<KnownVersion> {
                 match self {
                     D::Owned(_, v) | D::Borrowed(_, v) => *v,
                 }
@@ -547,8 +531,12 @@ impl Reader {
             } else {
                 // get version and double-check encoding with file
                 let header = Self::extract_gedcom_header(decoded.as_ref(), &mut warnings)?;
-                let (version, f_enc) =
-                    Self::parse_gedcom_header(&header, Some(external_encoding), None)?;
+                let (version, f_enc) = Self::parse_gedcom_header(
+                    &header,
+                    Some(external_encoding),
+                    None,
+                    &mut warnings,
+                )?;
 
                 // we don’t need the encoding here since we already decoded
                 // it will always be the same
@@ -562,7 +550,7 @@ impl Reader {
             // we need to determine the encoding from the file itself
             let header = Self::extract_gedcom_header(data, &mut warnings)?;
             let (version, file_encoding) =
-                Self::parse_gedcom_header(&header, None, self.opts.force_version)?;
+                Self::parse_gedcom_header(&header, None, self.opts.force_version, &mut warnings)?;
 
             tracing::debug!(
                 version = %version.value,
@@ -582,7 +570,7 @@ impl Reader {
     fn version_from_input(
         input: &str,
         warnings: &mut impl NonFatalHandler,
-    ) -> Result<SupportedGEDCOMVersion, DecodingError> {
+    ) -> Result<KnownVersion, DecodingError> {
         let head = Self::extract_gedcom_header(input, warnings)?;
         let version = Self::version_from_header(&head)?;
         Ok(*version)
@@ -672,20 +660,16 @@ impl Reader {
 
     fn version_from_header<S>(
         header: &Sourced<RawRecord<S>>,
-    ) -> Result<Sourced<SupportedGEDCOMVersion>, DecodingError>
+    ) -> Result<Sourced<KnownVersion>, DecodingError>
     where
         S: GEDCOMSource + ?Sized,
     {
         let version = Self::detect_version_from_header(header)?;
         tracing::debug!(version = %version.sourced_value, "detected GEDCOM version from file header");
 
-        let supported_version: Sourced<SupportedGEDCOMVersion> =
-            version
-                .try_into()
-                .map_err(|source| VersionError::Unsupported {
-                    help: source,
-                    span: version.span,
-                })?;
+        let supported_version: Sourced<KnownVersion> = version
+            .try_into()
+            .map_err(|source| VersionError::Unsupported { help: source, span: version.span })?;
 
         tracing::debug!(version = %supported_version.sourced_value, "confirmed supported version");
         Ok(supported_version)
@@ -694,26 +678,27 @@ impl Reader {
     fn parse_gedcom_header<S: GEDCOMSource + ?Sized>(
         header: &Sourced<RawRecord<S>>,
         external_encoding: Option<DetectedEncoding>,
-        force_version: Option<SupportedGEDCOMVersion>,
-    ) -> Result<(MaybeSourced<SupportedGEDCOMVersion>, DetectedEncoding), DecodingError> {
+        force_version: Option<KnownVersion>,
+        warnings: &mut impl NonFatalHandler,
+    ) -> Result<(MaybeSourced<KnownVersion>, DetectedEncoding), DecodingError> {
         debug_assert!(header.sourced_value.line.tag.sourced_value.eq("HEAD"));
 
-        let version = if let Some(force_version) = force_version {
-            MaybeSourced {
-                span: None,
-                value: force_version,
-            }
+        let mut version = if let Some(force_version) = force_version {
+            MaybeSourced { span: None, value: force_version }
         } else {
             Self::version_from_header(header)?.into()
         };
 
-        let encoding = version.detect_encoding_from_head_record(header, external_encoding)?;
+        // note that this can override the version
+        let encoding =
+            version.detect_encoding_from_head_record(header, external_encoding, warnings)?;
+
         Ok((version, encoding))
     }
 
     fn detect_version_from_header<S: GEDCOMSource + ?Sized>(
         head: &Sourced<RawRecord<S>>,
-    ) -> Result<Sourced<GEDCOMVersion>, VersionError> {
+    ) -> Result<Sourced<FileVersion>, VersionError> {
         if let Some(gedc) = head.subrecord_optional("GEDC") {
             tracing::debug!("located GEDC record");
             if let Some(vers) = gedc.subrecord_optional("VERS") {
@@ -721,24 +706,16 @@ impl Reader {
                 // GEDCOM 4.x or above (including 5.x and 7.x)
                 let data = match vers.line.value {
                     Sourced {
-                        sourced_value: LineValue::None | LineValue::Ptr(_),
-                        ..
+                        sourced_value: LineValue::None | LineValue::Ptr(_), ..
                     } => return Err(VersionError::Header {}),
-                    Sourced {
-                        sourced_value: LineValue::Str(value),
-                        span,
-                    } => Sourced {
-                        sourced_value: value,
-                        span,
-                    },
+                    Sourced { sourced_value: LineValue::Str(value), span } => {
+                        Sourced { sourced_value: value, span }
+                    }
                 };
 
                 return data
                     .try_map(|d| parse_version_head_gedc_vers(d))
-                    .map_err(|source| VersionError::Invalid {
-                        source,
-                        span: data.span,
-                    });
+                    .map_err(|source| VersionError::Invalid { source, span: data.span });
             }
         }
 

@@ -6,8 +6,8 @@ use std::{
 
 use fancy_duration::FancyDuration;
 use gedcomfy::{
-    reader::{encodings::SupportedEncoding, options::ParseOptions, Reader},
-    versions::SupportedGEDCOMVersion,
+    reader::{encodings::Encoding, options::ParseOptions, Reader},
+    versions::KnownVersion,
 };
 
 mod components;
@@ -77,21 +77,21 @@ pub enum ForcedVersion {
     V7,
 }
 
-impl From<ForcedEncoding> for SupportedEncoding {
-    fn from(value: ForcedEncoding) -> SupportedEncoding {
+impl From<ForcedEncoding> for Encoding {
+    fn from(value: ForcedEncoding) -> Encoding {
         match value {
-            ForcedEncoding::UTF_8 => SupportedEncoding::Utf8,
-            ForcedEncoding::Windows_1252 => SupportedEncoding::Windows1252,
+            ForcedEncoding::UTF_8 => Encoding::Utf8,
+            ForcedEncoding::Windows_1252 => Encoding::Windows1252,
         }
     }
 }
 
-impl From<ForcedVersion> for SupportedGEDCOMVersion {
-    fn from(value: ForcedVersion) -> SupportedGEDCOMVersion {
+impl From<ForcedVersion> for KnownVersion {
+    fn from(value: ForcedVersion) -> KnownVersion {
         match value {
-            ForcedVersion::V55 => SupportedGEDCOMVersion::V5_5,
-            ForcedVersion::V551 => SupportedGEDCOMVersion::V5_5_1,
-            ForcedVersion::V7 => SupportedGEDCOMVersion::V7_0,
+            ForcedVersion::V55 => KnownVersion::V5_5,
+            ForcedVersion::V551 => KnownVersion::V5_5_1,
+            ForcedVersion::V7 => KnownVersion::V7_0,
         }
     }
 }

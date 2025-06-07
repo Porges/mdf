@@ -1,10 +1,10 @@
 use miette::SourceSpan;
 
 use super::{
-    macros::{define_enum, define_record, define_structure},
     SchemaError, XRef,
+    macros::{define_enum, define_record, define_structure},
 };
-use crate::reader::{records::RawRecord, Sourced};
+use crate::reader::{Sourced, records::RawRecord};
 
 #[derive(Debug)]
 pub struct File {

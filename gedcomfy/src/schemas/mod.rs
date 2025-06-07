@@ -1,8 +1,8 @@
 use miette::SourceSpan;
 
 use crate::{
-    reader::{records::RawRecord, Sourced},
-    versions::SupportedGEDCOMVersion,
+    reader::{Sourced, records::RawRecord},
+    versions::KnownVersion,
 };
 
 mod conversions;
@@ -15,18 +15,19 @@ pub enum AnyFileVersion {
     V551(v551::File),
 }
 
-impl TryFrom<(SupportedGEDCOMVersion, Vec<Sourced<RawRecord<'_>>>)> for AnyFileVersion {
+impl TryFrom<(KnownVersion, Vec<Sourced<RawRecord<'_>>>)> for AnyFileVersion {
     type Error = SchemaError;
 
     fn try_from(
-        (version, records): (SupportedGEDCOMVersion, Vec<Sourced<RawRecord>>),
+        (version, records): (KnownVersion, Vec<Sourced<RawRecord>>),
     ) -> Result<Self, Self::Error> {
         Ok(match version {
             //TODO: 5.5 is not 5.5.1
-            SupportedGEDCOMVersion::V5_5 | SupportedGEDCOMVersion::V5_5_1 => {
+            KnownVersion::V5_5 | KnownVersion::V5_5_1 => {
                 AnyFileVersion::V551(v551::File::from_records(records)?)
             }
-            SupportedGEDCOMVersion::V7_0 => todo!(),
+            KnownVersion::V5_5_5 => todo!(),
+            KnownVersion::V7_0 => todo!(),
         })
     }
 }

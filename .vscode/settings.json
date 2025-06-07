@@ -1,3 +1,12 @@
 {
-    "sarif-viewer.connectToGithubCodeScanning": "off"
+    "cSpell.words": [
+        "ANSEL",
+        "GEDCOM",
+        "gedcomfy",
+        "indoc",
+        "insta",
+        "miette",
+        "subrecord",
+        "thiserror"
+    ]
 }

@@ -1,6 +1,6 @@
 use super::{SchemaError, XRef};
 use crate::{
-    reader::{lines::LineValue, records::RawRecord, Sourced},
+    reader::{Sourced, lines::LineValue, records::RawRecord},
     schemas::DataError,
 };
 
@@ -68,7 +68,7 @@ impl TryFrom<Sourced<RawRecord<'_>>> for String {
                         parent_span: source.span,
                         tag: tag.to_string(),
                         span: rec.line.tag.span,
-                    })
+                    });
                 }
             }
         }
@@ -94,12 +94,8 @@ impl<'a> TryFrom<Sourced<RawRecord<'a, str>>> for Option<XRef> {
 
     fn try_from(rec: Sourced<RawRecord<'a, str>>) -> Result<Self, Self::Error> {
         let tag = rec.line.tag.as_str();
-        Option::<XRef>::try_from(rec.sourced_value.line.sourced_value.value).map_err(|source| {
-            SchemaError::DataError {
-                tag: tag.to_string(),
-                source,
-            }
-        })
+        Option::<XRef>::try_from(rec.sourced_value.line.sourced_value.value)
+            .map_err(|source| SchemaError::DataError { tag: tag.to_string(), source })
     }
 }
 
@@ -109,10 +105,8 @@ impl<'a> TryFrom<Sourced<RawRecord<'a, str>>> for XRef {
     fn try_from(rec: Sourced<RawRecord<'a, str>>) -> Result<Self, Self::Error> {
         debug_assert!(rec.records.is_empty()); // TODO: error
         let tag = rec.line.tag.as_str();
-        XRef::try_from(rec.sourced_value.line.sourced_value.value).map_err(|source| SchemaError::DataError {
-            tag: tag.to_string(),
-            source,
-        })
+        XRef::try_from(rec.sourced_value.line.sourced_value.value)
+            .map_err(|source| SchemaError::DataError { tag: tag.to_string(), source })
     }
 }
 
@@ -122,9 +116,7 @@ impl<'a> TryFrom<Sourced<LineValue<'a, str>>> for Option<XRef> {
     fn try_from(source: Sourced<LineValue<'a, str>>) -> Result<Self, Self::Error> {
         match source.sourced_value {
             LineValue::None => Ok(None),
-            LineValue::Ptr(xref) => Ok(Some(XRef {
-                xref: xref.map(|x| x.to_string()),
-            })),
+            LineValue::Ptr(xref) => Ok(Some(XRef { xref: xref.map(|x| x.to_string()) })),
             LineValue::Str(_) => todo!("proper error for string"),
         }
     }
@@ -135,9 +127,7 @@ impl<'a> TryFrom<Sourced<LineValue<'a, str>>> for XRef {
 
     fn try_from(source: Sourced<LineValue<'a, str>>) -> Result<Self, Self::Error> {
         match source.sourced_value {
-            LineValue::Ptr(xref) => Ok(XRef {
-                xref: xref.map(|x| x.to_string()),
-            }),
+            LineValue::Ptr(xref) => Ok(XRef { xref: xref.map(|x| x.to_string()) }),
             LineValue::Str(_) => todo!(),
             LineValue::None => todo!(),
         }

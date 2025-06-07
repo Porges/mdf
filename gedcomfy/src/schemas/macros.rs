@@ -53,11 +53,7 @@ pub(super) fn c_vec2opt<T>(tag: &'static str, v: Vec<T>) -> Result<Option<T>, Sc
     match v.len() {
         0 => Ok(None),
         1 => Ok(v.into_iter().next()),
-        n => Err(SchemaError::TooManyRecords {
-            tag,
-            expected: 1,
-            received: n,
-        }),
+        n => Err(SchemaError::TooManyRecords { tag, expected: 1, received: n }),
     }
 }
 
@@ -69,11 +65,7 @@ pub(super) fn c_vec2one<T>(
     match v.len() {
         0 => Err(SchemaError::MissingRecord { parent_span, tag }),
         1 => Ok(v.into_iter().next().unwrap()),
-        n => Err(SchemaError::TooManyRecords {
-            tag,
-            expected: 1,
-            received: n,
-        }),
+        n => Err(SchemaError::TooManyRecords { tag, expected: 1, received: n }),
     }
 }
 
@@ -86,18 +78,10 @@ pub(super) fn c_vec2vec1<T>(
 }
 
 macro_rules! from_cardinality {
-    ($parent_span:expr, $tag:literal, $x:expr, 0, 1) => {{
-        crate::schemas::macros::c_vec2opt($tag, $x)?
-    }};
-    ($parent_span:expr, $tag:literal, $x:expr, 1, 1) => {{
-        crate::schemas::macros::c_vec2one($parent_span, $tag, $x)?
-    }};
-    ($parent_span:expr, $tag:literal, $x:expr, 1, N) => {{
-        crate::schemas::macros::c_vec2vec1($parent_span, $tag, $x)?
-    }};
-    ($parent_span:expr, $tag:literal, $x:expr, 0, N) => {{
-        $x
-    }};
+    ($parent_span:expr, $tag:literal, $x:expr, 0, 1) => {{ crate::schemas::macros::c_vec2opt($tag, $x)? }};
+    ($parent_span:expr, $tag:literal, $x:expr, 1, 1) => {{ crate::schemas::macros::c_vec2one($parent_span, $tag, $x)? }};
+    ($parent_span:expr, $tag:literal, $x:expr, 1, N) => {{ crate::schemas::macros::c_vec2vec1($parent_span, $tag, $x)? }};
+    ($parent_span:expr, $tag:literal, $x:expr, 0, N) => {{ $x }};
     ($parent_span:expr, $tag:literal, $x:expr, 1, $max:literal) => {{
         // TODO: enforce max
         c_vec2vec1($parent_span, $tag, $x)?

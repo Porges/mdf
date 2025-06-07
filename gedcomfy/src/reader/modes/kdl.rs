@@ -1,7 +1,7 @@
 use kdl::{KdlDocument, KdlEntry, KdlNode};
 
 use crate::reader::{
-    lines::LineValue, records::RawRecord, NonFatalHandler, ReadMode, ResultBuilder, Sourced,
+    NonFatalHandler, ReadMode, ResultBuilder, Sourced, lines::LineValue, records::RawRecord,
 };
 
 #[derive(Default)]
@@ -21,12 +21,9 @@ impl<'i> ReadMode<'i> for Mode {
 
     fn into_result_builder(
         self,
-        _version: crate::versions::SupportedGEDCOMVersion,
+        _version: crate::versions::KnownVersion,
     ) -> Result<Self::ResultBuilder, crate::reader::ReaderError> {
-        Ok(Builder {
-            mode: self,
-            doc: KdlDocument::new(),
-        })
+        Ok(Builder { mode: self, doc: KdlDocument::new() })
     }
 }
 

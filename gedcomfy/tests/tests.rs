@@ -1,7 +1,9 @@
 use std::path::PathBuf;
 
-use gedcomfy::reader::{decoding::detect_external_encoding, input::File, Reader};
+use gedcomfy::reader::{Reader, decoding::detect_external_encoding, input::File};
+use rstest::*;
 
+#[macro_use]
 mod shared;
 
 #[test]
@@ -45,9 +47,11 @@ fn produces_expected_allged_tree() -> miette::Result<()> {
     Ok(())
 }
 
-#[test]
-fn torture_test_valid() {
-    insta::glob!("external/torture-test-55-files/*.ged", |path| {
+#[rstest]
+fn torture_test_valid(#[files("tests/external/torture-test-55-files/*.ged")] path: PathBuf) {
+    insta::with_settings!({
+        snapshot_suffix => format!("{}", path.file_name().unwrap().display()),
+    }, {
         let parser = Reader::default();
         let decoded = parser.decode_file(path).unwrap();
         let kdl = parser.parse_kdl(&decoded).unwrap();
@@ -55,51 +59,48 @@ fn torture_test_valid() {
     });
 }
 
-#[test]
-fn golden_files() {
-    insta::glob!("format_inputs/*.ged", |path| {
-        let data = std::fs::read(path).unwrap();
-        let _filename = Path::new(path.file_name().unwrap());
-        insta::with_settings!({
-            // provide GEDCOM source alongside output
-            description => String::from_utf8_lossy(&data),
-        }, {
-            let reader = Reader::default();
-            let it = reader.decode_borrowed(data.as_slice()).and_then(|input| reader.parse_kdl(&input));
-            match it {
-                Ok(kdl) => {
-                    insta::assert_snapshot!(kdl);
-                }
-                Err(err) => {
-                    insta::assert_snapshot!(shared::render(&err));
-                },
-            };
-        });
+#[rstest]
+fn golden_files(#[files("tests/format_inputs/*.ged")] path: PathBuf) {
+    let data = std::fs::read(&path).unwrap();
+    let filename = path.file_name().unwrap();
+    insta::with_settings!({
+        // provide GEDCOM source alongside output
+        description => String::from_utf8_lossy(&data),
+        snapshot_suffix => format!("{}", filename.display()),
+    }, {
+        let reader = Reader::default();
+        let it = reader.decode_borrowed(data.as_slice()).and_then(|input| reader.parse_kdl(&input));
+        match it {
+            Ok(kdl) => {
+                insta::assert_snapshot!(kdl);
+            }
+            Err(err) => {
+                insta::assert_snapshot!(shared::render(&err));
+            },
+        };
     });
 }
 
-#[test]
-fn test_encodings() {
-    insta::glob!("encoding_inputs/*.ged", |path| {
-        let data = std::fs::read(path).unwrap();
-        let _filename = path.file_name().unwrap();
-
-        insta::with_settings!({
-            // provide GEDCOM source alongside output
-            description => String::from_utf8_lossy(&data),
-        }, {
-            let external_encoding = detect_external_encoding(&data);
-            insta::assert_debug_snapshot!("external_encoding", external_encoding);
-            let reader = Reader::default();
-            match reader.decode_borrowed(data.as_slice())
-                .and_then(|input| reader.parse_kdl(&input)) {
-                Ok(kdl) => {
-                    insta::assert_snapshot!("kdl", kdl);
-                }
-                Err(err) => {
-                    insta::assert_snapshot!("kdl_error", shared::render(&err));
-                },
-            };
-        });
+#[rstest]
+fn test_encodings(#[files("tests/encoding_inputs/*.ged")] path: PathBuf) {
+    let data = std::fs::read(&path).unwrap();
+    let filename = path.file_name().unwrap();
+    insta::with_settings!({
+        // provide GEDCOM source alongside output
+        description => String::from_utf8_lossy(&data),
+        snapshot_suffix => format!("{}", filename.display()),
+    }, {
+        let external_encoding = detect_external_encoding(&data);
+        insta::assert_debug_snapshot!("external_encoding", external_encoding);
+        let reader = Reader::default();
+        match reader.decode_borrowed(data.as_slice())
+            .and_then(|input| reader.parse_kdl(&input)) {
+            Ok(kdl) => {
+                insta::assert_snapshot!("kdl", kdl);
+            }
+            Err(err) => {
+                insta::assert_snapshot!("kdl_error", shared::render(&err));
+            },
+        };
     });
 }

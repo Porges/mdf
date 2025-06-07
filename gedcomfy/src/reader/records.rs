@@ -1,7 +1,7 @@
 use miette::SourceSpan;
 
 use super::{
-    decoding::DecodingError, lines::RawLine, GEDCOMSource, NonFatalHandler, ReaderError, Sourced,
+    GEDCOMSource, NonFatalHandler, ReaderError, Sourced, decoding::DecodingError, lines::RawLine,
 };
 
 /// Represents an assembled GEDCOM record, or sub-record,
@@ -14,10 +14,7 @@ pub struct RawRecord<'i, S: GEDCOMSource + ?Sized = str> {
 
 impl<'i, S: GEDCOMSource + ?Sized> RawRecord<'i, S> {
     fn new(line: Sourced<RawLine<'i, S>>) -> Self {
-        Self {
-            line,
-            records: Vec::new(),
-        }
+        Self { line, records: Vec::new() }
     }
 }
 
@@ -75,9 +72,8 @@ where
                 && child.line.tag.as_str() != "CONT"
                 && child.line.tag.as_str() != "TRLR"
             {
-                warnings.report(RecordStructureError::MissingRecordValue {
-                    span: child.line.span,
-                })?;
+                warnings
+                    .report(RecordStructureError::MissingRecordValue { span: child.line.span })?;
             }
 
             let span = if let Some(last_child) = child.records.last() {
@@ -91,10 +87,7 @@ where
                 child.line.span
             };
 
-            let sourced = Sourced {
-                sourced_value: child,
-                span,
-            };
+            let sourced = Sourced { sourced_value: child, span };
 
             match self.stack.last_mut() {
                 None => {

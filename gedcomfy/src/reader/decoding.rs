@@ -1,13 +1,12 @@
-use std::{borrow::Cow, io::Read, ops::Deref};
+use std::{borrow::Cow, ops::Deref};
 
 use ascii::AsAsciiStr;
-use itertools::Itertools;
 use miette::SourceSpan;
 use owo_colors::{OwoColorize, Stream};
 use vec1::Vec1;
 
 use super::{
-    encodings::{ansel, EncodingError, EncodingReason, SupportedEncoding},
+    encodings::{Encoding, EncodingError, EncodingReason, ansel},
     lines::{self, LineSyntaxError},
     records::RecordStructureError,
     versions::VersionError,
@@ -54,7 +53,7 @@ pub enum DecodingError {
 #[display("Invalid data for encoding {encoding}")]
 #[diagnostic(code(gedcom::encoding::invalid_data))]
 pub struct InvalidDataForEncodingError {
-    encoding: SupportedEncoding,
+    encoding: Encoding,
 
     source: Option<Box<dyn std::error::Error + Send + Sync + 'static>>,
 
@@ -94,7 +93,7 @@ struct DetectedPossibleEncodings {
 #[display("{} (using {encoding})",
     data_in_encoding.if_supports_color(Stream::Stderr, |e| e.bold()))] // TODO: hacky
 struct PossibleEncoding {
-    encoding: SupportedEncoding,
+    encoding: Encoding,
     data_in_encoding: String,
 }
 
@@ -104,35 +103,31 @@ pub fn detect_external_encoding(input: &[u8]) -> Result<Option<DetectedEncoding>
     let result = match input {
         // specifically indicate why UTF-32 is not supported
         [b'\x00', b'\x00', b'\xFE', b'\xFF', ..] => {
-            return Err(EncodingError::BOMInvalid {
-                encoding: "UTF-32 (big-endian)",
-            });
+            return Err(EncodingError::BOMInvalid { encoding: "UTF-32 (big-endian)" });
         }
         [b'\xFF', b'\xFE', b'\x00', b'\x00', ..] => {
-            return Err(EncodingError::BOMInvalid {
-                encoding: "UTF-32 (little-endian)",
-            });
+            return Err(EncodingError::BOMInvalid { encoding: "UTF-32 (little-endian)" });
         }
         // first, try possible BOMs:
         [b'\xEF', b'\xBB', b'\xBF', ..] => DetectedEncoding {
-            encoding: SupportedEncoding::Utf8,
+            encoding: Encoding::Utf8,
             reason: EncodingReason::BOMDetected { bom_length: 3 },
         },
         [b'\xFF', b'\xFE', ..] => DetectedEncoding {
-            encoding: SupportedEncoding::Utf16LittleEndian,
+            encoding: Encoding::Utf16LE,
             reason: EncodingReason::BOMDetected { bom_length: 2 },
         },
         [b'\xFE', b'\xFF', ..] => DetectedEncoding {
-            encoding: SupportedEncoding::Utf16BigEndian,
+            encoding: Encoding::Utf16BE,
             reason: EncodingReason::BOMDetected { bom_length: 2 },
         },
         // next, try sniffing the content, we look for '0' in the two non-ASCII-compatible encodings:
         [b'\x30', b'\x00', ..] => DetectedEncoding {
-            encoding: SupportedEncoding::Utf16LittleEndian,
+            encoding: Encoding::Utf16LE,
             reason: EncodingReason::Sniffed {},
         },
         [b'\x00', b'\x30', ..] => DetectedEncoding {
-            encoding: SupportedEncoding::Utf16BigEndian,
+            encoding: Encoding::Utf16BE,
             reason: EncodingReason::Sniffed {},
         },
         // unable to determine from the first bytes, so see if it’s at least
@@ -155,9 +150,7 @@ pub fn detect_external_encoding(input: &[u8]) -> Result<Option<DetectedEncoding>
                 });
             }
 
-            return Err(EncodingError::NotGedcomFile {
-                start: SourceSpan::from((0, span_until)),
-            });
+            return Err(EncodingError::NotGedcomFile { start: SourceSpan::from((0, span_until)) });
         }
     };
 
@@ -170,16 +163,16 @@ pub fn detect_external_encoding(input: &[u8]) -> Result<Option<DetectedEncoding>
 /// see [`EncodingReason`] for more information.
 #[derive(Debug)]
 pub struct DetectedEncoding {
-    encoding: SupportedEncoding,
+    encoding: Encoding,
     reason: EncodingReason,
 }
 
 impl DetectedEncoding {
-    pub(crate) fn new(encoding: SupportedEncoding, reason: EncodingReason) -> Self {
+    pub(crate) fn new(encoding: Encoding, reason: EncodingReason) -> Self {
         Self { encoding, reason }
     }
 
-    pub fn encoding(&self) -> SupportedEncoding {
+    pub fn encoding(&self) -> Encoding {
         self.encoding
     }
 
@@ -204,7 +197,7 @@ impl DetectedEncoding {
         let data = &data[offset_adjustment..];
 
         match self.encoding {
-            SupportedEncoding::Ascii => {
+            Encoding::Ascii => {
                 let ascii_err = match data.as_ascii_str() {
                     Ok(ascii_str) => return Ok(ascii_str.as_str().into()),
                     Err(err) => err,
@@ -239,14 +232,12 @@ impl DetectedEncoding {
                 );
 
                 let mut possible_encodings = Vec::new();
-                for encoding in [SupportedEncoding::Windows1252, SupportedEncoding::Utf8] {
+                for encoding in [Encoding::Windows1252, Encoding::Utf8] {
                     tracing::debug!(?encoding, "attempting to decode with alternate encoding");
 
                     // TODO, hack structure initialization
-                    let other_decoding = DetectedEncoding {
-                        encoding,
-                        reason: EncodingReason::Assumed {},
-                    };
+                    let other_decoding =
+                        DetectedEncoding { encoding, reason: EncodingReason::Assumed {} };
 
                     match other_decoding.decode(&to_show) {
                         Ok(decoded) => {
@@ -277,7 +268,7 @@ impl DetectedEncoding {
                     reason,
                 })
             }
-            SupportedEncoding::Windows1252 => encoding_rs::WINDOWS_1252
+            Encoding::Windows1252 => encoding_rs::WINDOWS_1252
                 .decode_without_bom_handling_and_without_replacement(data)
                 .ok_or_else(|| InvalidDataForEncodingError {
                     encoding: self.encoding,
@@ -285,15 +276,13 @@ impl DetectedEncoding {
                     span: None,
                     reason: Vec1::new(Box::new(self.reason)),
                 }),
-            SupportedEncoding::Ansel => {
-                ansel::decode(data).map_err(|source| InvalidDataForEncodingError {
-                    encoding: self.encoding,
-                    source: Some(Box::new(source)),
-                    span: Some(SourceSpan::from((offset_adjustment + source.offset(), 1))),
-                    reason: Vec1::new(Box::new(self.reason)),
-                })
-            }
-            SupportedEncoding::Utf8 => match std::str::from_utf8(data) {
+            Encoding::Ansel => ansel::decode(data).map_err(|source| InvalidDataForEncodingError {
+                encoding: self.encoding,
+                source: Some(Box::new(source)),
+                span: Some(SourceSpan::from((offset_adjustment + source.offset(), 1))),
+                reason: Vec1::new(Box::new(self.reason)),
+            }),
+            Encoding::Utf8 => match std::str::from_utf8(data) {
                 Ok(str) => Ok(str.into()),
                 Err(source) => Err(InvalidDataForEncodingError {
                     encoding: self.encoding,
@@ -305,7 +294,7 @@ impl DetectedEncoding {
                     reason: Vec1::new(Box::new(self.reason)),
                 }),
             },
-            SupportedEncoding::Utf16BigEndian => encoding_rs::UTF_16BE
+            Encoding::Utf16BE => encoding_rs::UTF_16BE
                 .decode_without_bom_handling_and_without_replacement(data)
                 .ok_or_else(|| InvalidDataForEncodingError {
                     encoding: self.encoding,
@@ -313,7 +302,7 @@ impl DetectedEncoding {
                     span: None,
                     reason: Vec1::new(Box::new(self.reason)),
                 }),
-            SupportedEncoding::Utf16LittleEndian => encoding_rs::UTF_16LE
+            Encoding::Utf16LE => encoding_rs::UTF_16LE
                 .decode_without_bom_handling_and_without_replacement(data)
                 .ok_or_else(|| InvalidDataForEncodingError {
                     encoding: self.encoding,

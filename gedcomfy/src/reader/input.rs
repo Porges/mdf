@@ -2,7 +2,7 @@ use std::{borrow::Cow, ops::Deref, path::PathBuf, sync::Arc};
 
 use miette::NamedSource;
 
-use super::{attach_name, decoding::DecodingError, AnySourceCode, WithSourceCode};
+use super::{AnySourceCode, WithSourceCode, attach_name, decoding::DecodingError};
 
 pub trait RawInput<'s>: AsRef<[u8]> + Send + Sync {
     fn source_code(&self) -> AnySourceCode<'s>;
@@ -16,7 +16,7 @@ impl<'s> RawInput<'s> for &'s [u8] {
 
 pub trait Input<'s>: AsRef<str> {
     fn source_code(&self) -> AnySourceCode<'s>;
-    fn version(&self) -> Option<crate::versions::SupportedGEDCOMVersion>;
+    fn version(&self) -> Option<crate::versions::KnownVersion>;
 }
 
 impl<'s> Input<'s> for &'s str {
@@ -24,7 +24,7 @@ impl<'s> Input<'s> for &'s str {
         AnySourceCode::Borrowed(Cow::Borrowed(self.as_bytes()))
     }
 
-    fn version(&self) -> Option<crate::versions::SupportedGEDCOMVersion> {
+    fn version(&self) -> Option<crate::versions::KnownVersion> {
         None
     }
 }
@@ -37,10 +37,7 @@ pub struct File {
 impl File {
     pub fn load(path: PathBuf) -> Result<File, FileLoadError> {
         match std::fs::File::open(&path).and_then(|file| unsafe { memmap2::Mmap::map(&file) }) {
-            Ok(data) => Ok(File {
-                path,
-                data: Arc::new(data),
-            }),
+            Ok(data) => Ok(File { path, data: Arc::new(data) }),
             Err(source) => Err(FileLoadError::IO { source, path }),
         }
     }

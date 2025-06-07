@@ -1,6 +1,6 @@
 use crate::{
-    reader::{records::RawRecord, NonFatalHandler, ReadMode, ReaderError, ResultBuilder, Sourced},
-    versions::SupportedGEDCOMVersion,
+    reader::{NonFatalHandler, ReadMode, ReaderError, ResultBuilder, Sourced, records::RawRecord},
+    versions::KnownVersion,
 };
 
 #[derive(Default)]
@@ -20,12 +20,9 @@ impl<'i> ReadMode<'i> for Mode {
 
     fn into_result_builder(
         self,
-        _version: SupportedGEDCOMVersion,
+        _version: KnownVersion,
     ) -> Result<Self::ResultBuilder, ReaderError> {
-        Ok(Builder {
-            mode: self,
-            records: Vec::new(),
-        })
+        Ok(Builder { mode: self, records: Vec::new() })
     }
 }
 

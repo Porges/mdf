@@ -3,7 +3,7 @@ use std::fmt::Display;
 use itertools::Itertools;
 use miette::Diagnostic;
 
-use crate::reader::{encodings::SupportedEncoding, GEDCOMSource};
+use crate::reader::{GEDCOMSource, encodings::Encoding};
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum GEDCOMEncoding {
@@ -32,38 +32,33 @@ impl Display for GEDCOMEncoding {
     .possibilities.iter().join(", ")))]
 pub struct AmbiguousEncoding {
     encoding: GEDCOMEncoding,
-    possibilities: &'static [SupportedEncoding],
+    possibilities: &'static [Encoding],
 }
 
-impl TryInto<SupportedEncoding> for GEDCOMEncoding {
+impl TryInto<Encoding> for GEDCOMEncoding {
     type Error = AmbiguousEncoding;
 
-    fn try_into(self) -> Result<SupportedEncoding, Self::Error> {
+    fn try_into(self) -> Result<Encoding, Self::Error> {
         match self {
-            GEDCOMEncoding::Ascii => Ok(SupportedEncoding::Ascii),
-            GEDCOMEncoding::Ansel => Ok(SupportedEncoding::Ansel),
-            GEDCOMEncoding::Utf8 => Ok(SupportedEncoding::Utf8),
+            GEDCOMEncoding::Ascii => Ok(Encoding::Ascii),
+            GEDCOMEncoding::Ansel => Ok(Encoding::Ansel),
+            GEDCOMEncoding::Utf8 => Ok(Encoding::Utf8),
             GEDCOMEncoding::Unicode => Err(AmbiguousEncoding {
                 encoding: self,
-                possibilities: &[
-                    SupportedEncoding::Utf16LittleEndian,
-                    SupportedEncoding::Utf16BigEndian,
-                ],
+                possibilities: &[Encoding::Utf16LE, Encoding::Utf16BE],
             }),
         }
     }
 }
 
-impl From<SupportedEncoding> for GEDCOMEncoding {
-    fn from(value: SupportedEncoding) -> Self {
+impl From<Encoding> for GEDCOMEncoding {
+    fn from(value: Encoding) -> Self {
         match value {
-            SupportedEncoding::Ascii => GEDCOMEncoding::Ascii,
-            SupportedEncoding::Ansel => GEDCOMEncoding::Ansel,
-            SupportedEncoding::Utf8 => GEDCOMEncoding::Utf8,
-            SupportedEncoding::Utf16BigEndian | SupportedEncoding::Utf16LittleEndian => {
-                GEDCOMEncoding::Unicode
-            }
-            SupportedEncoding::Windows1252 => todo!(),
+            Encoding::Ascii => GEDCOMEncoding::Ascii,
+            Encoding::Ansel => GEDCOMEncoding::Ansel,
+            Encoding::Utf8 => GEDCOMEncoding::Utf8,
+            Encoding::Utf16BE | Encoding::Utf16LE => GEDCOMEncoding::Unicode,
+            Encoding::Windows1252 => todo!(),
         }
     }
 }

@@ -4,7 +4,7 @@ use core::str;
 
 use miette::SourceSpan;
 use reader::{
-    decoding::DecodingError, lines::LineSyntaxError, records::RawRecord, GEDCOMSource, Sourced,
+    GEDCOMSource, Sourced, decoding::DecodingError, lines::LineSyntaxError, records::RawRecord,
 };
 use vec1::Vec1;
 
@@ -51,7 +51,9 @@ pub enum FileStructureError {
     #[display("Missing trailer (TRLR) record")]
     #[diagnostic(
         code(gedcom::schema_error::missing_trailer_record),
-        help("this record is always required at the end of the file – GEDCOM file might be truncated?")
+        help(
+            "this record is always required at the end of the file – GEDCOM file might be truncated?"
+        )
     )]
     MissingTrailerRecord,
 

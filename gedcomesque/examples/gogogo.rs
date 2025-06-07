@@ -5,7 +5,7 @@ use std::{path::PathBuf, time::Instant};
 use errful::ExitResult;
 use gedcomesque::entities::individual::{ActiveModel as IndividualActive, Entity as Individual};
 use gedcomfy::reader::{
-    encodings::SupportedEncoding, input::FileLoadError, lines::LineValue, options::ParseOptions,
+    encodings::Encoding, input::FileLoadError, lines::LineValue, options::ParseOptions,
     Reader, ReaderError,
 };
 use sea_orm::{
@@ -34,7 +34,7 @@ async fn main() -> ExitResult<Error> {
     let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../private/ITIS.ged");
     let filename = path.file_name().unwrap().to_string_lossy().to_string();
 
-    let opts = ParseOptions::default().force_encoding(SupportedEncoding::Windows1252);
+    let opts = ParseOptions::default().force_encoding(Encoding::Windows1252);
     let file_size = { std::fs::File::open(&path)?.metadata()?.len() };
     let start_time = Instant::now();
     let reader = Reader::with_options(opts);

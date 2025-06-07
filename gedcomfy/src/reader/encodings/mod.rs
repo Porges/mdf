@@ -4,7 +4,8 @@ use vec1::Vec1;
 
 use crate::{
     encodings::{GEDCOMEncoding, InvalidGEDCOMEncoding},
-    versions::SupportedGEDCOMVersion,
+    reader::ReaderError,
+    versions::KnownVersion,
 };
 
 pub(crate) mod ansel;
@@ -15,7 +16,7 @@ pub(crate) mod ansel;
 /// If you need to use an encoding which is not provided here,
 /// you can pre-decode the file and pass the decoded bytes to the parser.
 #[derive(Copy, Clone, PartialEq, Eq, Debug, derive_more::Display)]
-pub enum SupportedEncoding {
+pub enum Encoding {
     /// The ASCII encoding. This will reject any bytes with highest bit set.
     #[display("ASCII")]
     Ascii,
@@ -27,10 +28,10 @@ pub enum SupportedEncoding {
     Utf8,
     /// The UTF-16 Big Endian encoding.
     #[display("UTF-16 (big-endian)")]
-    Utf16BigEndian,
+    Utf16BE,
     /// The UTF-16 Little Endian encoding.
     #[display("UTF-16 (little-endian)")]
-    Utf16LittleEndian,
+    Utf16LE,
     /// This is not permitted by any GEDCOM specification, but is included
     /// as it is needed to parse some mal-encoded GEDCOM files.
     #[display("Windows-1252")]
@@ -39,9 +40,7 @@ pub enum SupportedEncoding {
 
 #[derive(thiserror::Error, derive_more::Display, Debug, miette::Diagnostic, Copy, Clone)]
 pub enum EncodingReason {
-    #[display(
-        "this encoding was detected from the byte-order mark (BOM) at the start of the file"
-    )]
+    #[display("this encoding was detected from the byte-order mark (BOM) at the start of the file")]
     #[diagnostic(severity(Advice), code(gedcom::encoding_reason::bom))]
     BOMDetected { bom_length: usize },
 
@@ -65,7 +64,7 @@ pub enum EncodingReason {
     )]
     #[diagnostic(severity(Advice))]
     DeterminedByVersion {
-        version: SupportedGEDCOMVersion,
+        version: KnownVersion,
 
         #[label("version was set here")]
         span: Option<SourceSpan>,
@@ -80,6 +79,12 @@ pub enum EncodingReason {
     #[display("this encoding was selected explicitly in the parsing options")]
     #[diagnostic(severity(Advice), code(gedcom::encoding_reason::forced))]
     Forced {},
+}
+
+impl From<EncodingError> for ReaderError {
+    fn from(err: EncodingError) -> Self {
+        Self::Decoding(err.into())
+    }
 }
 
 #[derive(thiserror::Error, Debug, miette::Diagnostic)]
@@ -107,16 +112,34 @@ pub enum EncodingError {
     )]
     #[diagnostic(code(gedcom::encoding::version_encoding_mismatch))]
     VersionEncodingMismatch {
-        version: SupportedGEDCOMVersion,
-        version_encoding: SupportedEncoding,
+        version: KnownVersion,
+        version_encoding: Encoding,
 
         #[label("file version was specified here")]
         version_span: Option<SourceSpan>,
 
-        external_encoding: SupportedEncoding,
+        external_encoding: Encoding,
 
         #[related]
         reason: Vec1<EncodingReason>,
+    },
+
+    #[error(
+        "GEDCOM version {version} does not support encoding {encoding}, continuing as if the version was {assumed_version}"
+    )]
+    #[diagnostic(severity(Warning), code(gedcom::encoding::version_encoding_mismatch))]
+    VersionEncodingMismatchWarning {
+        version: KnownVersion,
+
+        #[label("file version was specified here")]
+        version_span: SourceSpan,
+
+        encoding: Encoding,
+
+        #[label("encoding was specified here")]
+        encoding_span: SourceSpan,
+
+        assumed_version: KnownVersion,
     },
 
     #[error(
@@ -128,7 +151,7 @@ pub enum EncodingError {
         #[label("encoding was specified here")]
         span: SourceSpan,
 
-        external_encoding: SupportedEncoding,
+        external_encoding: Encoding,
 
         #[related]
         reason: Vec1<EncodingReason>,

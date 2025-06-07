@@ -1,9 +1,9 @@
-use complex_indifference::{plural, Count};
+use complex_indifference::{Count, plural};
 use miette::Diagnostic;
 
 use crate::{
-    reader::{records::RawRecord, NonFatalHandler, ReadMode, ReaderError, ResultBuilder, Sourced},
-    versions::SupportedGEDCOMVersion,
+    reader::{NonFatalHandler, ReadMode, ReaderError, ResultBuilder, Sourced, records::RawRecord},
+    versions::KnownVersion,
 };
 
 #[derive(Default)]
@@ -65,12 +65,9 @@ impl<'i> ReadMode<'i> for Mode {
 
     fn into_result_builder(
         self,
-        _version: SupportedGEDCOMVersion,
+        _version: KnownVersion,
     ) -> Result<Self::ResultBuilder, ReaderError> {
-        Ok(Builder {
-            mode: self,
-            record_count: 0,
-        })
+        Ok(Builder { mode: self, record_count: 0 })
     }
 }
 

@@ -7,7 +7,7 @@ input_file: gedcomfy/tests/encoding_inputs/utf16le_bom.ged
 Ok(
     Some(
         DetectedEncoding {
-            encoding: Utf16LittleEndian,
+            encoding: Utf16LE,
             reason: BOMDetected {
                 bom_length: 2,
             },

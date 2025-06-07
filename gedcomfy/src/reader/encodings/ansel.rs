@@ -53,8 +53,9 @@ pub(crate) fn decode(mut input: &[u8]) -> Result<Cow<str>, AnselErr> {
         let input_c = input[ascii_err.valid_up_to()];
         input = &input[ascii_err.valid_up_to() + 1..];
 
-        // combining chars
-        if matches!(input_c, b'\xE0'..=b'\xFB' | b'\xFE') {
+        // combining chars come _before_ in Ansel,
+        // so we store it before reading the next char
+        if matches!(input_c, b'\xE0'..=b'\xFC' | b'\xFE') {
             let combining = match input_c {
                 b'\xE0' => '\u{0309}',
                 b'\xE1' => '\u{0300}',
@@ -68,7 +69,7 @@ pub(crate) fn decode(mut input: &[u8]) -> Result<Cow<str>, AnselErr> {
                 b'\xE9' => '\u{030C}',
                 b'\xEA' => '\u{030A}',
                 b'\xEB' => '\u{FE20}',
-                b'\xEC' => '\u{FE20}',
+                b'\xEC' => '\u{FE21}',
                 b'\xED' => '\u{0315}',
                 b'\xEE' => '\u{030B}',
                 b'\xEF' => '\u{0310}',
@@ -84,14 +85,15 @@ pub(crate) fn decode(mut input: &[u8]) -> Result<Cow<str>, AnselErr> {
                 b'\xF9' => '\u{032E}',
                 b'\xFA' => '\u{FE22}',
                 b'\xFB' => '\u{FE23}',
+                b'\xFC' => '\u{0338}', // LDS extension
                 b'\xFE' => '\u{0313}',
                 _ => unreachable!(),
             };
 
+            // it is illegal to have more than one
+            // combining character in a row
             if let Some(_after_next) = after_next.take() {
-                return Err(AnselErr::StackedCombiningChars {
-                    offset: ascii_err.valid_up_to(),
-                });
+                return Err(AnselErr::StackedCombiningChars { offset: ascii_err.valid_up_to() });
             }
 
             after_next = Some(combining);
@@ -125,6 +127,7 @@ pub(crate) fn decode(mut input: &[u8]) -> Result<Cow<str>, AnselErr> {
                 b'\xB8' => '\u{0131}',
                 b'\xB9' => '\u{00A3}',
                 b'\xBA' => '\u{00F0}',
+                // BB x
                 b'\xBC' => '\u{01A1}',
                 b'\xBD' => '\u{01B0}',
                 // Cx
@@ -135,19 +138,15 @@ pub(crate) fn decode(mut input: &[u8]) -> Result<Cow<str>, AnselErr> {
                 b'\xC4' => '\u{266F}',
                 b'\xC5' => '\u{00BF}',
                 b'\xC6' => '\u{00A1}',
-                // GEDCOM
+                // GEDCOM - LDS extensions (5.5.5)
                 b'\xBE' => '\u{25A1}',
                 b'\xBF' => '\u{25A0}',
                 b'\xCD' => '\u{0065}',
                 b'\xCE' => '\u{006F}',
                 b'\xCF' => '\u{00DF}',
-                b'\xFC' => '\u{0338}',
                 // TODO: MARC-8? chars? https://www.loc.gov/marc/specifications/codetables/ExtendedLatin.html
                 c => {
-                    return Err(AnselErr::Invalid {
-                        value: c,
-                        offset: ascii_err.valid_up_to(),
-                    });
+                    return Err(AnselErr::Invalid { value: c, offset: ascii_err.valid_up_to() });
                 }
             };
 

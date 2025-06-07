@@ -7,7 +7,7 @@ input_file: gedcomfy/tests/encoding_inputs/utf16le_nobom.ged
 Ok(
     Some(
         DetectedEncoding {
-            encoding: Utf16LittleEndian,
+            encoding: Utf16LE,
             reason: Sniffed,
         },
     ),
