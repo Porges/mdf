@@ -1,4 +1,6 @@
+// cSpell:ignore GEDC VERS xref
 use gedcomfy::reader::{Reader, ReaderError, WithSourceCode};
+use indoc::indoc;
 use kdl::KdlDocument;
 
 mod shared;
@@ -15,12 +17,13 @@ fn test(input: &[u8]) -> Result<KdlDocument, String> {
 
 #[test]
 fn basic_line() {
-    let input: &[u8] = b"\
-    0 HEAD\n\
-    1 GEDC\n\
-    2 VERS 5.5.1\n\
-    1 CHAR ASCII\n\
-    0 TAG value";
+    let input: &[u8] = indoc! {b"
+        0 HEAD
+        1 GEDC
+        2 VERS 5.5.1
+        1 CHAR ASCII
+        0 TAG value
+    "};
 
     let result = test(input).unwrap();
     insta::assert_snapshot!(result, @r###"
@@ -36,13 +39,14 @@ fn basic_line() {
 
 #[test]
 fn basic_nested() {
-    let input: &[u8] = b"\
-    0 HEAD\n\
-    1 GEDC\n\
-    2 VERS 5.5.1\n\
-    1 CHAR ASCII\n\
-    0 _ROOT\n\
-    1 _CHILD c";
+    let input: &[u8] = indoc! {b"
+        0 HEAD
+        1 GEDC
+        2 VERS 5.5.1
+        1 CHAR ASCII
+        0 _ROOT
+        1 _CHILD c
+    "};
 
     let result = test(input).unwrap();
     insta::assert_snapshot!(result, @r###"
@@ -60,14 +64,15 @@ fn basic_nested() {
 
 #[test]
 fn basic_siblings() {
-    let input: &[u8] = b"\
-    0 HEAD\n\
-    1 GEDC\n\
-    2 VERS 5.5.1\n\
-    1 CHAR ASCII\n\
-    0 _ROOT\n\
-    1 _CHILD c1\n\
-    1 _CHILD c2";
+    let input: &[u8] = indoc! {b"
+        0 HEAD
+        1 GEDC
+        2 VERS 5.5.1
+        1 CHAR ASCII
+        0 _ROOT
+        1 _CHILD c1
+        1 _CHILD c2
+    "};
 
     let result = test(input).unwrap();
     insta::assert_snapshot!(result, @r###"
@@ -86,14 +91,15 @@ fn basic_siblings() {
 
 #[test]
 fn basic_nested_2() {
-    let input: &[u8] = b"\
-    0 HEAD\n\
-    1 GEDC\n\
-    2 VERS 5.5.1\n\
-    1 CHAR ASCII\n\
-    0 _ROOT\n\
-    1 _CHILD\n\
-    2 _GRANDCHILD gc";
+    let input: &[u8] = indoc! {b"
+        0 HEAD
+        1 GEDC
+        2 VERS 5.5.1
+        1 CHAR ASCII
+        0 _ROOT
+        1 _CHILD
+        2 _GRANDCHILD gc
+    "};
 
     let result = test(input).unwrap();
     insta::assert_snapshot!(result, @r###"
@@ -113,15 +119,16 @@ fn basic_nested_2() {
 
 #[test]
 fn basic_nested_2_siblings() {
-    let input: &[u8] = b"\
-    0 HEAD\n\
-    1 GEDC\n\
-    2 VERS 5.5.1\n\
-    1 CHAR ASCII\n\
-    0 _ROOT\n\
-    1 _CHILD c1\n\
-    2 _GRANDCHILD gc1\n\
-    1 _CHILD c2";
+    let input: &[u8] = indoc! {b"
+        0 HEAD
+        1 GEDC
+        2 VERS 5.5.1
+        1 CHAR ASCII
+        0 _ROOT
+        1 _CHILD c1
+        2 _GRANDCHILD gc1
+        1 _CHILD c2
+    "};
 
     let result = test(input).unwrap();
     insta::assert_snapshot!(result, @r###"
@@ -142,15 +149,16 @@ fn basic_nested_2_siblings() {
 
 #[test]
 fn basic_grandparent() {
-    let input: &[u8] = b"\
-    0 HEAD\n\
-    1 GEDC\n\
-    2 VERS 5.5.1\n\
-    1 CHAR ASCII\n\
-    0 _ROOT1\n\
-    1 _CHILD\n\
-    2 _GRANDCHILD gc\n\
-    0 _ROOT2 r";
+    let input: &[u8] = indoc! {b"
+        0 HEAD
+        1 GEDC
+        2 VERS 5.5.1
+        1 CHAR ASCII
+        0 _ROOT1
+        1 _CHILD
+        2 _GRANDCHILD gc
+        0 _ROOT2 r
+    "};
 
     let result = test(input).unwrap();
     insta::assert_snapshot!(result, @r###"
@@ -171,12 +179,13 @@ fn basic_grandparent() {
 
 #[test]
 fn bad_xref_no_tag() {
-    let input: &[u8] = b"\
-    0 HEAD\n\
-    1 GEDC\n\
-    2 VERS 5.5.1\n\
-    1 CHAR ASCII\n\
-    0 @x@\n";
+    let input: &[u8] = indoc! {b"
+        0 HEAD
+        1 GEDC
+        2 VERS 5.5.1
+        1 CHAR ASCII
+        0 @x@
+    "};
 
     let err = test(input).unwrap_err();
     insta::assert_snapshot!(err, @r"
@@ -197,13 +206,14 @@ fn bad_xref_no_tag() {
 
 #[test]
 fn bad_void_xref() {
-    let input: &[u8] = b"\
-    0 HEAD\n\
-    1 GEDC\n\
-    2 VERS 5.5.1\n\
-    1 CHAR ASCII\n\
-    0 OK\n\
-    1 @VOID@ BAD\n";
+    let input: &[u8] = indoc! {b"
+        0 HEAD
+        1 GEDC
+        2 VERS 5.5.1
+        1 CHAR ASCII
+        0 OK
+        1 @VOID@ BAD
+    "};
 
     let err = test(input).unwrap_err();
     insta::assert_snapshot!(err, @r"
@@ -224,13 +234,14 @@ fn bad_void_xref() {
 
 #[test]
 fn bad_skipped_level() {
-    let input: &[u8] = b"\
-    0 HEAD\n\
-    1 GEDC\n\
-    2 VERS 5.5.1\n\
-    1 CHAR ASCII\n\
-    0 TAG\n\
-    2 TAG";
+    let input: &[u8] = indoc! {b"
+        0 HEAD
+        1 GEDC
+        2 VERS 5.5.1
+        1 CHAR ASCII
+        0 TAG
+        2 TAG
+    "};
 
     let err = test(input).unwrap_err();
     insta::assert_snapshot!(err, @r"
@@ -251,12 +262,13 @@ fn bad_skipped_level() {
 
 #[test]
 fn bad_no_tag() {
-    let input: &[u8] = b"\
-    0 HEAD\n\
-    1 GEDC\n\
-    2 VERS 5.5.1\n\
-    1 CHAR ASCII\n\
-    0";
+    let input: &[u8] = indoc! {b"
+        0 HEAD
+        1 GEDC
+        2 VERS 5.5.1
+        1 CHAR ASCII
+        0
+    "};
 
     let err = test(input).unwrap_err();
     insta::assert_snapshot!(err, @r"
@@ -277,9 +289,10 @@ fn bad_no_tag() {
 
 #[test]
 fn bad_incorrect_level() {
-    let input: &[u8] = b"\
-    1 HEAD\n\
-    1 TAG";
+    let input: &[u8] = indoc! {b"
+        1 HEAD
+        1 TAG
+    "};
 
     let err = test(input).unwrap_err();
     insta::assert_snapshot!(err, @r"
@@ -304,12 +317,13 @@ fn bad_incorrect_level() {
 
 #[test]
 fn bad_invalid_level() {
-    let input: &[u8] = b"\
-    0 HEAD\n\
-    1 GEDC\n\
-    2 VERS 5.5.1\n\
-    1 CHAR ASCII\n\
-    x y z";
+    let input: &[u8] = indoc! {b"
+        0 HEAD
+        1 GEDC
+        2 VERS 5.5.1
+        1 CHAR ASCII
+        x y z
+    "};
 
     let err = test(input).unwrap_err();
     insta::assert_snapshot!(err, @r"
@@ -332,12 +346,13 @@ fn bad_invalid_level() {
 
 #[test]
 fn warn_no_children_or_value() {
-    let input: &[u8] = b"\
-    0 HEAD\n\
-    1 GEDC\n\
-    2 VERS 5.5.1\n\
-    1 CHAR ASCII\n\
-    0 TAG";
+    let input: &[u8] = indoc! {b"
+        0 HEAD
+        1 GEDC
+        2 VERS 5.5.1
+        1 CHAR ASCII
+        0 TAG
+    "};
 
     // TODO[warn]: warning check
     let err = test(input).unwrap();

@@ -1,4 +1,5 @@
-use std::path::{self, Path, PathBuf};
+// cSpell:ignore allged
+use std::path::PathBuf;
 
 use gedcomfy::reader::{Reader, decoding::detect_external_encoding, input::File};
 use rstest::*;

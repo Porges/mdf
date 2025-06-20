@@ -2,10 +2,14 @@
     "cSpell.words": [
         "ANSEL",
         "GEDCOM",
+        "errful",
         "gedcomfy",
         "indoc",
         "insta",
+        "itertools",
+        "memmap",
         "miette",
+        "rstest",
         "subrecord",
         "thiserror"
     ]
