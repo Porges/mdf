@@ -34,8 +34,8 @@ gedcomfy::error
   │   Advice: gedcom::possible_encodings
   │   
   │     ☞ the invalid data appears to be valid in other encodings:
-  │     │ → [1mHÃ–Ã–T[0m (using Windows-1252)
-  │     │ → [1mHÖÖT[0m (using UTF-8)
+  │     │ → HÃ–Ã–T (using Windows-1252)
+  │     │ → HÖÖT (using UTF-8)
   │     help: encoding can be chosen explicitly using the `--force-encoding`
   │           option
   │   

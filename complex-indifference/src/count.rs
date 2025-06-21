@@ -31,10 +31,7 @@ impl<T: ?Sized> Count<T> {
     pub const ONE: Self = Self::new(1);
 
     pub const fn new(count: usize) -> Self {
-        Self {
-            count,
-            _phantom: PhantomData,
-        }
+        Self { count, _phantom: PhantomData }
     }
 
     pub const fn count(&self) -> usize {
@@ -69,10 +66,7 @@ impl<T: ?Sized> Count<T> {
 
 impl<T: ?Sized> From<usize> for Count<T> {
     fn from(count: usize) -> Self {
-        Self {
-            count,
-            _phantom: PhantomData,
-        }
+        Self { count, _phantom: PhantomData }
     }
 }
 
