@@ -50,12 +50,7 @@ pub struct Label<'a> {
 
 impl<'a> Label<'a> {
     pub fn new(span: Span<u8>, message: Cow<'a, str>, style: Style) -> Self {
-        Self {
-            span,
-            message,
-            style,
-            is_multiline_end: false,
-        }
+        Self { span, message, style, is_multiline_end: false }
     }
 
     pub fn with_style(self, style: Style) -> Self {
@@ -229,11 +224,8 @@ impl Highlighter<'_> {
             );
 
             // indicate the portion of the line that the labels are pointing at
-            let LitLine {
-                line,
-                indicator_line,
-                messages,
-            } = LineHighlighter::new(self.source_code).highlight_line(line_span, &line_labels);
+            let LitLine { line, indicator_line, messages } =
+                LineHighlighter::new(self.source_code).highlight_line(line_span, &line_labels);
 
             // 0. context-before
             // 1. line
@@ -630,7 +622,7 @@ mod test {
     use insta::assert_snapshot;
     use owo_colors::Style;
 
-    use super::{render, sort_labels, Label};
+    use super::{Label, render, sort_labels};
 
     fn span_of(source: &str, word: &str) -> Span<u8> {
         let start = source.find(word).unwrap();

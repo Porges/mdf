@@ -1,4 +1,7 @@
 {
+    "cSpell.ignoreRegExpList": [
+        "\\b[A-Z]{4}\\b" // ignore GEDCOM tags
+    ],
     "cSpell.words": [
         "ANSEL",
         "GEDCOM",
