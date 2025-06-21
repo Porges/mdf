@@ -15,7 +15,7 @@
 //! The reason for this is that the `provide` method cannot distinguish between
 //! multiple values of the same type, so it would be necessary to define wrapper
 //! types anyway (e.g. `struct Code(str)` – this is how an earlier version of this
-//! module worksed). However, once these are defined, we might as well just use
+//! module worked). However, once these are defined, we might as well just use
 //! a trait instead, since the wrapper types would have to be referenced directly anyway.
 //!
 //! The other thing that is difficult to do with the `provide` method is to provide
@@ -34,7 +34,7 @@
 use std::{
     backtrace::Backtrace,
     borrow::Cow,
-    error::{request_ref, request_value, Error},
+    error::{Error, request_ref, request_value},
     fmt::Display,
     process::ExitCode,
 };
@@ -167,10 +167,7 @@ impl<'a> Label<'a> {
         message: &'a dyn Error,
         span: Span<u8>,
     ) -> Self {
-        Label {
-            message: LabelMessage::Error(message),
-            span,
-        }
+        Label { message: LabelMessage::Error(message), span }
     }
 
     pub fn new_literal(

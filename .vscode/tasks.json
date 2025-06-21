@@ -18,6 +18,13 @@
 				"isDefault": true
 			},
 			"label": "rust: cargo test with coverage"
+		},
+		{
+            "label": "Watch coverage on open",
+            "command": "${command:coverage-gutters.watchCoverageAndVisibleEditors}",
+            "runOptions": {
+                "runOn": "folderOpen"
+            }
 		}
 	]
 }
