@@ -94,14 +94,14 @@ pub trait AsErrful: Error + Sized {
         F::from(self.errful())
     }
 
-    fn display_pretty(&self) -> PrettyDisplay
+    fn display_pretty(&self) -> PrettyDisplay<'_>
     where
         Self: Sized,
     {
         self.display_errful()
     }
 
-    fn display_pretty_nocolor(&self) -> PrettyDisplay
+    fn display_pretty_nocolor(&self) -> PrettyDisplay<'_>
     where
         Self: Sized,
     {
@@ -140,7 +140,7 @@ pub trait Errful: Error {
         None
     }
 
-    fn labels(&self) -> Option<Vec<Label>> {
+    fn labels(&self) -> Option<Vec<Label<'_>>> {
         None
     }
 
@@ -185,7 +185,7 @@ impl<'a> Label<'a> {
         self.span
     }
 
-    pub fn message(&self) -> &LabelMessage {
+    pub fn message(&self) -> &LabelMessage<'_> {
         &self.message
     }
 }

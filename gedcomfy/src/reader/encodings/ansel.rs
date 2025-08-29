@@ -24,7 +24,7 @@ impl AnselErr {
     }
 }
 
-pub(crate) fn decode(mut input: &[u8]) -> Result<Cow<str>, AnselErr> {
+pub(crate) fn decode(mut input: &[u8]) -> Result<Cow<'_, str>, AnselErr> {
     // if it’s pure ASCII we can return it straight away
     let ascii_err = match input.as_ascii_str() {
         Ok(str) => return Ok(str.as_str().into()),

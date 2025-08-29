@@ -62,7 +62,7 @@ impl sophia_api::term::Term for Term<'_> {
         self
     }
 
-    fn bnode_id(&self) -> Option<sophia_api::term::BnodeId<sophia_api::MownStr>> {
+    fn bnode_id(&self) -> Option<sophia_api::term::BnodeId<sophia_api::MownStr<'_>>> {
         match self {
             Term::UnnamedBNode(id) => {
                 Some(sophia_api::term::BnodeId::new(format!("b{id}").into()).unwrap())
@@ -73,7 +73,7 @@ impl sophia_api::term::Term for Term<'_> {
         }
     }
 
-    fn iri(&self) -> Option<sophia_api::term::IriRef<sophia_api::MownStr>> {
+    fn iri(&self) -> Option<sophia_api::term::IriRef<sophia_api::MownStr<'_>>> {
         match self {
             Term::NamedNode(iri) => {
                 Some(sophia_api::term::IriRef::new(iri.deref().into()).unwrap())
@@ -82,18 +82,18 @@ impl sophia_api::term::Term for Term<'_> {
         }
     }
 
-    fn lexical_form(&self) -> Option<sophia_api::MownStr> {
+    fn lexical_form(&self) -> Option<sophia_api::MownStr<'_>> {
         match self {
             Term::String(s) => Some(s.deref().into()),
             Term::NamedBNode(_) | Term::UnnamedBNode(_) | Term::NamedNode(_) => None,
         }
     }
 
-    fn language_tag(&self) -> Option<sophia_api::term::LanguageTag<sophia_api::MownStr>> {
+    fn language_tag(&self) -> Option<sophia_api::term::LanguageTag<sophia_api::MownStr<'_>>> {
         None
     }
 
-    fn datatype(&self) -> Option<sophia_api::term::IriRef<sophia_api::MownStr>> {
+    fn datatype(&self) -> Option<sophia_api::term::IriRef<sophia_api::MownStr<'_>>> {
         Some(IriRef::new_unchecked(
             "http://www.w3.org/2001/XMLSchema#string".into(), // DevSkim: ignore DS137138
         ))

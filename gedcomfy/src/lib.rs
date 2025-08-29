@@ -32,7 +32,7 @@ pub enum ValidationError {
 }
 
 impl<S: GEDCOMSource + ?Sized> RawRecord<'_, S> {
-    pub(crate) fn subrecord_optional(&self, subrecord_tag: &str) -> Option<&Sourced<RawRecord<S>>> {
+    pub(crate) fn subrecord_optional(&self, subrecord_tag: &str) -> Option<&Sourced<RawRecord<'_, S>>> {
         self.records
             .iter()
             .find(|r| r.sourced_value.line.tag.sourced_value == subrecord_tag)

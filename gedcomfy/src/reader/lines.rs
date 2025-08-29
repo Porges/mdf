@@ -96,7 +96,7 @@ pub enum LineSyntaxError {
 /// ## Syntax
 pub(crate) fn iterate_lines<S: GEDCOMSource + ?Sized>(
     source_code: &S,
-) -> impl Iterator<Item = Result<(Sourced<usize>, Sourced<RawLine<S>>), LineSyntaxError>> {
+) -> impl Iterator<Item = Result<(Sourced<usize>, Sourced<RawLine<'_, S>>), LineSyntaxError>> {
     // Line syntax is as follows:
     /*
     Line    = Level D [Xref D] Tag [D LineVal] EOL

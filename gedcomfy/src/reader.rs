@@ -301,7 +301,7 @@ impl<E: std::error::Error + 'static> std::error::Error for WithSourceCode<'_, E>
 }
 
 impl<E: miette::Diagnostic + 'static> miette::Diagnostic for WithSourceCode<'_, E> {
-    fn code<'a>(&'a self) -> Option<Box<(dyn std::fmt::Display + 'a)>> {
+    fn code<'a>(&'a self) -> Option<Box<dyn std::fmt::Display + 'a>> {
         Some(Box::new("gedcomfy::error"))
     }
 

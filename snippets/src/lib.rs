@@ -77,7 +77,7 @@ impl<'a> Label<'a> {
 }
 
 impl Highlighter<'_> {
-    fn new(source_code: &str) -> Highlighter {
+    fn new(source_code: &str) -> Highlighter<'_> {
         Highlighter {
             source_code,
             context_lines: 2,
@@ -346,7 +346,7 @@ struct LineHighlighter<'a> {
 }
 
 impl LineHighlighter<'_> {
-    fn new(source_code: &str) -> LineHighlighter {
+    fn new(source_code: &str) -> LineHighlighter<'_> {
         LineHighlighter {
             source_code,
             line: Vec::new(),
