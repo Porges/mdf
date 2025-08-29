@@ -841,7 +841,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "778e2ac28f6c47af28e4907f13ffd1e1ddbd400980a9abd7c8df189bf578a5ad"
 dependencies = [
  "libc",
- "windows-sys 0.52.0",
+ "windows-sys 0.60.2",
 ]
 
 [[package]]
@@ -1397,9 +1397,9 @@ dependencies = [
 
 [[package]]
 name = "iocraft"
-version = "0.5.3"
+version = "0.7.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bb123fec8a58f6b1781bb5d0ee38dac04fac2bbfcf446130295f86831295ffa8"
+checksum = "bd8d3ddf4888a50fae057c96cca667a52bc529e56a19fc2300e09a1d5d955d5a"
 dependencies = [
  "any_key",
  "bitflags",
@@ -1408,15 +1408,14 @@ dependencies = [
  "generational-box",
  "iocraft-macros",
  "taffy",
- "textwrap",
  "unicode-width 0.1.14",
 ]
 
 [[package]]
 name = "iocraft-macros"
-version = "0.1.8"
+version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7d0e726dcb066433b8c3f9c3fb49df64428fbd33777099be6426ab691fa38e33"
+checksum = "d2a8b12929295d5fea225570fd69a41084e2949d56ce0c20ff22494ef13e0d56"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1432,7 +1431,7 @@ checksum = "e04d7f318608d35d4b61ddd75cbdaee86b023ebe2bd5a66ee0915f0bf93095a9"
 dependencies = [
  "hermit-abi",
  "libc",
- "windows-sys 0.52.0",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -2397,7 +2396,7 @@ dependencies = [
  "errno",
  "libc",
  "linux-raw-sys 0.4.15",
- "windows-sys 0.52.0",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -2410,7 +2409,7 @@ dependencies = [
  "errno",
  "libc",
  "linux-raw-sys 0.9.4",
- "windows-sys 0.52.0",
+ "windows-sys 0.60.2",
 ]
 
 [[package]]
@@ -3643,7 +3642,7 @@ version = "0.1.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0978bf7171b3d90bac376700cb56d606feb40f251a475a5d6634613564460b22"
 dependencies = [
- "windows-sys 0.48.0",
+ "windows-sys 0.60.2",
 ]
 
 [[package]]
