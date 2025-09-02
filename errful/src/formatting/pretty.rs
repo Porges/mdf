@@ -1,9 +1,9 @@
 use std::fmt::{Display, Formatter};
 
 use crate::{
+    Severity,
     colors::ColorGenerator,
     protocol::{AsErrful, Errful, Label, LabelMessage, PrintableSeverity},
-    Severity,
 };
 
 pub struct PrettyDisplay<'e> {
@@ -18,17 +18,11 @@ impl PrettyDisplay<'_> {
     }
 
     pub fn with_terminal_width(self) -> Self {
-        Self {
-            width: None,
-            ..self
-        }
+        Self { width: None, ..self }
     }
 
     pub fn with_width(self, width: usize) -> Self {
-        Self {
-            width: Some(width),
-            ..self
-        }
+        Self { width: Some(width), ..self }
     }
 
     pub fn use_color(&self) -> bool {
@@ -65,8 +59,11 @@ impl PrettyDisplay<'_> {
                     )
                 }));
 
+                let source_name = None; // TODO: source name
+
                 if let Ok(labels) = labels.try_into() {
-                    let rendered = snippets::render(source_code, labels);
+                    let rendered =
+                        snippets::render_labels_to_string(source_code, source_name, labels);
                     write!(f, "{}", textwrap::indent(&rendered, prefix))?;
                 }
             } else {
@@ -107,11 +104,7 @@ impl PrettyDisplay<'_> {
 
 impl<'e> From<&'e dyn Errful> for PrettyDisplay<'e> {
     fn from(err: &'e dyn Errful) -> Self {
-        Self {
-            err,
-            color: true,
-            width: Some(usize::MAX),
-        }
+        Self { err, color: true, width: Some(usize::MAX) }
     }
 }
 
@@ -146,31 +139,19 @@ impl Styles {
     }
 
     fn base_style<'s, T>(&'s self, value: T) -> AppliedStyle<'s, T> {
-        AppliedStyle {
-            style: &self.base,
-            value,
-        }
+        AppliedStyle { style: &self.base, value }
     }
 
     fn base_style_dim<'s, T>(&'s self, value: T) -> AppliedStyle<'s, T> {
-        AppliedStyle {
-            style: &self.base_dim,
-            value,
-        }
+        AppliedStyle { style: &self.base_dim, value }
     }
 
     fn main_sev_style<'s, T>(&'s self, value: T) -> AppliedStyle<'s, T> {
-        AppliedStyle {
-            style: &self.main_sev,
-            value,
-        }
+        AppliedStyle { style: &self.main_sev, value }
     }
 
     fn only_bold_style<'s, T>(&'s self, value: T) -> AppliedStyle<'s, T> {
-        AppliedStyle {
-            style: &self.only_bold,
-            value,
-        }
+        AppliedStyle { style: &self.only_bold, value }
     }
 }
 

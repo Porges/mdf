@@ -273,9 +273,9 @@ dependencies = [
 
 [[package]]
 name = "bolero"
-version = "0.12.0"
+version = "0.13.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3c8110b2b4255b16c25af45c2351fa26a391f899239703522995600b5eabb1f8"
+checksum = "4e913ed74716cd68dc5be41c702327b1cc4ffc8f0b55945ae46fb015777007eb"
 dependencies = [
  "bolero-afl",
  "bolero-engine",
@@ -284,14 +284,14 @@ dependencies = [
  "bolero-kani",
  "bolero-libfuzzer",
  "cfg-if",
- "rand",
+ "rand 0.9.1",
 ]
 
 [[package]]
 name = "bolero-afl"
-version = "0.12.0"
+version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7152db647a5df11b8d9bc6f17916b6fbf7e8303632d1855e67939439ba26a798"
+checksum = "d9bf4cbd0bacf9356d3c7e5d9d088480f2076ba3c595c15ee9a6a378cdd7b297"
 dependencies = [
  "bolero-engine",
  "cc",
@@ -299,37 +299,36 @@ dependencies = [
 
 [[package]]
 name = "bolero-engine"
-version = "0.12.0"
+version = "0.13.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cfa8aec1ff59a515462a473c56a428e8d9d7ea15df49151820dfbd63ef364b4a"
+checksum = "05cae8c41807b046bb7005f52fa60c8f67787c1bf272242f0b84224853e04ceb"
 dependencies = [
  "anyhow",
- "backtrace",
  "bolero-generator",
  "lazy_static",
  "pretty-hex",
- "rand",
+ "rand 0.9.1",
  "rand_xoshiro",
 ]
 
 [[package]]
 name = "bolero-generator"
-version = "0.12.0"
+version = "0.13.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6e85be107ff475ca58de17db3f6f5d6e53a6f429f54e8b25e34d235ed2cf47e6"
+checksum = "8e3ac7405f187921256faa515fa05ae02521103582a9d938410cefabe3a9a172"
 dependencies = [
  "bolero-generator-derive",
  "either",
- "getrandom 0.2.16",
- "rand_core",
+ "getrandom 0.3.3",
+ "rand_core 0.9.3",
  "rand_xoshiro",
 ]
 
 [[package]]
 name = "bolero-generator-derive"
-version = "0.12.0"
+version = "0.13.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c613c51da2e38c264682ab4e64db57f17fbcdcf83045779c5a0c20faa2fb9ec0"
+checksum = "9c56c2f8c1c0707d678bebb36168cfd523c45927bb8d9cb7567d3578fa428cbd"
 dependencies = [
  "proc-macro-crate",
  "proc-macro2",
@@ -339,27 +338,27 @@ dependencies = [
 
 [[package]]
 name = "bolero-honggfuzz"
-version = "0.12.0"
+version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "afeb0b293298dcbc70e3c0980a6588217180b83f6ef96e7684e1d3ea8a2cf522"
+checksum = "9a118ef27295eddefadc6a99728ee698d1b18d2e80dc4777d21bee3385096ffd"
 dependencies = [
  "bolero-engine",
 ]
 
 [[package]]
 name = "bolero-kani"
-version = "0.12.0"
+version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cb0bb91187b113a3daf85ad86a0ac0db6ef7856b2bf15f4ac90fb8c60a641718"
+checksum = "852ea5784a9f3e68bfd302ca80b8b863bce140593eb5770fee6ab110899c28fc"
 dependencies = [
  "bolero-engine",
 ]
 
 [[package]]
 name = "bolero-libfuzzer"
-version = "0.12.0"
+version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "67e73a17841837494a19e574289cc9e7c185de51fd4287a0e15e440bae1ca366"
+checksum = "858dc57c11725c52662501fa79fdbc6f7050339a05ca1bf1e587add0fed40d62"
 dependencies = [
  "bolero-engine",
  "cc",
@@ -1728,7 +1727,7 @@ dependencies = [
  "num-integer",
  "num-iter",
  "num-traits",
- "rand",
+ "rand 0.8.5",
  "smallvec",
  "zeroize",
 ]
@@ -1945,7 +1944,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3c80231409c20246a13fddb31776fb942c38553c51e871f8cbd687a4cfb5843d"
 dependencies = [
  "phf_shared",
- "rand",
+ "rand 0.8.5",
 ]
 
 [[package]]
@@ -2151,8 +2150,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "34af8d1a0e25924bc5b7c43c079c942339d8f0a8b57c39049bef581b46327404"
 dependencies = [
  "libc",
- "rand_chacha",
- "rand_core",
+ "rand_chacha 0.3.1",
+ "rand_core 0.6.4",
+]
+
+[[package]]
+name = "rand"
+version = "0.9.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9fbfd9d094a40bf3ae768db9361049ace4c0e04a4fd6b359518bd7b73a73dd97"
+dependencies = [
+ "rand_chacha 0.9.0",
+ "rand_core 0.9.3",
 ]
 
 [[package]]
@@ -2162,7 +2171,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e6c10a63a0fa32252be49d21e7709d4d4baf8d231c2dbce1eaa8141b9b127d88"
 dependencies = [
  "ppv-lite86",
- "rand_core",
+ "rand_core 0.6.4",
+]
+
+[[package]]
+name = "rand_chacha"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d3022b5f1df60f26e1ffddd6c66e8aa15de382ae63b3a0c1bfc0e4d3e3f325cb"
+dependencies = [
+ "ppv-lite86",
+ "rand_core 0.9.3",
 ]
 
 [[package]]
@@ -2175,12 +2194,21 @@ dependencies = [
 ]
 
 [[package]]
-name = "rand_xoshiro"
-version = "0.6.0"
+name = "rand_core"
+version = "0.9.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6f97cdb2a36ed4183de61b2f824cc45c9f1037f28afe0a322e9fff4c108b5aaa"
+checksum = "99d9a13982dcf210057a8a78572b2217b667c3beacbf3a0d8b454f6f82837d38"
 dependencies = [
- "rand_core",
+ "getrandom 0.3.3",
+]
+
+[[package]]
+name = "rand_xoshiro"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f703f4665700daf5512dcca5f43afa6af89f09db47fb56be587f80636bda2d41"
+dependencies = [
+ "rand_core 0.9.3",
 ]
 
 [[package]]
@@ -2321,7 +2349,7 @@ dependencies = [
  "num-traits",
  "pkcs1",
  "pkcs8",
- "rand_core",
+ "rand_core 0.6.4",
  "signature",
  "spki",
  "subtle",
@@ -2365,7 +2393,7 @@ dependencies = [
  "borsh",
  "bytes",
  "num-traits",
- "rand",
+ "rand 0.8.5",
  "rkyv",
  "serde",
  "serde_json",
@@ -2657,7 +2685,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "77549399552de45a898a580c1b41d445bf730df867cc44e6c0233bbc4b8329de"
 dependencies = [
  "digest",
- "rand_core",
+ "rand_core 0.6.4",
 ]
 
 [[package]]
@@ -2714,6 +2742,7 @@ version = "0.1.0"
 dependencies = [
  "bolero",
  "complex-indifference",
+ "indoc",
  "insta",
  "owo-colors",
  "textwrap",
@@ -2925,7 +2954,7 @@ dependencies = [
  "memchr",
  "once_cell",
  "percent-encoding",
- "rand",
+ "rand 0.8.5",
  "rsa",
  "rust_decimal",
  "serde",
@@ -2969,7 +2998,7 @@ dependencies = [
  "memchr",
  "num-bigint",
  "once_cell",
- "rand",
+ "rand 0.8.5",
  "rust_decimal",
  "serde",
  "serde_json",

@@ -19,5 +19,10 @@
     "coverage-gutters.coverageBaseDir": ".",
     "coverage-gutters.coverageFileNames": [
         "lcov.info"
-    ]
+    ],
+    "workbench.colorCustomizations": {
+        "activityBar.background": "#24311C",
+        "titleBar.activeBackground": "#334427",
+        "titleBar.activeForeground": "#FAFBF9"
+    }
 }

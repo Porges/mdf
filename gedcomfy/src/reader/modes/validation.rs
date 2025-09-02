@@ -1,4 +1,4 @@
-use complex_indifference::{Count, plural};
+use complex_indifference::Count;
 use miette::Diagnostic;
 
 use crate::{
@@ -11,13 +11,23 @@ pub(in crate::reader) struct Mode {
     non_fatals: Vec<ReaderError>,
 }
 
+fn plural<T>(count: &Count<T>) -> &'static str {
+    match count.as_usize() {
+        1 => "s",
+        _ => "",
+    }
+}
+
 #[derive(thiserror::Error, derive_more::Display, Debug, miette::Diagnostic)]
 #[display(
-    "Validation was {validity}: {} top-level records processed with {}, {}, and {}.",
+    "Validation was {validity}: {} top-level records processed with {} error{}, {} warning{}, and {} piece{} of advice.",
     record_count,
-    error_count.plural(plural!(error(s))),
-    warning_count.plural(plural!(warning(s))),
-    advice_count.plural(plural!(piece(s)" of advice"))
+    error_count,
+    plural(error_count),
+    warning_count,
+    plural(warning_count),
+    advice_count,
+    plural(advice_count)
 )]
 #[diagnostic(severity(Advice))]
 pub struct ValidationResult {

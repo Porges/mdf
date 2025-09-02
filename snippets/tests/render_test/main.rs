@@ -3,7 +3,7 @@ use std::{
     ops::Deref,
 };
 
-use bolero::{check, TypeGenerator};
+use bolero::{TypeGenerator, check};
 use complex_indifference::Span;
 use snippets::Label;
 
@@ -35,7 +35,7 @@ fn main() {
                 .collect();
 
             if let Ok(labels) = labels.try_into() {
-                let _ = snippets::render(value, labels);
+                let _ = snippets::render_labels_to_string(value, None, labels);
             }
         });
 }

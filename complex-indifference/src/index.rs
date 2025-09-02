@@ -2,64 +2,62 @@ use std::marker::PhantomData;
 
 use crate::{Count, Span};
 
-// TODO: distinguish between `Index` and `Offset`?
-// Offset is essentially a `Count` with a different name.
-// Not sure that this is worth it.
-//
-// TODO: distringuish between indices which are "inclusive" and "exclusive"?
-// e.g. the end index of a span is exclusive
-
 /// An index into a sequence of things of type `T`
 /// (i.e. a finite [Ordinal number](https://en.wikipedia.org/wiki/Ordinal_number)).
 #[derive(Debug)]
+#[repr(transparent)]
 pub struct Index<T: ?Sized> {
     index: usize,
     _phantom: PhantomData<T>,
 }
 
 impl<T: ?Sized> Default for Index<T> {
+    #[inline(always)]
     fn default() -> Self {
         Self::new(0)
     }
 }
 
+impl<T: ?Sized> From<Index<T>> for usize {
+    #[inline(always)]
+    fn from(index: Index<T>) -> Self {
+        index.index
+    }
+}
+
 impl<T: ?Sized> Index<T> {
+    #[inline(always)]
     pub const fn new(index: usize) -> Self {
-        Self {
-            index,
-            _phantom: PhantomData,
-        }
+        Self { index, _phantom: PhantomData }
     }
 
-    pub const fn index(&self) -> usize {
+    #[inline(always)]
+    pub const fn as_usize(&self) -> usize {
         self.index
     }
 
-    pub fn up_to(&self, ix: Index<T>) -> Option<Span<T>> {
-        debug_assert!(
-            *self <= ix,
-            "cannot go up_to a lower index: {} > {}",
-            self.index,
-            ix.index
-        );
-
+    #[inline(always)]
+    pub fn span_until(&self, ix: Index<T>) -> Option<Span<T>> {
         Span::try_from_indices(*self, ix)
     }
 }
 
 impl<T: ?Sized> PartialOrd<Index<T>> for Index<T> {
+    #[inline(always)]
     fn partial_cmp(&self, other: &Index<T>) -> Option<std::cmp::Ordering> {
         Some(self.cmp(other))
     }
 }
 
 impl<T: ?Sized> Ord for Index<T> {
+    #[inline(always)]
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         self.index.cmp(&other.index)
     }
 }
 
 impl<T: ?Sized> PartialEq<Index<T>> for Index<T> {
+    #[inline(always)]
     fn eq(&self, other: &Self) -> bool {
         self.index == other.index
     }
@@ -68,6 +66,7 @@ impl<T: ?Sized> PartialEq<Index<T>> for Index<T> {
 impl<T: ?Sized> Eq for Index<T> {}
 
 impl<T: ?Sized> Clone for Index<T> {
+    #[inline(always)]
     fn clone(&self) -> Self {
         *self
     }
@@ -76,122 +75,105 @@ impl<T: ?Sized> Clone for Index<T> {
 impl<T: ?Sized> Copy for Index<T> {}
 
 impl<T: ?Sized> From<usize> for Index<T> {
+    #[inline(always)]
     fn from(value: usize) -> Self {
         Self::new(value)
     }
 }
 
 impl<T: ?Sized> std::ops::Sub<Index<T>> for Index<T> {
-    type Output = Count<T>;
+    type Output = Option<Count<T>>;
 
+    #[inline(always)]
     fn sub(self, rhs: Index<T>) -> Self::Output {
-        Count::new(self.index - rhs.index)
+        Some(Count::new(self.index.checked_sub(rhs.index)?))
     }
 }
 
 impl<T: ?Sized> std::ops::Sub<Count<T>> for Index<T> {
-    type Output = Index<T>;
+    type Output = Option<Index<T>>;
 
+    #[inline(always)]
     fn sub(self, rhs: Count<T>) -> Self::Output {
-        Self::new(self.index - rhs.count())
-    }
-}
-
-impl<T: ?Sized> std::ops::SubAssign<Count<T>> for Index<T> {
-    fn sub_assign(&mut self, rhs: Count<T>) {
-        self.index -= rhs.count();
+        Some(Self::new(self.index.checked_sub(rhs.as_usize())?))
     }
 }
 
 impl<T: ?Sized> std::ops::Add<Count<T>> for Index<T> {
     type Output = Self;
 
+    #[inline(always)]
     fn add(self, rhs: Count<T>) -> Self::Output {
         Self {
-            index: self.index + rhs.count(),
+            index: self.index + rhs.as_usize(),
             _phantom: PhantomData,
         }
     }
 }
 
 impl<T: ?Sized> std::ops::AddAssign<Count<T>> for Index<T> {
+    #[inline(always)]
     fn add_assign(&mut self, rhs: Count<T>) {
-        self.index += rhs.count();
+        self.index += rhs.as_usize();
     }
 }
 
 impl<T> std::ops::Index<Index<T>> for [T] {
     type Output = T;
 
+    #[inline(always)]
     fn index(&self, index: Index<T>) -> &Self::Output {
-        &self[index.index()]
+        &self[index.as_usize()]
     }
 }
 
 impl<T> std::ops::IndexMut<Index<T>> for [T] {
+    #[inline(always)]
     fn index_mut(&mut self, index: Index<T>) -> &mut Self::Output {
-        &mut self[index.index()]
+        &mut self[index.as_usize()]
     }
 }
 
 impl std::ops::Index<Index<u8>> for str {
     type Output = u8;
 
+    #[inline(always)]
     fn index(&self, index: Index<u8>) -> &Self::Output {
-        &self.as_bytes()[index.index()]
+        &self.as_bytes()[index.as_usize()]
     }
 }
 
-pub trait Sliceable<T> {
-    fn slice(&self, span: Span<T>) -> &Self;
-    fn slice_to(&self, ix: Index<T>) -> &Self;
-    fn slice_from(&self, ix: Index<T>) -> &Self;
-}
+#[cfg(test)]
+mod test {
+    use super::*;
 
-pub trait SliceableMut<T>: Sliceable<T> {
-    fn slice_mut(&mut self, span: Span<T>) -> &mut Self;
-    fn slice_to_mut(&mut self, ix: Index<T>) -> &mut Self;
-    fn slice_from_mut(&mut self, ix: Index<T>) -> &mut Self;
-}
-
-impl Sliceable<u8> for str {
-    fn slice(&self, span: Span<u8>) -> &str {
-        &self[span.start().index()..span.end().index()]
+    #[test]
+    pub fn unsized_equal() {
+        let x = Index::<str>::new(2);
+        let y = Index::<str>::new(2);
+        assert!(x == y);
     }
 
-    fn slice_to(&self, ix: Index<u8>) -> &str {
-        &self[..ix.index()]
+    #[test]
+    pub fn unsized_cmp() {
+        let x = Index::<[u8]>::new(3);
+        let y = Index::<[u8]>::new(2);
+        assert!(x > y);
     }
 
-    fn slice_from(&self, ix: Index<u8>) -> &str {
-        &self[ix.index()..]
-    }
-}
-
-impl<T> Sliceable<T> for [T] {
-    fn slice(&self, span: Span<T>) -> &Self {
-        &self[span.start().index()..span.end().index()]
+    #[test]
+    pub fn noeq_eq() {
+        struct NoEq {}
+        let x = Index::<NoEq>::new(3);
+        let y = Index::<NoEq>::new(3);
+        assert!(x == y);
     }
 
-    fn slice_to(&self, ix: Index<T>) -> &[T] {
-        &self[..ix.index()]
-    }
-
-    fn slice_from(&self, ix: Index<T>) -> &[T] {
-        &self[ix.index()..]
-    }
-}
-
-impl<T> SliceableMut<T> for [T] {
-    fn slice_mut(&mut self, span: Span<T>) -> &mut Self {
-        &mut self[span.start().index()..span.end().index()]
-    }
-
-    fn slice_to_mut(&mut self, ix: Index<T>) -> &mut [T] {
-        &mut self[..ix.index()]
-    }
-
-    fn slice_from_mut(&mut self, ix: Index<T>) -> &mut [T] {
-        &mut self[ix.index()..]
+    #[test]
+    pub fn nocmp_cmp() {
+        struct NoCmp {}
+        let x = Index::<NoCmp>::new(3);
+        let y = Index::<NoCmp>::new(2);
+        assert!(x > y);
     }
 }

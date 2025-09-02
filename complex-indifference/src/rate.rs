@@ -12,7 +12,7 @@ impl<T: ?Sized> std::ops::Div<Duration> for Count<T> {
 
     fn div(self, rhs: Duration) -> Self::Output {
         Rate {
-            count_per_second: self.count() as f64 / rhs.as_secs_f64(),
+            count_per_second: self.as_usize() as f64 / rhs.as_secs_f64(),
             _phantom: PhantomData,
         }
     }

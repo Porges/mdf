@@ -1,24 +1,32 @@
-use std::marker::PhantomData;
-
-use crate::formatting::{PluralFormatter, PluralString};
+use std::{fmt::Display, marker::PhantomData};
 
 /// A count of things of type `T` (i.e. a finite [Cardinal number](https://en.wikipedia.org/wiki/Cardinal_number)).
 ///
 /// Use the [`Countable`](crate::Countable) trait to obtain a `Count` for a supported type,
 /// or use [`Count::from`](Count::from) or [`Count::new`](Count::new) to create a `Count` directly.
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug)]
+#[repr(transparent)]
 pub struct Count<T: ?Sized> {
     count: usize,
     _phantom: PhantomData<T>,
 }
 
+impl<T: ?Sized> Display for Count<T> {
+    #[inline(always)]
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.count.fmt(f)
+    }
+}
+
 impl<T: ?Sized> Default for Count<T> {
+    #[inline(always)]
     fn default() -> Self {
         Self::ZERO
     }
 }
 
 impl<T: ?Sized> Clone for Count<T> {
+    #[inline(always)]
     fn clone(&self) -> Self {
         *self
     }
@@ -26,67 +34,78 @@ impl<T: ?Sized> Clone for Count<T> {
 
 impl<T: ?Sized> Copy for Count<T> {}
 
+impl<T: ?Sized> PartialOrd<Count<T>> for Count<T> {
+    #[inline(always)]
+    fn partial_cmp(&self, other: &Count<T>) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl<T: ?Sized> Ord for Count<T> {
+    #[inline(always)]
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.count.cmp(&other.count)
+    }
+}
+
+impl<T: ?Sized> PartialEq<Count<T>> for Count<T> {
+    #[inline(always)]
+    fn eq(&self, other: &Self) -> bool {
+        self.count == other.count
+    }
+}
+
+impl<T: ?Sized> Eq for Count<T> {}
+
 impl<T: ?Sized> Count<T> {
     pub const ZERO: Self = Self::new(0);
     pub const ONE: Self = Self::new(1);
 
+    #[inline(always)]
     pub const fn new(count: usize) -> Self {
         Self { count, _phantom: PhantomData }
     }
 
-    pub const fn count(&self) -> usize {
+    #[inline(always)]
+    pub const fn as_usize(&self) -> usize {
         self.count
-    }
-
-    /// Obtains a pluralized form for printing.
-    ///
-    /// You can use the [`plural!`](crate::plural) macro to indicate how to format the plural.
-    ///
-    /// ```rust
-    /// use complex_indifference::{Countable, Count, plural};
-    ///
-    /// assert_eq!("1 item", format!("{}", [1].counted().plural(plural!(item(s)))));
-    /// assert_eq!("2 items", format!("{}", [1, 2].counted().plural(plural!(item(s)))));
-    ///
-    /// // disambiguate when the target can be counted in multiple ways
-    /// let chars: Count<char> = "¡olé!".counted();
-    /// assert_eq!("5 characters", format!("{}", chars.plural(plural!(character(s)))));
-    ///
-    /// let bytes: Count<u8> = "¡olé!".counted();
-    /// assert_eq!("7 bytes", format!("{}", bytes.plural(plural!(byte(s)))));
-    ///
-    /// // act like a pirate:
-    /// let bytes: Count<u8> = 56.into();
-    /// assert_eq!("56 pieces o’ eight", format!("{}", bytes.plural(plural!(piece(s)" o’ eight"))));
-    /// ```
-    pub const fn plural<'a>(&self, plural_string: PluralString<'a>) -> PluralFormatter<'a> {
-        PluralFormatter::new(self.count, plural_string)
     }
 }
 
 impl<T: ?Sized> From<usize> for Count<T> {
+    #[inline(always)]
     fn from(count: usize) -> Self {
         Self { count, _phantom: PhantomData }
+    }
+}
+
+impl<T: ?Sized> From<Count<T>> for usize {
+    #[inline(always)]
+    fn from(count: Count<T>) -> Self {
+        count.as_usize()
     }
 }
 
 impl<T: ?Sized> std::ops::Mul<Count<T>> for usize {
     type Output = Count<T>;
 
+    #[inline(always)]
     fn mul(self, rhs: Count<T>) -> Self::Output {
-        (rhs.count() * self).into()
+        (rhs.as_usize() * self).into()
     }
 }
 
 impl<T: ?Sized> std::ops::Mul<usize> for Count<T> {
     type Output = Count<T>;
 
+    #[inline(always)]
     fn mul(self, rhs: usize) -> Self::Output {
-        (self.count() * rhs).into()
+        (self.as_usize() * rhs).into()
     }
 }
 
 impl<T: ?Sized> std::ops::MulAssign<usize> for Count<T> {
+    #[inline(always)]
     fn mul_assign(&mut self, rhs: usize) {
         self.count *= rhs;
     }
@@ -95,6 +114,7 @@ impl<T: ?Sized> std::ops::MulAssign<usize> for Count<T> {
 impl<T: ?Sized> std::ops::Add for Count<T> {
     type Output = Count<T>;
 
+    #[inline(always)]
     fn add(self, rhs: Self) -> Self::Output {
         Self {
             count: self.count + rhs.count,
@@ -104,84 +124,55 @@ impl<T: ?Sized> std::ops::Add for Count<T> {
 }
 
 impl<T: ?Sized> std::ops::AddAssign for Count<T> {
+    #[inline(always)]
     fn add_assign(&mut self, rhs: Self) {
-        self.count += rhs.count()
+        self.count += rhs.as_usize()
     }
 }
 
 impl<T: ?Sized> std::ops::Sub for Count<T> {
-    type Output = Count<T>;
+    type Output = Option<Count<T>>;
 
+    #[inline(always)]
     fn sub(self, rhs: Self) -> Self::Output {
-        Self {
-            count: self.count - rhs.count,
+        Some(Self {
+            count: self.count.checked_sub(rhs.count)?,
             _phantom: PhantomData,
-        }
+        })
     }
 }
 
-impl<T: ?Sized> std::ops::SubAssign for Count<T> {
-    fn sub_assign(&mut self, rhs: Self) {
-        self.count -= rhs.count()
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    pub fn unsized_equal() {
+        let x = Count::<str>::new(2);
+        let y = Count::<str>::new(2);
+        assert!(x == y);
     }
-}
 
-/// A trait for things that can be counted.
-pub trait Countable<T: ?Sized> {
-    fn count_items(&self) -> Count<T>;
-}
-
-impl Countable<u8> for str {
-    fn count_items(&self) -> Count<u8> {
-        self.len().into()
+    #[test]
+    pub fn unsized_cmp() {
+        let x = Count::<[u8]>::new(3);
+        let y = Count::<[u8]>::new(2);
+        assert!(x > y);
     }
-}
 
-pub trait ByteCount: Countable<u8> {
-    fn count_bytes(&self) -> Count<u8> {
-        self.count_items()
+    #[test]
+    pub fn noeq_eq() {
+        struct NoEq {}
+        let x = Count::<NoEq>::new(3);
+        let y = Count::<NoEq>::new(3);
+        assert!(x == y);
     }
-}
 
-impl<T: Countable<u8> + ?Sized> ByteCount for T {}
-
-impl Countable<char> for str {
-    fn count_items(&self) -> Count<char> {
-        self.chars().count().into()
-    }
-}
-
-pub trait CharCount: Countable<char> {
-    fn count_chars(&self) -> Count<char> {
-        self.count_items()
-    }
-}
-
-impl<T: Countable<char> + ?Sized> CharCount for T {}
-
-#[cfg(feature = "unicode-width")]
-pub enum UnicodeWidth {}
-
-#[cfg(feature = "unicode-width")]
-impl Countable<UnicodeWidth> for str {
-    fn count_items(&self) -> Count<UnicodeWidth> {
-        use unicode_width::UnicodeWidthStr;
-        self.width().into()
-    }
-}
-
-#[cfg(feature = "unicode-width")]
-pub trait UnicodeWidthCount: Countable<UnicodeWidth> {
-    fn width_count(&self) -> Count<UnicodeWidth> {
-        self.count_items()
-    }
-}
-
-#[cfg(feature = "unicode-width")]
-impl<T: Countable<UnicodeWidth> + ?Sized> UnicodeWidthCount for T {}
-
-impl<T> Countable<T> for [T] {
-    fn count_items(&self) -> Count<T> {
-        self.len().into()
+    #[test]
+    pub fn nocmp_cmp() {
+        struct NoCmp {}
+        let x = Count::<NoCmp>::new(3);
+        let y = Count::<NoCmp>::new(2);
+        assert!(x > y);
     }
 }
